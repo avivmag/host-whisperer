@@ -21,7 +21,7 @@ export function studioToolDefinitions(): ToolDefinition[] {
     {
       name: 'create_integration_profile', title: 'Create support integration',
       description: 'Configure the visible Studio for a website that will install Host Whisperer. This does not modify the target website.',
-      inputSchema: objectSchema({ appName: string('Public application name.', { minLength: 1, maxLength: 80 }), allowedOrigin: string('Exact HTTP or HTTPS origin where the adapter will run.'), provider: string('Developer-only hosting provider hint.', { enum: providers }), resourceRef: string('Optional developer-only service reference. Never include credentials.', { maxLength: 300 }) }, ['appName', 'allowedOrigin', 'provider']),
+      inputSchema: objectSchema({ appName: string('Public application name.', { minLength: 1, maxLength: 80 }), allowedOrigin: string('Exact HTTP or HTTPS origin where the adapter will run.'), provider: string('Hosting provider used only as context if the customer escalates to a developer.', { enum: providers }) }, ['appName', 'allowedOrigin', 'provider']),
       execute: async (input) => compactToolOutput({ profile: await replaceStudioProfile(input), next: 'Select a support playbook and review its diagnostics and recovery effects.' }),
     },
     {

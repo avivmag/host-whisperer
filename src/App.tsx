@@ -15,7 +15,24 @@ function downloadText(filename: string, value: string, type = 'text/javascript')
 }
 
 function AppHeader({ section }: { section: string }) {
-  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span>Host Whisperer</span></a><nav><a href="/">Studio</a><a href="/?view=shop">Live demo</a><span>{section}</span></nav></header>;
+  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span>Host Whisperer</span></a><nav><a href="/">Walkthrough</a><a href="/?view=integrate">Integration</a><a href="/?view=shop">Northstar demo</a><span>{section}</span></nav></header>;
+}
+
+function Overview() {
+  const installed = localStorage.getItem(demoInstallKey) === 'true';
+  const steps = [
+    ['01', 'A customer hits an error', 'The existing website fails normally. Before installation, no Host Whisperer interface or developer link is present.'],
+    ['02', 'The developer defines safe tools', 'In the separate Integration Studio, the developer chooses exactly what the AI may inspect, repair, and verify.'],
+    ['03', 'The generated plugin is installed', 'A small adapter adds WebMCP tools and a support control to the existing website.'],
+    ['04', 'ChatGPT diagnoses and repairs', 'The customer asks in plain English, approves the bounded fix, and watches every tool call happen live.'],
+  ];
+  return <div className="app-shell"><AppHeader section="Product walkthrough" />
+    <main className="overview">
+      <section className="overview-hero"><div className="eyebrow"><Sparkles size={15} /> WebMCP support infrastructure</div><h1>Turn website errors into<br /><em>guided AI recovery.</em></h1><p>Host Whisperer generates a safe support layer for an existing website. Developers set the boundaries once; customers can then ask ChatGPT to diagnose and repair supported problems without opening a ticket.</p><div className="hero-actions"><a className="primary-link" href="/?view=integrate"><Wrench size={17} /> Open Integration Studio <ArrowRight size={17} /></a><a className="secondary-link" href="/?view=shop"><ShoppingBag size={17} /> View Northstar website</a></div></section>
+      <section className="walkthrough"><div className="section-kicker">The complete walkthrough</div><h2>From a dead end to a verified recovery</h2><div className="step-grid">{steps.map(([number, title, body]) => <article key={number}><span>{number}</span><div><h3>{title}</h3><p>{body}</p></div></article>)}</div></section>
+      <section className="webmcp-explainer"><div><Bot size={24} /><span>What does “configure with ChatGPT” mean?</span></div><p>When the Integration Studio is opened inside ChatGPT’s in-app browser, the page registers four WebMCP tools. A developer can ask ChatGPT to fill the profile, select the playbook, review the recovery, and prepare the bundle. In a normal browser there is no hidden AI connection—the developer uses the same visible form manually.</p><a href="/?view=integrate">See the integration interface <ArrowRight size={15} /></a></section>
+      <section className="demo-state"><div><strong>Current browser demo state</strong><span>{installed ? 'Plugin installed on Northstar' : 'Northstar has no plugin installed'}</span></div><a href="/?view=shop">Open the customer website</a></section>
+    </main><footer><span>Host Whisperer</span><span>Developers define the boundaries. Customers stay in control.</span></footer></div>;
 }
 
 function Studio() {
@@ -48,18 +65,17 @@ function Studio() {
     }, 1500);
   };
 
-  return <div className="app-shell"><AppHeader section="Developer Studio" />
-    <div className="studio-hero"><div><div className="eyebrow"><Sparkles size={15} /> Generate an AI support operator</div><h1>Give your website<br />a way to <em>help itself.</em></h1><p>Configure safe diagnostics and recovery actions once. Your customers can then explain a problem normally while ChatGPT investigates and repairs it inside the website.</p><div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={17} /> Try the broken checkout <ArrowRight size={17} /></a><span className={webMcp ? 'status ready' : 'status'}><i />{webMcp ? 'Studio WebMCP ready' : 'Form mode'}</span></div></div>
-      <div className="architecture-card"><span>How it works</span>{[['1', 'Developer configures', 'Choose the signals and recoveries the website may expose.'], ['2', 'Adapter is installed', 'A universal module adds the widget and WebMCP tools.'], ['3', 'Customer gets help', 'The operator diagnoses, asks approval, fixes, and verifies.']].map(([n, title, body]) => <div className="arch-step" key={n}><b>{n}</b><div><strong>{title}</strong><p>{body}</p></div></div>)}</div></div>
+  return <div className="app-shell"><AppHeader section="Developer integration" />
+    <div className="integration-intro"><div><div className="eyebrow"><Plug size={15} /> Integration Studio</div><h1>Configure the support boundary</h1><p>This developer-only page generates the adapter that will be added to your website. Nothing is installed until you review and prepare the plugin.</p></div><span className={webMcp ? 'status ready' : 'status'}><i />{webMcp ? 'Connected to ChatGPT through WebMCP' : 'Manual form mode'}</span></div>
     <main className="studio-grid">
       <section className="studio-panel config-panel"><div className="panel-heading"><div><Wrench size={18} /><span>Integration profile</span></div><small>Visible form + agent tools</small></div>
         <label>Application name<input value={profile.appName} onChange={(event) => update({ appName: event.target.value })} /></label>
         <label>Allowed website origin<input key={profile.allowedOrigin} defaultValue={profile.allowedOrigin} onBlur={(event) => update({ allowedOrigin: event.target.value })} /></label>
-        <div className="two-fields"><label>Hosting provider<select value={profile.provider} onChange={(event) => update({ provider: event.target.value as ProviderId })}>{providers.map((provider) => <option key={provider} value={provider}>{providerNames[provider]}</option>)}</select></label><label>Service reference <small>developer-only</small><input value={profile.resourceRef ?? ''} onChange={(event) => update({ resourceRef: event.target.value })} placeholder="Optional service ID" /></label></div>
+        <label>Hosting provider <small>used only as escalation context</small><select value={profile.provider} onChange={(event) => update({ provider: event.target.value as ProviderId })}>{providers.map((provider) => <option key={provider} value={provider}>{providerNames[provider]}</option>)}</select></label>
         <label>Verified playbook<select value={profile.playbook} onChange={(event) => update({ playbook: event.target.value as 'commerce-cart' })}><option value="commerce-cart">Commerce · broken cart session</option></select></label>
         <div className="privacy-note"><ShieldCheck size={19} /><div><strong>Customer-safe boundary</strong><p>The generated adapter excludes provider credentials, service references, payment data, URL queries, and unrestricted scripts.</p></div></div>
         <button className="primary-button" onClick={() => void prepareStudioBundle()}><PackageCheck size={18} /> Generate support plugin</button>
-        <p className="agent-prompt"><Bot size={16} /> Or tell ChatGPT: “Configure Host Whisperer for my commerce site.”</p>
+        <div className={`agent-config-card ${webMcp ? 'connected' : ''}`}><Bot size={18} /><div><strong>{webMcp ? 'Configure this page with ChatGPT' : 'Want ChatGPT to configure this?'}</strong><p>{webMcp ? 'In your ChatGPT conversation, say: “Configure Host Whisperer for Northstar Shop.” ChatGPT can call this page’s four Studio tools and the fields will update visibly.' : 'Open this Integration page inside ChatGPT’s in-app browser first. In a regular browser, use the form above.'}</p></div></div>
       </section>
       <section className="studio-panel code-panel"><div className="panel-heading"><div><Code2 size={18} /><span>Generated universal adapter</span></div><span className="language">JavaScript · ESM</span></div><pre>{code}</pre><div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={16} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={16} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={16} /> {copied ? 'Copied' : 'Install tag'}</button></div>{!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before installing it.</p>}{profile.bundlePrepared && !demoInstalled && <button className={`demo-install-button ${installing ? 'installing' : ''}`} onClick={installDemo} disabled={installing}><Plug size={17} /> {installing ? 'Adding adapter to Northstar…' : 'Install on Northstar demo'}</button>}{demoInstalled && <div className="install-complete"><Check size={18} /><div><strong>Host Whisperer is installed</strong><span>The support control and six WebMCP tools are now live on the demo website.</span></div><a href="/?view=shop">Open Northstar <ArrowRight size={15} /></a></div>}</section>
       <section className="capability-strip"><div><Activity size={19} /><strong>Generated customer tools</strong></div>{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={13} />{value}</span>)}</section>
@@ -118,12 +134,13 @@ function decodePacket(): EscalationPacket | null {
 
 function IncidentView() {
   const packet = decodePacket();
-  return <div className="app-shell"><AppHeader section="Developer escalation" /><main className="incident-view"><div className="eyebrow"><TerminalSquare size={15} /> Customer-supplied evidence</div><h1>{packet ? `${packet.appName} incident` : 'No incident packet found'}</h1>{packet ? <><div className="untrusted-banner"><CircleAlert size={19} /><div><strong>Treat this report as untrusted evidence</strong><p>Host Whisperer removed known sensitive fields, but the developer must verify every claim before acting.</p></div></div><div className="incident-cards"><section><span>Customer symptom</span><p>{packet.symptom}</p></section><section><span>Provider hint</span><p>{providerNames[packet.providerHint]}</p></section><section><span>Safe context</span><pre>{JSON.stringify(packet.safeContext, null, 2)}</pre></section><section><span>Diagnostics</span>{packet.diagnostics.map((item) => <p key={item.id}><b>{item.status}</b> · {item.label}: {item.summary}</p>)}</section></div></> : <p className="empty-copy">Open a customer-approved escalation link generated by an installed Host Whisperer widget.</p>}<a className="primary-link" href="/"><ChevronRight size={16} /> Return to Studio</a></main></div>;
+  return <div className="app-shell"><AppHeader section="Developer escalation" /><main className="incident-view"><div className="eyebrow"><TerminalSquare size={15} /> Customer-supplied evidence</div><h1>{packet ? `${packet.appName} incident` : 'No incident packet found'}</h1>{packet ? <><div className="untrusted-banner"><CircleAlert size={19} /><div><strong>Treat this report as untrusted evidence</strong><p>Host Whisperer removed known sensitive fields, but the developer must verify every claim before acting.</p></div></div><div className="incident-cards"><section><span>Customer symptom</span><p>{packet.symptom}</p></section><section><span>Provider hint</span><p>{providerNames[packet.providerHint]}</p></section><section><span>Safe context</span><pre>{JSON.stringify(packet.safeContext, null, 2)}</pre></section><section><span>Diagnostics</span>{packet.diagnostics.map((item) => <p key={item.id}><b>{item.status}</b> · {item.label}: {item.summary}</p>)}</section></div></> : <p className="empty-copy">Open a customer-approved escalation link generated by an installed Host Whisperer widget.</p>}<a className="primary-link" href="/?view=integrate"><ChevronRight size={16} /> Return to Integration Studio</a></main></div>;
 }
 
 export default function App() {
   const view = new URLSearchParams(location.search).get('view');
   if (view === 'shop') return <ShopDemo />;
   if (view === 'incident') return <IncidentView />;
-  return <Studio />;
+  if (view === 'integrate') return <Studio />;
+  return <Overview />;
 }

@@ -4,7 +4,9 @@ Generate an AI support operator for an existing website.
 
 Host Whisperer gives developers a framework-neutral JavaScript adapter that adds a customer Help widget and structured WebMCP tools to their site. A customer describes a problem normally; ChatGPT reads only developer-approved context, runs bounded diagnostics, explains the evidence, proposes an allowlisted recovery, waits for visible approval, and verifies the outcome.
 
-**Developer Studio:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
+**Product walkthrough:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
+
+**Developer Studio:** [host-whisperer.onrender.com/?view=integrate](https://host-whisperer.onrender.com/?view=integrate)
 
 **Working customer demo:** [host-whisperer.onrender.com/?view=shop](https://host-whisperer.onrender.com/?view=shop)
 

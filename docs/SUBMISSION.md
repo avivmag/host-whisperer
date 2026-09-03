@@ -6,7 +6,9 @@
 
 **Tagline:** Give your website an AI support operator.
 
-**Live Studio:** https://host-whisperer.onrender.com
+**Product walkthrough:** https://host-whisperer.onrender.com
+
+**Live Studio:** https://host-whisperer.onrender.com/?view=integrate
 
 **Working demo:** https://host-whisperer.onrender.com/?view=shop
 
@@ -56,7 +58,7 @@ Next steps include additional verified playbooks for authentication and data syn
 - Country: Israel
 - App Status: New
 - Live URL: https://host-whisperer.onrender.com/?view=shop
-- Testing instructions: Open the live Northstar URL and click **Restart full story** if needed. Click Checkout to reproduce the generic error; no developer configuration is exposed on the customer site. Separately open the Host Whisperer Studio at the root URL, generate the support plugin, and install it on the Northstar demo. Return to Northstar and click Checkout again. The new **Ask AI to fix this** control appears. Open it and say “Fix checkout safely” in ChatGPT. Watch the live activity timeline, approve the proposed recovery in the page, then let ChatGPT apply and verify it.
+- Testing instructions: Open the live Northstar URL and click **Restart full story** if needed. Click Checkout to reproduce the generic error; no developer configuration is exposed on the customer site. Separately open the Host Whisperer Studio at `?view=integrate`, generate the support plugin, and install it on the Northstar demo. Return to Northstar and click Checkout again. The new **Ask AI to fix this** control appears. Open it and say “Fix checkout safely” in ChatGPT. Watch the live activity timeline, approve the proposed recovery in the page, then let ChatGPT apply and verify it.
 - Public repository: https://github.com/avivmag/host-whisperer
 - Tested clients: Google Chrome 152 with `WebMCPTesting` enabled and automated Vitest tool-contract tests. Add ChatGPT's in-app browser after the recorded interactive test.
 - AI tools used: OpenAI Codex for product design, implementation, testing, deployment, and debugging; Devpost's MCP server for challenge requirements and submission preparation.

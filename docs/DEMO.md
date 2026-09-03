@@ -8,7 +8,7 @@
 2. Click **Restart full story** if this browser has run the demo before.
 3. Click **Checkout** and show the `CART_SESSION_OUTDATED` error.
 4. Point out that there is no AI support button or developer configuration link. The customer only receives a generic error.
-5. Leave Northstar open and separately open the developer Studio at `https://host-whisperer.onrender.com/`.
+5. Leave Northstar open and separately open the developer Studio at `https://host-whisperer.onrender.com/?view=integrate`.
 
 ### 2. Configure and generate the plugin
 

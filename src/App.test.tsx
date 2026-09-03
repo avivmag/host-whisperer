@@ -9,12 +9,21 @@ afterEach(() => {
 });
 
 describe('Host Whisperer surfaces', () => {
-  it('presents the developer generator and install boundary', () => {
+  it('presents the complete product walkthrough on the homepage', () => {
     render(<App />);
-    expect(screen.getByText('Host Whisperer')).toBeInTheDocument();
-    expect(screen.getByText(/Give your website/)).toBeInTheDocument();
+    expect(screen.getAllByText('Host Whisperer')).not.toHaveLength(0);
+    expect(screen.getByText(/Turn website errors/)).toBeInTheDocument();
+    expect(screen.getByText(/The complete walkthrough/)).toBeInTheDocument();
+    expect(screen.getByText(/What does “configure with ChatGPT” mean/)).toBeInTheDocument();
+  });
+
+  it('keeps developer configuration on a separate integration page', () => {
+    history.replaceState({}, '', '/?view=integrate');
+    render(<App />);
+    expect(screen.getByText(/Configure the support boundary/)).toBeInTheDocument();
     expect(screen.getByText(/Generated universal adapter/)).toBeInTheDocument();
     expect(screen.getByText(/Customer-safe boundary/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Service reference/)).not.toBeInTheDocument();
   });
 
   it('renders a deterministic customer checkout failure', () => {

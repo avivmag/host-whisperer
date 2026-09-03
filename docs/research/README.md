@@ -2,6 +2,8 @@
 
 This directory is the tracked, reviewable index for challenge research. Run `npm run research:sync` to place raw snapshots in gitignored `.research-cache/`. The sync report records retrieval failures without failing the entire run.
 
+The actionable challenge contract is maintained in [`docs/HACKATHON.md`](../HACKATHON.md). The official rules and challenge website take precedence over all repository summaries.
+
 ## Findings that shape the product
 
 - The challenge rewards a working WebMCP app whose human-and-agent experience is coherent, useful, creative, and non-trivial. It requires a live URL, public licensed repository, written description, and public narrated video under three minutes.

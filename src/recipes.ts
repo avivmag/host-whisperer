@@ -50,7 +50,7 @@ export const recipes: ProviderRecipe[] = [
   },
   {
     id: 'render-static', provider: 'render', providerName: 'Render', name: 'Static Site',
-    description: 'A generated static project deployed from a public Git repository.', runtime: 'Vite static site', capability: 'proof-ready',
+    description: 'A generated static project deployed from a Git repository.', runtime: 'Vite static site', capability: 'live-tested',
     mcpUrl: 'https://mcp.render.com/mcp', docsUrl: 'https://render.com/docs/mcp-server',
     artifacts: ['render.yaml', 'src/App.tsx', 'package.json'], commands: ['npm run build'],
     supportedOperations: ['create', 'inspect', 'fetch_logs', 'update_config', 'redeploy', 'health_check'],

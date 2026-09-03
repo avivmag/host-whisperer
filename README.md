@@ -17,10 +17,10 @@ Provider MCP servers can operate infrastructure, but they do not own the web pag
 | Cloudflare | Worker + Assets | Handoff ready |
 | Vercel | Next.js app | Handoff ready |
 | Netlify | Web app + Function | Handoff ready |
-| Render | Static site | Proof ready |
+| Render | Static site | Live tested |
 | Shopify | Hydrogen storefront | Manual CLI handoff |
 
-These labels are deliberate: Render has the complete proof fixture but is not labeled live-tested until the remote deployment is verified. MCP-B is a compatibility/testing option, not a hosting provider.
+These labels are deliberate: Render earned its live-tested label through the recorded failure-and-recovery proof. MCP-B is a compatibility/testing option, not a hosting provider.
 
 ## Run locally
 

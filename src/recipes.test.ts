@@ -7,9 +7,8 @@ describe('provider recipes', () => {
     expect(recipes.map((recipe) => recipe.provider).sort()).toEqual([...providers].sort());
   });
 
-  it('keeps Render proof-ready until the live deployment is verified', () => {
-    expect(recipes.filter((recipe) => recipe.capability === 'proof-ready').map((recipe) => recipe.provider)).toEqual(['render']);
-    expect(recipes.filter((recipe) => recipe.capability === 'live-tested')).toEqual([]);
+  it('only claims the verified Render recipe as live-tested', () => {
+    expect(recipes.filter((recipe) => recipe.capability === 'live-tested').map((recipe) => recipe.provider)).toEqual(['render']);
   });
 
   it('includes dated provider-specific cost sources', () => {

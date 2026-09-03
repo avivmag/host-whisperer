@@ -1,96 +1,81 @@
 # Host Whisperer
 
-Your AI operator for when software breaks.
+Generate an AI support operator for an existing website.
 
-Host Whisperer lets a non-expert describe a production problem in plain English. The agent investigates the existing deployment with the provider's official MCP, explains the likely cause, prepares the smallest repair, waits for human approval, and verifies that the original symptom is gone.
+Host Whisperer gives developers a framework-neutral JavaScript adapter that adds a customer Help widget and structured WebMCP tools to their site. A customer describes a problem normally; ChatGPT reads only developer-approved context, runs bounded diagnostics, explains the evidence, proposes an allowlisted recovery, waits for visible approval, and verifies the outcome.
 
-**Live app:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
+**Developer Studio:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
 
-## The missing layer between chat and provider MCPs
+**Working customer demo:** [host-whisperer.onrender.com/?view=shop](https://host-whisperer.onrender.com/?view=shop)
 
-Provider MCP servers expose infrastructure operations. They do not provide a durable incident workflow or the web interface where a person can understand what the agent found and control what happens next.
+## Why WebMCP
 
-Host Whisperer adds that operating layer:
+A conventional support widget can display canned answers or send a transcript. Host Whisperer makes the website itself agent-operable. The agent works with the same live application state and approval controls the customer can see, without guessing through the UI or receiving unrestricted access.
 
-1. **Report** — the user describes the symptom without knowing cloud terminology.
-2. **Investigate** — the agent inspects status, logs, and health through read-only provider tools.
-3. **Explain** — evidence becomes a concise, plain-English diagnosis with a confidence level.
-4. **Approve** — a configuration or redeploy repair appears in the page for human approval.
-5. **Verify** — the agent checks the original symptom and records the recovery.
+The project uses WebMCP twice:
 
-WebMCP keeps this incident state shared between the human interface and the agent. The page exposes structured tools for reporting incidents, preparing evidence checks, recording provider evidence, explaining diagnoses, preparing repairs, and verifying recovery.
+1. **Studio tools** let a developer and ChatGPT configure an integration together and prepare its install bundle.
+2. **Generated runtime tools** let a customer and ChatGPT investigate and recover inside the instrumented website.
 
-## WebMCP safety properties
+The runtime registers:
 
-- Read-only evidence checks do not require approval.
-- Mutating execution handoffs are withheld from WebMCP responses until the user clicks the visible approval control.
-- Provider logs are untrusted data, never agent instructions.
-- Secret-like configuration keys are refused in chat-mediated repairs.
-- Token-shaped content is redacted and long output is truncated.
-- A mutating provider result cannot be recorded before visible approval.
-- Source-code incidents become structured Codex repair briefs.
+- `get_support_context`
+- `run_support_diagnostics`
+- `prepare_recovery`
+- `apply_recovery`
+- `verify_recovery`
+- `prepare_developer_escalation`
 
-The approval flow coordinates the Host Whisperer workflow; it is not a cryptographic restriction on provider tools an agent might access independently.
+## Demonstrated incident
 
-## Provider connections
+The Northstar sample store contains an intentionally outdated cart session. Checkout fails with `CART_SESSION_OUTDATED`, while the product remains in stock and the store stays healthy.
 
-| Provider | Project type | Status |
-| --- | --- | --- |
-| AWS | Lambda API | Handoff ready |
-| Google Cloud | Cloud Run service | Handoff ready |
-| Cloudflare | Worker + Assets | Handoff ready |
-| Vercel | Next.js app | Handoff ready |
-| Netlify | Web app + Function | Handoff ready |
-| Render | Static site | Live tested |
-| Shopify | Hydrogen storefront | Manual CLI handoff |
+Host Whisperer identifies the incompatible session, proposes **Rebuild cart session**, and displays its exact effects. The repair cannot execute until the customer clicks the visible approval button. It then migrates only the cart state, preserves the item and quantity, and verifies checkout readiness. It never places an order or reads payment information.
 
-These are connection recipes, not provider rankings or claims of identical support. Render earned its live-tested label through the recorded failure, diagnosis, repair, and recovery proof. MCP-B is a compatibility/testing option, not a hosting provider.
+Every agent action is shown in the widget's **Operator activity** timeline, making the WebMCP execution visible in the demo.
 
-## Run locally
+## Safety boundary
 
-Requirements: Node.js 22+ and a WebMCP-capable browser.
+- The adapter is bound to one configured origin.
+- Only developer-supplied diagnostics and recovery handlers are callable.
+- Context is allowlisted and recursively sanitized.
+- Credential-like fields, token-shaped content, URL queries, and DOM content are excluded.
+- Recovery requires visible customer approval and cannot be replayed as a different incident.
+- Success is not reported until the configured verification check passes.
+- Developer escalation requires separate sharing consent and produces a sanitized URL-fragment packet; no incident backend receives it.
+- Cloud credentials and provider administration remain in the developer's authenticated environment, never the customer page.
+
+The sample shop is deterministic demonstration software. It does not impersonate Amazon, process payments, or claim installation on websites that do not include the adapter.
+
+## Generated installation
+
+Studio prepares two self-hostable files:
+
+- `host-whisperer.js` — the universal ESM runtime.
+- `host-whisperer-adapter.js` — origin-bound application diagnostics and recovery handlers.
+
+The developer reviews and connects the generated handler stubs to their application, copies both files into their own public assets, and installs the adapter:
+
+```html
+<script type="module" src="/support/host-whisperer-adapter.js"></script>
+```
+
+## Run and verify
 
 ```bash
 npm install
+npm test
+npm run build
 npm run dev
 ```
 
-Open the page in ChatGPT's in-app browser, or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled. The human interface remains usable without WebMCP, but agent tools are unavailable.
+Open the deployed app in ChatGPT's in-app browser, or in Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled. Without WebMCP, the installed widget remains usable in local self-service mode.
 
-## Verify
+See [docs/DEMO.md](docs/DEMO.md) for the exact judged flow and [docs/SUBMISSION.md](docs/SUBMISSION.md) for the Devpost copy and video script.
 
-```bash
-npm test
-npm run build
-```
+## Technology
 
-The intentional Render incident fixture has two outcomes:
-
-```bash
-cd demo/render-static
-npm install
-npm run build # expected to fail with a missing PUBLIC_SITE_TITLE message
-PUBLIC_SITE_TITLE="It shipped." npm run build # expected to pass
-```
-
-See [the demo runbook](docs/DEMO.md) for the plain-English report → investigate → explain → approve → repair → verify flow.
-
-## Persistence and credentials
-
-- Provider OAuth remains between the user, agent host, and official vendor MCP.
-- Host Whisperer stores incident rooms locally in IndexedDB and supports JSON export/import.
-- The application does not store cloud credentials.
-- External content is escaped by React before it is rendered.
-
-## Research archive
-
-The tracked source index and findings live in [`docs/research`](docs/research). To cache the official challenge, WebMCP, security, provider MCP, and deployment documentation locally:
-
-```bash
-npm run research:sync
-```
-
-Raw snapshots are intentionally gitignored and remain subject to their original sites' licenses and terms.
+React, TypeScript, Vite, IndexedDB, the imperative `document.modelContext.registerTool` API, and a standalone framework-neutral ESM runtime. The application and runtime are both produced by the production build.
 
 ## License
 

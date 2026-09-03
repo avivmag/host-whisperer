@@ -4,7 +4,7 @@ import { compactToolOutput, containsSensitiveValue, isSensitiveKey, sanitizeExte
 describe('security helpers', () => {
   it('recognizes secret-like configuration keys', () => {
     expect(isSensitiveKey('API_TOKEN')).toBe(true);
-    expect(isSensitiveKey('PUBLIC_SITE_TITLE')).toBe(false);
+    expect(isSensitiveKey('CART_SCHEMA_VERSION')).toBe(false);
     expect(containsSensitiveValue('ghp_abcdefghijklmnop')).toBe(true);
   });
 

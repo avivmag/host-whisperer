@@ -1,13 +1,28 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
-describe('Host Whisperer UI', () => {
-  it('presents the plain-English incident experience and provider catalog', () => {
+afterEach(() => {
+  cleanup();
+  history.replaceState({}, '', '/');
+  document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove());
+});
+
+describe('Host Whisperer surfaces', () => {
+  it('presents the developer generator and install boundary', () => {
     render(<App />);
     expect(screen.getByText('Host Whisperer')).toBeInTheDocument();
-    expect(screen.getByText(/Tell me what/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Render/ })).toBeInTheDocument();
-    expect(screen.getByText(/Plain-English diagnosis/)).toBeInTheDocument();
+    expect(screen.getByText(/Give your website/)).toBeInTheDocument();
+    expect(screen.getByText(/Generated universal adapter/)).toBeInTheDocument();
+    expect(screen.getByText(/Customer-safe boundary/)).toBeInTheDocument();
+  });
+
+  it('renders a deterministic customer checkout failure', () => {
+    localStorage.removeItem('northstar-demo-cart');
+    history.replaceState({}, '', '/?view=shop');
+    render(<App />);
+    expect(screen.getByText('Aster H1')).toBeInTheDocument();
+    expect(screen.getByText(/couldn’t open checkout/)).toBeInTheDocument();
+    expect(document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent).toContain('Help me fix this');
   });
 });

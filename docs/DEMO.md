@@ -1,23 +1,29 @@
-# Three-minute demo runbook
+# Demo Runbook
 
-1. Open [Host Whisperer](https://host-whisperer.onrender.com) in ChatGPT's in-app browser and show **AI operator ready**.
-2. Say: “My Render deployment failed and I don't understand the error. Investigate it for me.”
-3. Let the agent open an incident room from that plain-English symptom.
-4. Ask the agent to inspect the service and fetch the relevant logs through read-only provider MCP operations.
-5. Record the evidence line `Missing required configuration: PUBLIC_SITE_TITLE` and ask for an explanation without cloud jargon.
-6. Show the diagnosis, confidence level, and proposed non-secret configuration repair.
-7. Ask the agent to prepare the repair. Point out that its provider execution handoff is withheld until the visible **Approve repair** button is clicked.
-8. Approve `PUBLIC_SITE_TITLE=It shipped.`, apply it through Render MCP, and show the recovery deploy.
-9. Run the health check tied to the original symptom and open [the verified proof](https://host-whisperer-proof.onrender.com).
-10. End on the recovered incident state: the user never needed a CLI, dashboard, or provider vocabulary.
+## Customer recovery
 
-Never show OAuth tokens, API keys, workspace IDs, or other account identifiers in the recording.
+1. Open `https://host-whisperer.onrender.com/?view=shop` inside ChatGPT's in-app browser.
+2. Show the failed Aster H1 checkout and click **Help me fix this** so the operator timeline remains visible.
+3. Tell ChatGPT: “I can't buy these headphones. Find the problem and fix it safely.”
+4. ChatGPT calls `get_support_context`; show the safe fields and the matching activity event.
+5. ChatGPT calls `run_support_diagnostics`; show that the store is healthy, inventory is available, and cart-session compatibility fails.
+6. Explain that the browser exposes error code `CART_SESSION_OUTDATED`, not payment data or arbitrary DOM content.
+7. ChatGPT calls `prepare_recovery` with `rebuild_cart_session`.
+8. Show the visible effects and demonstrate that `apply_recovery` fails before approval.
+9. Click **Approve recovery** in the website.
+10. ChatGPT calls `apply_recovery`, then `verify_recovery`.
+11. Show **Checkout is ready**, the original headphones still in the cart, and the complete operator activity timeline.
 
-## Verified proof
+Use **Reset broken-cart demo** between recordings. The reset restores schema v1 deterministically.
 
-The full sequence was verified on Render on 2026-09-03 using commit `33cb0d6`:
+## Developer generation
 
-- The initial deploy reached `build_failed` with `Missing required configuration: PUBLIC_SITE_TITLE`.
-- The user approved the non-secret configuration update `PUBLIC_SITE_TITLE=It shipped.`.
-- Render automatically started a recovery deploy, which reached `live`.
-- [`https://host-whisperer-proof.onrender.com`](https://host-whisperer-proof.onrender.com) returned HTTP 200 and rendered the approved title.
+1. Return to the Studio.
+2. Briefly show application name, bound origin, provider hint, and the verified commerce playbook.
+3. Point out the generated universal adapter and customer-safe boundary.
+4. Explain that ChatGPT can configure the same form through Studio WebMCP tools.
+5. Prepare the bundle and show that the developer—not the agent—must click the download controls.
+
+## Optional escalation
+
+If recovery cannot be verified, call `prepare_developer_escalation`. The first call only previews the sanitized packet. After the customer approves sharing in the widget, a second call returns a Host Whisperer URL whose fragment contains the report. The packet is labeled untrusted evidence and is not uploaded to a Host Whisperer backend.

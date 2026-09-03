@@ -1,94 +1,59 @@
 export const providers = ['aws', 'gcp', 'cloudflare', 'vercel', 'netlify', 'render', 'shopify'] as const;
 export type ProviderId = (typeof providers)[number];
-export type CapabilityStatus = 'proof-ready' | 'live-tested' | 'handoff-ready' | 'manual';
-export type RoomStage = 'reported' | 'investigating' | 'diagnosed' | 'awaiting_approval' | 'repairing' | 'verifying' | 'recovered' | 'failed';
-export type OperationType = 'create' | 'inspect' | 'fetch_logs' | 'update_config' | 'redeploy' | 'health_check';
 
-export interface CostNote {
-  summary: string;
-  assumptions: string[];
-  sourceUrl: string;
-  checkedAt: string;
-}
+export type SupportPlaybook = 'commerce-cart';
+export type SupportStage = 'idle' | 'reported' | 'investigating' | 'diagnosed' | 'awaiting_approval' | 'repairing' | 'verifying' | 'recovered' | 'escalated';
 
-export interface ProviderRecipe {
+export interface SupportIntegration {
   id: string;
+  appName: string;
+  allowedOrigin: string;
   provider: ProviderId;
-  providerName: string;
-  name: string;
-  description: string;
-  runtime: string;
-  capability: CapabilityStatus;
-  mcpUrl?: string;
-  docsUrl: string;
-  artifacts: string[];
-  commands: string[];
-  supportedOperations: OperationType[];
-  cost: CostNote;
-  handoffNotes: string[];
-}
-
-export interface ProjectIntent {
-  id: string;
-  name: string;
-  reportedIssue: string;
   resourceRef?: string;
-  provider: ProviderId;
-  recipeId: string;
+  playbook: SupportPlaybook;
   createdAt: string;
   updatedAt: string;
+  bundlePrepared: boolean;
 }
 
-export interface ProviderPlan {
-  projectId: string;
-  recipeId: string;
-  capability: CapabilityStatus;
-  artifacts: string[];
-  commands: string[];
-  connection: { kind: 'mcp' | 'manual'; url?: string; instructions: string };
-  cost: CostNote;
-  warnings: string[];
-}
-
-export interface ProviderHandoff {
-  provider: ProviderId;
-  serverUrl?: string;
-  suggestedTool: string;
-  arguments: Record<string, unknown>;
-  postcondition: string;
-}
-
-export interface OperationRecord {
+export interface DiagnosticResult {
   id: string;
-  type: OperationType;
-  status: 'prepared' | 'approved' | 'executing' | 'succeeded' | 'failed';
-  approvalRequired: boolean;
-  approvedAt?: string;
-  handoff: ProviderHandoff;
-  summary?: string;
-  resourceId?: string;
-  url?: string;
-  logExcerpt?: string;
-  createdAt: string;
-  completedAt?: string;
+  label: string;
+  status: 'pass' | 'fail';
+  summary: string;
 }
 
-export interface Incident {
+export interface OperatorActivity {
   id: string;
-  operationId: string;
-  cause: string;
-  confidence: 'low' | 'medium' | 'high';
-  evidence: string[];
-  fixKind: 'configuration' | 'code';
-  proposedChanges: string[];
-  verification: string[];
+  actor: 'customer' | 'agent' | 'runtime';
+  label: string;
+  detail: string;
+  status: 'running' | 'succeeded' | 'failed' | 'approval';
   createdAt: string;
 }
 
-export interface ProjectRoom {
-  intent: ProjectIntent;
-  plan: ProviderPlan;
-  stage: RoomStage;
-  operations: OperationRecord[];
-  incidents: Incident[];
+export interface SupportIncident {
+  id: string;
+  description: string;
+  stage: SupportStage;
+  safeContext?: Record<string, unknown>;
+  diagnostics: DiagnosticResult[];
+  pendingActionId?: string;
+  approvedActionId?: string;
+  escalationApproved: boolean;
+  activity: OperatorActivity[];
+  createdAt: string;
+}
+
+export interface EscalationPacket {
+  version: 1;
+  integrationId: string;
+  appName: string;
+  providerHint: ProviderId;
+  createdAt: string;
+  symptom: string;
+  safeContext: Record<string, unknown>;
+  diagnostics: DiagnosticResult[];
+  activity: OperatorActivity[];
+  trust: 'customer_supplied_untrusted_evidence';
 }

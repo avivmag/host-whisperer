@@ -56,7 +56,7 @@ Next steps include verified provider-specific adapters beyond Render, richer hea
 - Live URL: https://host-whisperer.onrender.com
 - Testing instructions: Open the app in ChatGPT's in-app browser or Chrome with WebMCP enabled. Ask the agent to list Render recipes, create a Render project room, and prepare a create action. Confirm that the visible approval card must be clicked before a mutating result can be recorded.
 - Public repository: https://github.com/avivmag/host-whisperer
-- Tested clients: TODO — record the exact WebMCP-capable client and version after the final manual browser test.
+- Tested clients: Google Chrome 152 with `WebMCPTesting` enabled for native `document.modelContext` registration and UI detection; automated Vitest contract tests cover tool discovery and execution. Add ChatGPT's in-app browser here after the recorded interactive demo.
 - AI tools used: OpenAI Codex for product design, implementation, research, testing, deployment, and debugging; Render's official MCP server for the live infrastructure proof; Devpost's MCP server for challenge requirements and submission preparation.
 - Learning derived: Significant
 - Career AI value: Yes

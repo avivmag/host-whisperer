@@ -10,16 +10,23 @@
 4. Point out that there is no AI support button or developer configuration link. The customer only receives a generic error.
 5. Leave Northstar open and separately open the developer Studio at `https://host-whisperer.onrender.com/?view=integrate`.
 
-### 2. Configure and generate the plugin
+### 2. Configure and generate the plugin in Host Whisperer
 
 1. Confirm **Northstar Shop**, the exact website origin, Render, and the verified broken-cart playbook.
 2. Explain that this is a separate developer-only surface and that the form can also be configured by ChatGPT through the Studio's WebMCP tools.
 3. Click **Generate support plugin**.
 4. Show the generated adapter. Point out the allowlisted context, diagnostic, recovery, and verification functions.
-5. Click **Install on Northstar demo**. This button simulates adding the generated adapter and runtime files to the demo website; real developers use the adjacent downloads and install tag.
-6. Wait for **Host Whisperer is installed**, then click **Open Northstar**.
+5. Click **Send package to Northstar Admin**. This transfers the generated demo package without pretending that an external service can silently modify the store.
+6. Wait for **Integration package is ready**, then click **Open Northstar Admin**.
 
-### 3. Let the customer's AI operate the website
+### 3. Install it in the store's admin page
+
+1. Point out the completely different Northstar Admin interface and the **Store developer** role.
+2. Review the two received files and the four requested capabilities.
+3. Click **Install plugin on storefront**.
+4. Wait for **Host Whisperer is active**, then click **Test on storefront**.
+
+### 4. Let the customer's AI operate the website
 
 1. Click **Checkout** again. The same error occurs, but **Ask AI to fix this** now appears.
 2. Click the new support control and keep the panel open.

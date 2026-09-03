@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Activity, ArrowRight, Bot, Check, ChevronRight, CircleAlert, Code2, Copy, Download, PackageCheck, Plug, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TerminalSquare, Wrench } from 'lucide-react';
+import { Activity, ArrowRight, Bot, Check, ChevronRight, CircleAlert, Code2, Copy, Download, Gauge, LayoutDashboard, PackageCheck, Plug, RefreshCw, Settings, ShieldCheck, ShoppingBag, Sparkles, TerminalSquare, Wrench } from 'lucide-react';
 import { createHostWhispererRuntime } from './runtime';
 import { generatedAdapter, getStudioSnapshot, hydrateStudio, prepareStudioBundle, subscribeStudio, updateStudioProfile } from './studio';
 import { providers, type EscalationPacket, type ProviderId } from './types';
@@ -7,6 +7,7 @@ import { hasWebMcp, registerWebMcpTools } from './webmcp';
 
 const providerNames: Record<ProviderId, string> = { aws: 'AWS', gcp: 'Google Cloud', cloudflare: 'Cloudflare', vercel: 'Vercel', netlify: 'Netlify', render: 'Render', shopify: 'Shopify' };
 const demoInstallKey = 'host-whisperer-northstar-installed';
+const demoBundleKey = 'host-whisperer-northstar-bundle-ready';
 
 function downloadText(filename: string, value: string, type = 'text/javascript') {
   const url = URL.createObjectURL(new Blob([value], { type }));
@@ -15,7 +16,7 @@ function downloadText(filename: string, value: string, type = 'text/javascript')
 }
 
 function AppHeader({ section }: { section: string }) {
-  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span>Host Whisperer</span></a><nav><a href="/">Walkthrough</a><a href="/?view=integrate">Integration</a><a href="/?view=shop">Northstar demo</a><span>{section}</span></nav></header>;
+  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span>Host Whisperer</span></a><nav><a href="/">Walkthrough</a><a href="/?view=integrate">Integration Studio</a><span>{section}</span></nav></header>;
 }
 
 function Overview() {
@@ -23,7 +24,7 @@ function Overview() {
   const steps = [
     ['01', 'A customer hits an error', 'The existing website fails normally. Before installation, no Host Whisperer interface or developer link is present.'],
     ['02', 'The developer defines safe tools', 'In the separate Integration Studio, the developer chooses exactly what the AI may inspect, repair, and verify.'],
-    ['03', 'The generated plugin is installed', 'A small adapter adds WebMCP tools and a support control to the existing website.'],
+    ['03', 'The store admin installs it', 'The generated package moves to Northstar Admin, where the store owner applies it to the customer website.'],
     ['04', 'ChatGPT diagnoses and repairs', 'The customer asks in plain English, approves the bounded fix, and watches every tool call happen live.'],
   ];
   return <div className="app-shell"><AppHeader section="Product walkthrough" />
@@ -31,7 +32,8 @@ function Overview() {
       <section className="overview-hero"><div className="eyebrow"><Sparkles size={15} /> WebMCP support infrastructure</div><h1>Turn website errors into<br /><em>guided AI recovery.</em></h1><p>Host Whisperer generates a safe support layer for an existing website. Developers set the boundaries once; customers can then ask ChatGPT to diagnose and repair supported problems without opening a ticket.</p><div className="hero-actions"><a className="primary-link" href="/?view=integrate"><Wrench size={17} /> Open Integration Studio <ArrowRight size={17} /></a><a className="secondary-link" href="/?view=shop"><ShoppingBag size={17} /> View Northstar website</a></div></section>
       <section className="walkthrough"><div className="section-kicker">The complete walkthrough</div><h2>From a dead end to a verified recovery</h2><div className="step-grid">{steps.map(([number, title, body]) => <article key={number}><span>{number}</span><div><h3>{title}</h3><p>{body}</p></div></article>)}</div></section>
       <section className="webmcp-explainer"><div><Bot size={24} /><span>What does “configure with ChatGPT” mean?</span></div><p>When the Integration Studio is opened inside ChatGPT’s in-app browser, the page registers four WebMCP tools. A developer can ask ChatGPT to fill the profile, select the playbook, review the recovery, and prepare the bundle. In a normal browser there is no hidden AI connection—the developer uses the same visible form manually.</p><a href="/?view=integrate">See the integration interface <ArrowRight size={15} /></a></section>
-      <section className="demo-state"><div><strong>Current browser demo state</strong><span>{installed ? 'Plugin installed on Northstar' : 'Northstar has no plugin installed'}</span></div><a href="/?view=shop">Open the customer website</a></section>
+      <section className="surface-switcher"><div><span>Customer</span><strong>Northstar Market</strong><p>Shop and encounter the checkout problem.</p><a href="/?view=shop">Open storefront <ArrowRight size={14} /></a></div><div><span>Operator</span><strong>Host Whisperer Studio</strong><p>Define safe tools and generate the plugin.</p><a href="/?view=integrate">Open Studio <ArrowRight size={14} /></a></div><div><span>Store developer</span><strong>Northstar Admin</strong><p>Review and install the generated package.</p><a href="/?view=admin">Open Admin <ArrowRight size={14} /></a></div></section>
+      <section className="demo-state"><div><strong>Current browser demo state</strong><span>{installed ? 'Plugin installed on Northstar Market' : 'Northstar Market has no plugin installed'}</span></div><a href="/?view=shop">Open the customer website</a></section>
     </main><footer><span>Host Whisperer</span><span>Developers define the boundaries. Customers stay in control.</span></footer></div>;
 }
 
@@ -40,8 +42,8 @@ function Studio() {
   const webMcp = hasWebMcp();
   const code = useMemo(() => generatedAdapter(profile), [profile]);
   const [copied, setCopied] = useState(false);
-  const [installing, setInstalling] = useState(false);
-  const [demoInstalled, setDemoInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
+  const [sending, setSending] = useState(false);
+  const [sentToAdmin, setSentToAdmin] = useState(() => localStorage.getItem(demoBundleKey) === 'true');
 
   useEffect(() => { void hydrateStudio(); }, []);
   useEffect(() => {
@@ -56,12 +58,12 @@ function Studio() {
     await navigator.clipboard.writeText(`<script type="module" src="/support/host-whisperer-adapter.js"></script>`);
     setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   };
-  const installDemo = () => {
-    setInstalling(true);
+  const sendToAdmin = () => {
+    setSending(true);
     window.setTimeout(() => {
-      localStorage.setItem(demoInstallKey, 'true');
-      setDemoInstalled(true);
-      setInstalling(false);
+      localStorage.setItem(demoBundleKey, 'true');
+      setSentToAdmin(true);
+      setSending(false);
     }, 1500);
   };
 
@@ -77,7 +79,7 @@ function Studio() {
         <button className="primary-button" onClick={() => void prepareStudioBundle()}><PackageCheck size={18} /> Generate support plugin</button>
         <div className={`agent-config-card ${webMcp ? 'connected' : ''}`}><Bot size={18} /><div><strong>{webMcp ? 'Configure this page with ChatGPT' : 'Want ChatGPT to configure this?'}</strong><p>{webMcp ? 'In your ChatGPT conversation, say: “Configure Host Whisperer for Northstar Shop.” ChatGPT can call this page’s four Studio tools and the fields will update visibly.' : 'Open this Integration page inside ChatGPT’s in-app browser first. In a regular browser, use the form above.'}</p></div></div>
       </section>
-      <section className="studio-panel code-panel"><div className="panel-heading"><div><Code2 size={18} /><span>Generated universal adapter</span></div><span className="language">JavaScript · ESM</span></div><pre>{code}</pre><div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={16} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={16} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={16} /> {copied ? 'Copied' : 'Install tag'}</button></div>{!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before installing it.</p>}{profile.bundlePrepared && !demoInstalled && <button className={`demo-install-button ${installing ? 'installing' : ''}`} onClick={installDemo} disabled={installing}><Plug size={17} /> {installing ? 'Adding adapter to Northstar…' : 'Install on Northstar demo'}</button>}{demoInstalled && <div className="install-complete"><Check size={18} /><div><strong>Host Whisperer is installed</strong><span>The support control and six WebMCP tools are now live on the demo website.</span></div><a href="/?view=shop">Open Northstar <ArrowRight size={15} /></a></div>}</section>
+      <section className="studio-panel code-panel"><div className="panel-heading"><div><Code2 size={18} /><span>Generated universal adapter</span></div><span className="language">JavaScript · ESM</span></div><pre>{code}</pre><div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={16} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={16} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={16} /> {copied ? 'Copied' : 'Install tag'}</button></div>{!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before exporting it.</p>}{profile.bundlePrepared && !sentToAdmin && <button className={`demo-install-button ${sending ? 'installing' : ''}`} onClick={sendToAdmin} disabled={sending}><PackageCheck size={17} /> {sending ? 'Preparing package for Northstar…' : 'Send package to Northstar Admin'}</button>}{sentToAdmin && <div className="install-complete"><Check size={18} /><div><strong>Integration package is ready</strong><span>Host Whisperer generated the files; the store owner must install them.</span></div><a href="/?view=admin">Open Northstar Admin <ArrowRight size={15} /></a></div>}</section>
       <section className="capability-strip"><div><Activity size={19} /><strong>Generated customer tools</strong></div>{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={13} />{value}</span>)}</section>
     </main><footer><span>Host Whisperer Studio</span><span>Developers define the boundaries. Customers stay in control.</span></footer></div>;
 }
@@ -86,6 +88,30 @@ type Cart = { schemaVersion: number; items: Array<{ sku: string; name: string; p
 const cartKey = 'northstar-demo-cart';
 const brokenCart = (): Cart => ({ schemaVersion: 1, items: [{ sku: 'ASTER-H1', name: 'Aster H1 Headphones', price: 149, quantity: 1 }] });
 const readCart = () => { try { return JSON.parse(localStorage.getItem(cartKey) || '') as Cart; } catch { const cart = brokenCart(); localStorage.setItem(cartKey, JSON.stringify(cart)); return cart; } };
+
+function StoreAdmin() {
+  const [bundleReady] = useState(() => localStorage.getItem(demoBundleKey) === 'true');
+  const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
+  const [installing, setInstalling] = useState(false);
+  const install = () => {
+    if (!bundleReady) return;
+    setInstalling(true);
+    window.setTimeout(() => {
+      localStorage.setItem(demoInstallKey, 'true');
+      setInstalled(true);
+      setInstalling(false);
+    }, 1700);
+  };
+  return <div className="admin-shell"><aside className="admin-sidebar"><a href="/?view=admin" className="admin-logo"><span>N</span><div><strong>Northstar</strong><small>Store Admin</small></div></a><nav><a className="active" href="/?view=admin"><LayoutDashboard size={17} /> Overview</a><span><ShoppingBag size={17} /> Orders</span><span><Gauge size={17} /> Store health</span><span><Settings size={17} /> Settings</span></nav><div className="admin-user"><i>AM</i><div><strong>Alex Morgan</strong><small>Store developer</small></div></div></aside>
+    <main className="admin-main"><header><div><span>Developer workspace</span><h1>Store integrations</h1></div><a href="/?view=shop">View storefront <ArrowRight size={15} /></a></header>
+      <section className="admin-stats"><article><span>Store status</span><strong className="online"><i /> Online</strong></article><article><span>Active integrations</span><strong>{installed ? '1' : '0'}</strong></article><article><span>Checkout incidents</span><strong className="warning">1 open</strong></article></section>
+      <section className="admin-integration"><div className="admin-section-head"><div><Plug size={19} /><div><h2>Support integration</h2><p>Code packages applied to the Northstar customer website.</p></div></div><span className={installed ? 'admin-badge live' : 'admin-badge'}>{installed ? 'Active' : 'Not installed'}</span></div>
+        {!bundleReady && <div className="admin-empty"><PackageCheck size={30} /><h3>No integration package received</h3><p>Generate a customer-support adapter in Host Whisperer, then return here to install it.</p><a href="/?view=integrate">Open Host Whisperer <ArrowRight size={15} /></a></div>}
+        {bundleReady && !installed && <div className="package-review"><div className="package-title"><span className="package-icon">HW</span><div><strong>Host Whisperer support operator</strong><p>Prepared for Northstar Shop · Commerce cart playbook</p></div></div><div className="package-files"><span><Code2 size={15} /> host-whisperer-adapter.js</span><span><Code2 size={15} /> host-whisperer.js</span></div><div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={14} /> Read allowlisted cart context</span><span><Check size={14} /> Run three safe diagnostics</span><span><Check size={14} /> Rebuild cart only after customer approval</span><span><Check size={14} /> Verify checkout compatibility</span></div><button className={installing ? 'admin-install installing' : 'admin-install'} onClick={install} disabled={installing}><Plug size={17} /> {installing ? 'Deploying plugin to storefront…' : 'Install plugin on storefront'}</button></div>}
+        {installed && <div className="admin-live"><div><Check size={24} /><div><strong>Host Whisperer is active</strong><p>Six WebMCP support tools and the customer help control are now deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={15} /></a></div>}
+      </section>
+    </main></div>;
+}
 
 function ShopDemo() {
   const [cart, setCart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) localStorage.setItem(cartKey, JSON.stringify(brokenCart())); return readCart(); });
@@ -110,7 +136,7 @@ function ShopDemo() {
   }, [installed, checkoutTried]);
 
   const reset = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); setCart(readCart()); setCheckoutTried(false); };
-  const restartJourney = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); localStorage.removeItem(demoInstallKey); setCart(readCart()); setInstalled(false); setCheckoutTried(false); };
+  const restartJourney = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); localStorage.removeItem(demoInstallKey); localStorage.removeItem(demoBundleKey); setCart(readCart()); setInstalled(false); setCheckoutTried(false); };
   const healthy = cart.schemaVersion === 2;
   return <div className="shop-shell"><div className="shop-promo">Free delivery on orders over $50 · 30-day returns</div><header className="shop-nav"><a href="/?view=shop" className="shop-logo">NORTHSTAR</a><nav><span>Audio</span><span>Workspace</span><span>Travel</span></nav><div><ShoppingBag size={20} /><b>{cart.items.length}</b></div></header>
     <main className="product-layout"><section className="product-visual"><span className="product-badge">Editor’s choice</span><div className="headphone-art"><i /><i /><b>H1</b></div><div className="thumb-row"><span /><span /><span /></div></section><section className="product-details"><div className="crumb">Audio / Wireless headphones</div><h1>Aster H1</h1><p className="product-sub">Studio sound. All-day calm.</p><div className="rating">★★★★★ <span>4.8 · 2,104 reviews</span></div><strong className="price">$149</strong><p className="description">Adaptive noise cancellation, spatial audio, and a 38-hour battery in a lightweight aluminum frame.</p><div className="color-row"><b>Color</b><span className="swatch active" /><span className="swatch dark" /><span className="swatch sand" /></div><button className="checkout-button" onClick={() => setCheckoutTried(true)}>{healthy ? <><Check size={19} /> Continue to secure checkout</> : <><ShoppingBag size={19} /> Checkout</>}</button>
@@ -140,6 +166,7 @@ function IncidentView() {
 export default function App() {
   const view = new URLSearchParams(location.search).get('view');
   if (view === 'shop') return <ShopDemo />;
+  if (view === 'admin') return <StoreAdmin />;
   if (view === 'incident') return <IncidentView />;
   if (view === 'integrate') return <Studio />;
   return <Overview />;

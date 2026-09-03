@@ -12,6 +12,8 @@
 
 **Working demo:** https://host-whisperer.onrender.com/?view=shop
 
+**Store Admin demo:** https://host-whisperer.onrender.com/?view=admin
+
 **Repository:** https://github.com/avivmag/host-whisperer
 
 ## Description
@@ -28,7 +30,7 @@ The Host Whisperer Studio generates a framework-neutral JavaScript adapter conta
 
 A customer describes the symptom normally. ChatGPT reads only safe application context, runs the approved diagnostics, explains the evidence, prepares a bounded recovery, waits for the customer to approve its exact effects, applies it, and verifies the original problem is gone. Every step appears in a visible Operator activity timeline.
 
-The working Northstar demo shows the complete before-and-after journey. It begins without Host Whisperer: headphones are in the cart, checkout cannot read an outdated cart-session format, and the customer receives only a generic error. The developer moves to Studio, configures the safe boundary, generates the adapter, and visibly installs it on the demo store. When they return, the same broken website now has an AI support control. ChatGPT confirms that the store is healthy and inventory is available, identifies the incompatible session, and proposes rebuilding only the cart. After approval, it preserves the item and quantity, creates a current session, and proves checkout is ready. It cannot place an order or access payment data.
+The working Northstar demo shows the complete before-and-after journey across three clearly separated products. It begins in Northstar Market without Host Whisperer: headphones are in the cart, checkout cannot read an outdated cart-session format, and the customer receives only a generic error. In the external Host Whisperer Studio, an operator configures the safe boundary and generates an adapter package. In the separate Northstar Admin dashboard, the store developer reviews the files and requested capabilities, then installs the plugin on the storefront. When they return to the market, the same broken website now has an AI support control. ChatGPT identifies the incompatible session, proposes rebuilding only the cart, applies the approved repair, and proves checkout is ready.
 
 If a problem cannot be safely repaired in the customer page, Host Whisperer prepares a sanitized, customer-approved escalation packet for the developer. Cloud credentials and infrastructure operations never enter the customer context.
 
@@ -58,25 +60,27 @@ Next steps include additional verified playbooks for authentication and data syn
 - Country: Israel
 - App Status: New
 - Live URL: https://host-whisperer.onrender.com/?view=shop
-- Testing instructions: Open the live Northstar URL and click **Restart full story** if needed. Click Checkout to reproduce the generic error; no developer configuration is exposed on the customer site. Separately open the Host Whisperer Studio at `?view=integrate`, generate the support plugin, and install it on the Northstar demo. Return to Northstar and click Checkout again. The new **Ask AI to fix this** control appears. Open it and say “Fix checkout safely” in ChatGPT. Watch the live activity timeline, approve the proposed recovery in the page, then let ChatGPT apply and verify it.
+- Testing instructions: Open Northstar Market and click **Restart full story** if needed. Click Checkout to reproduce the generic error. Open Host Whisperer Studio at `?view=integrate`, generate the plugin, and send the package to Northstar Admin. In `?view=admin`, review the requested capabilities and install the plugin. Return to the market, click Checkout again, open **Ask AI to fix this**, and say “Fix checkout safely” in ChatGPT. Watch the live activity timeline, approve the proposed recovery, then let ChatGPT apply and verify it.
 - Public repository: https://github.com/avivmag/host-whisperer
 - Tested clients: Google Chrome 152 with `WebMCPTesting` enabled and automated Vitest tool-contract tests. Add ChatGPT's in-app browser after the recorded interactive test.
 - AI tools used: OpenAI Codex for product design, implementation, testing, deployment, and debugging; Devpost's MCP server for challenge requirements and submission preparation.
 - Learning derived: Significant
 - Career AI value: Yes
 
-## Video script — target 2:35
+## Video script — target 2:40
 
 **0:00–0:20 — Start before installation.** Open Northstar, reproduce the broken checkout, and show that the customer has only a generic error. Say: “This customer is stuck, and this website has no safe way for an AI to help yet.”
 
-**0:20–0:55 — Configure and install.** Separately open the developer-only Host Whisperer Studio, show the app boundary and verified playbook, generate the adapter, then click **Install on Northstar demo**. Briefly show the real download and install-tag controls beside the demo shortcut.
+**0:20–0:50 — Generate.** Open the visually distinct Host Whisperer Studio, show the app boundary and verified playbook, generate the adapter, and send the package to Northstar Admin.
 
-**0:55–1:10 — Show the transformation.** Return to Northstar and click Checkout again. The same error occurs, but **Ask AI to fix this** now appears. Open it and tell ChatGPT only: “Fix checkout safely.”
+**0:50–1:05 — Install.** In the dark Northstar Admin dashboard, review the files and requested capabilities, then click **Install plugin on storefront**.
 
-**1:10–1:45 — Investigate visibly.** Keep the widget open while the animated timeline shows safe context, healthy storefront, available inventory, and the outdated cart-session evidence. Explain that no payment data, credentials, URL queries, or arbitrary DOM content were shared.
+**1:05–1:20 — Show the transformation.** Return to Northstar and click Checkout again. The same error occurs, but **Ask AI to fix this** now appears. Open it and tell ChatGPT only: “Fix checkout safely.”
 
-**1:45–2:10 — Approve and repair.** Show the precise effects of **Rebuild cart session**, click **Approve recovery**, and let ChatGPT apply and verify it.
+**1:20–1:50 — Investigate visibly.** Keep the widget open while the animated timeline shows safe context, healthy storefront, available inventory, and the outdated cart-session evidence. Explain that no payment data, credentials, URL queries, or arbitrary DOM content were shared.
 
-**2:10–2:25 — Prove the result.** Show **Everything is running smoothly**, the Aster H1 still present, no order placed, and the completed activity timeline.
+**1:50–2:15 — Approve and repair.** Show the precise effects of **Rebuild cart session**, click **Approve recovery**, and let ChatGPT apply and verify it.
 
-**2:25–2:35 — Close.** “Host Whisperer turns a website that can only report an error into one that can safely help ChatGPT diagnose, repair, and verify it.”
+**2:15–2:30 — Prove the result.** Show **Everything is running smoothly**, the Aster H1 still present, no order placed, and the completed activity timeline.
+
+**2:30–2:40 — Close.** “Host Whisperer turns a website that can only report an error into one that can safely help ChatGPT diagnose, repair, and verify it.”

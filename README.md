@@ -10,6 +10,8 @@ Host Whisperer gives developers a framework-neutral JavaScript adapter that adds
 
 **Working customer demo:** [host-whisperer.onrender.com/?view=shop](https://host-whisperer.onrender.com/?view=shop)
 
+**Northstar Admin:** [host-whisperer.onrender.com/?view=admin](https://host-whisperer.onrender.com/?view=admin)
+
 ## Why WebMCP
 
 A conventional support widget can display canned answers or send a transcript. Host Whisperer makes the website itself agent-operable. The agent works with the same live application state and approval controls the customer can see, without guessing through the UI or receiving unrestricted access.

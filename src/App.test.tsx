@@ -15,6 +15,18 @@ describe('Host Whisperer surfaces', () => {
     expect(screen.getByText(/Turn website errors/)).toBeInTheDocument();
     expect(screen.getByText(/The complete walkthrough/)).toBeInTheDocument();
     expect(screen.getByText(/What does “configure with ChatGPT” mean/)).toBeInTheDocument();
+    expect(screen.getByText('Northstar Market')).toBeInTheDocument();
+    expect(screen.getByText('Northstar Admin')).toBeInTheDocument();
+  });
+
+  it('presents the store admin as a distinct installation surface', () => {
+    localStorage.setItem('host-whisperer-northstar-bundle-ready', 'true');
+    localStorage.removeItem('host-whisperer-northstar-installed');
+    history.replaceState({}, '', '/?view=admin');
+    render(<App />);
+    expect(screen.getByText('Store integrations')).toBeInTheDocument();
+    expect(screen.getByText('Store developer')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Install plugin on storefront/ })).toBeInTheDocument();
   });
 
   it('keeps developer configuration on a separate integration page', () => {

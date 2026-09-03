@@ -12,7 +12,7 @@ export interface RuntimeRecoveryAction {
   label: string;
   description: string;
   effects: string[];
-  run: () => Promise<void> | void;
+  run: (report?: (label: string, detail: string) => void) => Promise<void> | void;
   verify: () => Promise<{ recovered: boolean; summary: string }> | { recovered: boolean; summary: string };
 }
 
@@ -22,6 +22,9 @@ export interface HostWhispererConfig {
   allowedOrigin: string;
   providerHint: ProviderId;
   studioUrl?: string;
+  agentLabel?: string;
+  revealDelayMs?: number;
+  anchorTo?: () => Element | null;
   getContext: () => Record<string, unknown>;
   diagnostics: RuntimeDiagnostic[];
   actions: RuntimeRecoveryAction[];
@@ -83,8 +86,12 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   if (config.diagnostics.length > 20 || config.actions.length > 20) throw new Error('Host Whisperer supports at most 20 diagnostics and 20 actions per integration.');
   if (new Set(config.diagnostics.map((item) => item.id)).size !== config.diagnostics.length || new Set(config.actions.map((item) => item.id)).size !== config.actions.length) throw new Error('Diagnostic and action IDs must be unique.');
 
+  const agentLabel = config.agentLabel ?? 'Codex';
   let incident: SupportIncident | null = null;
   let open = false;
+  let revealed = !config.revealDelayMs;
+  let revealTimer: number | null = null;
+  let anchorFrame: number | null = null;
   let controller: AbortController | null = null;
   const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
   const host = document.createElement('div');
@@ -158,7 +165,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     current.stage = 'repairing';
     activity('agent', 'Apply approved recovery', action.label, 'running');
     try {
-      await action.run();
+      await action.run((label, detail) => activity('runtime', label, detail));
     } catch {
       current.stage = 'escalated';
       activity('runtime', 'Recovery action failed', 'No successful recovery was recorded.', 'failed');
@@ -219,10 +226,16 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   const styles = `<style>
     :host{all:initial;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;color:#14170f;-webkit-font-smoothing:antialiased}
     button,input{font:inherit;color:inherit}
-    .hw-launch{position:fixed;right:22px;bottom:22px;z-index:2147483000;display:flex;align-items:center;border:1px solid #c7cebb;border-radius:999px;background:#fff;color:#14170f;padding:13px 19px;box-shadow:0 16px 40px rgba(28,38,18,.20);font-size:16px;font-weight:600;cursor:pointer;animation:hw-arrive .45s ease-out}
-    .hw-launch:hover{background:#f6f7f2;border-color:#a9d431}
-    .hw-launch i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#8fc61a;margin-right:10px;box-shadow:0 0 0 0 rgba(143,198,26,.55);animation:hw-pulse 2s infinite}
-    .hw-panel{position:fixed;right:22px;bottom:84px;width:392px;max-height:76vh;overflow:auto;z-index:2147483000;background:#fff;border:1px solid #c7cebb;border-radius:16px;box-shadow:0 28px 70px rgba(28,38,18,.24);padding:20px;animation:hw-arrive .25s ease-out}
+    .hw-launch{position:fixed;right:22px;bottom:22px;z-index:2147483000;display:block;width:292px;text-align:left;border:1px solid #c7cebb;border-radius:16px;background:#fff;color:#14170f;padding:14px 16px 13px;box-shadow:0 18px 44px rgba(28,38,18,.22);cursor:pointer;animation:hw-enter .5s cubic-bezier(.2,.9,.3,1.25) both,hw-nudge 4.4s 1.2s ease-in-out infinite}
+    .hw-launch.anchored{right:auto;bottom:auto}
+    .hw-launch::before{content:'';position:absolute;left:-8px;top:28px;width:14px;height:14px;background:#fff;border-left:1px solid #c7cebb;border-bottom:1px solid #c7cebb;transform:rotate(45deg);opacity:0}
+    .hw-launch.anchored::before{opacity:1}
+    .hw-launch:hover{border-color:#a9d431;box-shadow:0 22px 54px rgba(28,38,18,.27)}
+    .hw-launch-head{display:flex;align-items:center;gap:9px;font:500 11.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:#4d7c0f}
+    .hw-launch-head i{flex:none;width:9px;height:9px;border-radius:50%;background:#8fc61a;box-shadow:0 0 0 0 rgba(143,198,26,.55);animation:hw-pulse 2s infinite}
+    .hw-launch-copy{display:block;margin:9px 0 0;font-size:14.5px;line-height:1.5;color:#14170f}
+    .hw-launch-cta{display:inline-block;margin-top:11px;border:1px solid #a9d431;border-radius:999px;background:#cbf24d;color:#1a2405;font-size:13.5px;font-weight:700;padding:7px 15px}
+    .hw-panel{position:fixed;right:22px;bottom:22px;width:392px;max-height:76vh;overflow:auto;z-index:2147483000;background:#fff;border:1px solid #c7cebb;border-radius:16px;box-shadow:0 28px 70px rgba(28,38,18,.24);padding:20px;animation:hw-arrive .25s ease-out}
     .hw-panel::-webkit-scrollbar{width:8px}.hw-panel::-webkit-scrollbar-thumb{background:#dde1d4;border-radius:8px}
     .hw-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
     .hw-brand{font:500 11.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:#4d7c0f}
@@ -258,15 +271,42 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     .hw-agent-request strong{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;font-size:18.5px;font-weight:600}
     .hw-agent-request p{color:#5b6353;font-size:13px;line-height:1.5;margin:8px 0 0}
     @keyframes hw-arrive{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+    @keyframes hw-enter{from{opacity:0;transform:translateX(30px) scale(.93)}to{opacity:1;transform:none}}
+    @keyframes hw-nudge{0%,84%,100%{transform:none}87%{transform:translateX(-6px) rotate(-1.7deg)}90%{transform:translateX(5px) rotate(1.4deg)}93%{transform:translateX(-3px) rotate(-.8deg)}96%{transform:translateX(1px)}}
+    @media (prefers-reduced-motion:reduce){.hw-launch{animation:hw-enter .01s both}.hw-launch-head i{animation:none}}
     @keyframes hw-event-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
     @keyframes hw-pulse{70%{box-shadow:0 0 0 8px transparent}}
   </style>`;
+
+  const positionLauncher = () => {
+    const launcher = shadow.querySelector<HTMLElement>('.hw-launch');
+    if (!launcher) return;
+    const anchor = config.anchorTo?.();
+    const rect = anchor?.getBoundingClientRect();
+    const width = launcher.offsetWidth || 292;
+    const fits = rect && rect.right + width + 34 <= window.innerWidth && rect.bottom > 8 && rect.top < window.innerHeight - 8;
+    if (!fits) {
+      launcher.classList.remove('anchored');
+      launcher.style.left = launcher.style.top = '';
+      return;
+    }
+    launcher.classList.add('anchored');
+    launcher.style.left = `${Math.round(rect!.right + 18)}px`;
+    launcher.style.top = `${Math.round(Math.min(Math.max(rect!.top - 6, 14), window.innerHeight - launcher.offsetHeight - 14))}px`;
+  };
+
+  const schedulePosition = () => {
+    if (anchorFrame !== null) return;
+    anchorFrame = requestAnimationFrame(() => { anchorFrame = null; positionLauncher(); });
+  };
 
   const render = () => {
     const current = incident;
     const action = config.actions.find((item) => item.id === current?.pendingActionId);
     const events = current?.activity.slice(-10).reverse().map((item) => `<div class="hw-event ${escapeHtml(item.status)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div></div>`).join('') ?? '';
-    shadow.innerHTML = `${styles}<button class="hw-launch"><i></i>Ask AI to fix this</button>${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${modelContext ? 'AI operator ready' : 'self-service mode'}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Only developer-approved diagnostics and recoveries are available.</p>${!current ? (modelContext ? `<div class="hw-agent-request"><span>Tell ChatGPT</span><strong>“Fix checkout safely.”</strong><p>That one request lets the agent use the tools installed on this page. Its work will appear here live.</p></div>` : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`) : `<div class="hw-status"><strong>${escapeHtml(current.stage.replace('_', ' '))}</strong><br>${escapeHtml(current.description)}</div>${current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `<button class="hw-approve">${modelContext ? 'Approve recovery' : 'Approve & apply recovery'}</button>` : `<p class="hw-ready">Approved${modelContext ? ' — the AI can continue.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !modelContext ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Recovery verified</h3><p>The original checkout problem is gone.</p></div>` : ''}${!modelContext ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}${current.stage !== 'recovered' ? `<button class="hw-primary hw-escalate" style="margin-top:8px">Approve safe developer report</button>` : ''}`}<div class="hw-activity"><h3>Live operator activity</h3>${events || '<p class="hw-copy">The AI’s steps will appear here as it uses each website tool.</p>'}</div></section>` : ''}`;
+    const launcher = revealed && !open ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">That\u2019s a server error on their side \u2014 not something you did. Want me to look into it?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>` : '';
+    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${modelContext ? 'AI operator ready' : 'self-service mode'}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Only developer-approved diagnostics and recoveries are available.</p>${!current ? (modelContext ? `<div class="hw-agent-request"><span>Tell ${escapeHtml(agentLabel)}</span><strong>“Fix checkout safely.”</strong><p>That one request lets the agent use the tools installed on this page. Its work will appear here live.</p></div>` : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`) : `<div class="hw-status"><strong>${escapeHtml(current.stage.replace('_', ' '))}</strong><br>${escapeHtml(current.description)}</div>${current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `<button class="hw-approve">${modelContext ? 'Approve recovery' : 'Approve & apply recovery'}</button>` : `<p class="hw-ready">Approved${modelContext ? ' — the AI can continue.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !modelContext ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Recovery verified</h3><p>The original checkout problem is gone.</p></div>` : ''}${!modelContext ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}${current.stage !== 'recovered' ? `<button class="hw-primary hw-escalate" style="margin-top:8px">Approve safe developer report</button>` : ''}`}<div class="hw-activity"><h3>Live operator activity</h3>${events || '<p class="hw-copy">The AI’s steps will appear here as it uses each website tool.</p>'}</div></section>` : ''}`;
+    positionLauncher();
     shadow.querySelector('.hw-launch')?.addEventListener('click', () => { open = !open; render(); });
     shadow.querySelector('.hw-close')?.addEventListener('click', () => { open = false; render(); });
     shadow.querySelector('.hw-primary:not(.hw-suggest):not(.hw-escalate):not(.hw-copychat)')?.addEventListener('click', async () => {
@@ -289,12 +329,23 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   };
 
   render();
+  window.addEventListener('scroll', schedulePosition, { passive: true });
+  window.addEventListener('resize', schedulePosition);
+  if (config.revealDelayMs) revealTimer = window.setTimeout(() => { revealed = true; render(); }, config.revealDelayMs);
   void register().catch((error) => console.error('Host Whisperer WebMCP registration failed', error));
   return {
-    open: () => { open = true; render(); },
+    open: () => { revealed = true; open = true; render(); },
     reset: () => { incident = null; render(); },
     getIncident: () => incident,
     tools: definitions,
-    destroy: () => { controller?.abort(); if (activeRuntimeRegistration === controller) activeRuntimeRegistration = null; host.remove(); },
+    destroy: () => {
+      controller?.abort();
+      if (activeRuntimeRegistration === controller) activeRuntimeRegistration = null;
+      if (revealTimer !== null) clearTimeout(revealTimer);
+      if (anchorFrame !== null) cancelAnimationFrame(anchorFrame);
+      window.removeEventListener('scroll', schedulePosition);
+      window.removeEventListener('resize', schedulePosition);
+      host.remove();
+    },
   };
 }

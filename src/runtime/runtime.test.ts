@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHostWhispererRuntime } from './index';
 
-afterEach(() => document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()));
+afterEach(() => { vi.useRealTimers(); document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()); });
 
 describe('generated support runtime', () => {
   it('diagnoses, blocks unapproved repair, applies approval, and verifies recovery', async () => {
@@ -48,6 +48,43 @@ describe('generated support runtime', () => {
     document.querySelector('#host-whisperer-root')?.shadowRoot?.querySelector<HTMLButtonElement>('.hw-escalate')?.click();
     const shared = await tool('prepare_developer_escalation').execute({ incidentId }) as { content: Array<{ text: string }> };
     expect(JSON.parse(shared.content[0].text).escalationUrl).toContain('#packet=');
+    runtime.destroy();
+  });
+
+  it('holds the offer of help back, then streams the host conversation', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => undefined } });
+    let healthy = false;
+    const runtime = createHostWhispererRuntime({
+      integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render',
+      agentLabel: 'Codex', revealDelayMs: 5000,
+      getContext: () => ({ route: '/product/aster-h1', checkoutStatus: 503 }),
+      diagnostics: [{ id: 'checkout_service', label: 'Checkout service', run: () => ({ status: 'fail', summary: 'HTTP 503 from checkout-service.' }) }],
+      actions: [{
+        id: 'roll_back_checkout_service', label: 'Roll back the checkout service', description: 'Restore the last healthy deploy.', effects: ['Cart untouched'],
+        run: (report) => { report?.('Read deploy history', 'dep-8f2c1a failing'); report?.('Host confirmed rollback', 'checkout-service healthy'); healthy = true; },
+        verify: () => ({ recovered: healthy, summary: 'Checkout returns HTTP 200.' }),
+      }],
+    });
+    const shadow = () => document.querySelector('#host-whisperer-root')!.shadowRoot!;
+    expect(shadow().querySelector('.hw-launch')).toBeNull();
+    vi.advanceTimersByTime(5000);
+    expect(shadow().querySelector('.hw-launch')?.textContent).toContain('Ask Codex');
+
+    const tool = (name: string) => runtime.tools.find((item) => item.name === name)!;
+    const context = await tool('get_support_context').execute({ issue: 'Checkout returns a server error.' }) as { content: Array<{ text: string }> };
+    const incidentId = JSON.parse(context.content[0].text).incidentId;
+    await tool('run_support_diagnostics').execute({ incidentId });
+    await tool('prepare_recovery').execute({ incidentId, actionId: 'roll_back_checkout_service' });
+    runtime.open();
+    shadow().querySelector<HTMLButtonElement>('.hw-approve')!.click();
+    await tool('apply_recovery').execute({ incidentId, actionId: 'roll_back_checkout_service' });
+
+    const labels = runtime.getIncident()!.activity.map((item) => item.label);
+    expect(labels).toContain('Read deploy history');
+    expect(labels).toContain('Host confirmed rollback');
+    const verification = await tool('verify_recovery').execute({ incidentId }) as { content: Array<{ text: string }> };
+    expect(JSON.parse(verification.content[0].text)).toMatchObject({ recovered: true, stage: 'recovered' });
     runtime.destroy();
   });
 });

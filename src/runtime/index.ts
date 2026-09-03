@@ -88,6 +88,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   let controller: AbortController | null = null;
   let approvalWaiter: { actionId: string; promise: Promise<boolean>; resolve: (approved: boolean) => void } | null = null;
   const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
+  let registrationState: 'unsupported' | 'registering' | 'ready' | 'failed' = modelContext ? 'registering' : 'unsupported';
   const host = document.createElement('div');
   host.id = 'host-whisperer-root';
   const shadow = host.attachShadow({ mode: 'open' });
@@ -243,8 +244,14 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     activeRuntimeRegistration = controller;
     try {
       await Promise.all(definitions.map((tool) => modelContext.registerTool(tool, { signal: controller!.signal })));
+      registrationState = 'ready';
+      render();
     } catch (error) {
-      if (!controller.signal.aborted) throw error;
+      if (!controller.signal.aborted) {
+        registrationState = 'failed';
+        render();
+        console.error('Host Whisperer Website Tool registration failed', error);
+      }
     }
   };
 
@@ -327,11 +334,20 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
 
   const render = () => {
     const current = incident;
+    const agentReady = registrationState === 'ready';
     const action = config.actions.find((item) => item.id === current?.pendingActionId);
     const stageLabel = current ? ({ reported: 'Request received', investigating: 'Gathering data', diagnosed: 'Under inspection', awaiting_approval: 'Waiting for approval', repairing: 'Applying resolution', verifying: 'Verifying', recovered: 'Resolved', escalated: 'Escalated', idle: 'Ready' }[current.stage]) : '';
     const events = current?.activity.slice(-10).map((item) => `<div class="hw-event ${escapeHtml(item.status)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div></div>`).join('') ?? '';
     const launcher = revealed && !open ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">That\u2019s a server error on their side \u2014 not something you did. Want me to look into it?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>` : '';
-    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${modelContext ? 'support agent connected' : 'self-service mode'}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Host Whisperer handles the technical investigation. You only see the decisions that need you.</p>${!current ? (modelContext ? `<div class="hw-agent-request"><span>Tell ${escapeHtml(agentLabel)}</span><strong>“@Browser ask Host Whisperer to fix checkout.”</strong><p>${escapeHtml(agentLabel)} will hand off the issue, wait for any required approval here, and return when checkout is ready.</p></div>` : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`) : `<div class="hw-status"><strong>${escapeHtml(stageLabel)}</strong><br>${escapeHtml(current.description)}</div>${!modelContext && current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `${modelContext ? `<p class="hw-copy">Host Whisperer is waiting for this decision and will finish the support request automatically after approval.</p>` : ''}<button class="hw-approve">${modelContext ? 'Approve resolution' : 'Approve & apply resolution'}</button>` : `<p class="hw-ready">Approved${modelContext ? ' — Host Whisperer is continuing now.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !modelContext ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Issue resolved</h3><p>Checkout is available again. You can try it now.</p></div>` : ''}${current.stage === 'escalated' ? `<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not verify a safe resolution, so the issue was escalated.</p></div>` : ''}${!modelContext ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}`}<div class="hw-activity"><h3>Support progress</h3>${events || '<p class="hw-copy">Host Whisperer’s progress will appear here.</p>'}</div></section>` : ''}`;
+    const emptyState = agentReady
+      ? `<div class="hw-agent-request"><span>Tell ${escapeHtml(agentLabel)}</span><strong>“Ask Host Whisperer to fix checkout.”</strong><p>Keep this page open in the integrated browser. ${escapeHtml(agentLabel)} will use the Website Tool, wait for any required approval here, and return when checkout is ready.</p></div>`
+      : registrationState === 'registering'
+        ? '<div class="hw-agent-request"><span>Connecting</span><strong>Preparing the Website Tool…</strong><p>Keep this page open for a moment.</p></div>'
+        : registrationState === 'failed'
+          ? '<div class="hw-agent-request"><span>Website Tool unavailable</span><strong>Check your browser settings.</strong><p>Enable Website Tools, use GPT-5.6 Sol or Terra, and reload this page.</p></div>'
+          : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`;
+    const connectionLabel = agentReady ? 'support agent connected' : registrationState === 'registering' ? 'connecting website tool' : registrationState === 'failed' ? 'website tool unavailable' : 'self-service mode';
+    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${connectionLabel}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Host Whisperer handles the technical investigation. You only see the decisions that need you.</p>${!current ? emptyState : `<div class="hw-status"><strong>${escapeHtml(stageLabel)}</strong><br>${escapeHtml(current.description)}</div>${!agentReady && current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `${agentReady ? `<p class="hw-copy">Host Whisperer is waiting for this decision and will finish the support request automatically after approval.</p>` : ''}<button class="hw-approve">${agentReady ? 'Approve resolution' : 'Approve & apply resolution'}</button>` : `<p class="hw-ready">Approved${agentReady ? ' — Host Whisperer is continuing now.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !agentReady ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Issue resolved</h3><p>Checkout is available again. You can try it now.</p></div>` : ''}${current.stage === 'escalated' ? `<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not verify a safe resolution, so the issue was escalated.</p></div>` : ''}${!agentReady ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}`}<div class="hw-activity"><h3>Support progress</h3>${events || '<p class="hw-copy">Host Whisperer’s progress will appear here.</p>'}</div></section>` : ''}`;
     positionLauncher();
     shadow.querySelector('.hw-launch')?.addEventListener('click', () => { open = !open; render(); });
     shadow.querySelector('.hw-close')?.addEventListener('click', () => { open = false; render(); });
@@ -343,12 +359,12 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     shadow.querySelector('.hw-approve')?.addEventListener('click', async () => {
       if (!incident || !action || incident.stage !== 'awaiting_approval') return;
       incident.approvedActionId = action.id; activity('customer', 'Resolution approved', 'You approved the visible resolution.', 'approval');
-      if (modelContext) finishApprovalWait(true);
+      if (agentReady) finishApprovalWait(true);
       else { await applyRecovery(action.id); await verifyRecovery(); }
     });
     shadow.querySelector('.hw-copychat')?.addEventListener('click', async () => {
       if (!incident) return;
-      const prompt = `@Browser ask Host Whisperer to fix this issue on ${location.origin}${location.pathname}: ${incident.description}`;
+      const prompt = `Ask Host Whisperer to fix this issue on ${location.origin}${location.pathname}: ${incident.description}`;
       await navigator.clipboard?.writeText(prompt);
       activity('customer', 'ChatGPT handoff copied', 'The prompt includes this page URL and the customer’s issue, not private application state.');
     });
@@ -358,7 +374,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   window.addEventListener('scroll', schedulePosition, { passive: true });
   window.addEventListener('resize', schedulePosition);
   if (config.revealDelayMs) revealTimer = window.setTimeout(() => { revealed = true; render(); }, config.revealDelayMs);
-  void register().catch((error) => console.error('Host Whisperer WebMCP registration failed', error));
+  void register();
   return {
     open: () => { revealed = true; open = true; render(); },
     reset: () => { finishApprovalWait(false); incident = null; render(); },

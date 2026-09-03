@@ -11,7 +11,7 @@ This repository exists solely for OpenAI's WebMCP Challenge. The governing objec
 - Branch: `main`
 - Last committed revision: `8e7d33d`
 - The demo rework described below is present as uncommitted changes in `src/App.tsx`, `src/studio.ts`, `src/runtime/index.ts`, `src/styles.css`, both test files, and the documentation.
-- Validation after the single-tool delegation change: 13 tests passed across 3 files, and both builds passed (`dist/assets/index-*.js` and `dist/runtime/host-whisperer.js`, 20.84 kB).
+- Validation after the Website Tool routing fix: 14 tests passed across 3 files, and both builds passed (`dist/assets/index-*.js` and `dist/runtime/host-whisperer.js`, 21.44 kB).
 - The rework had not been deployed at the time of the audit.
 
 ## Verified in the browser
@@ -34,6 +34,7 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - Plugin installed by default, so the demo needs no setup; before/after still available in demo controls
 - One runtime WebMCP delegation tool, registered only by the installed customer runtime
 - Same-call visible approval: `ask_host_whisperer_to_fix_issue` stays pending while Host Whisperer waits for the customer, then applies and verifies internally without another chat message
+- Registration-aware UI: the panel says connected only after `registerTool()` succeeds and gives current model/settings guidance if registration fails
 - Safe-context filtering and output limits
 - Incident-bound approval, replay prevention, and post-recovery verification
 - Customer-approved escalation preview and URL-fragment packet

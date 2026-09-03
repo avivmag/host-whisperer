@@ -60,7 +60,7 @@ Next steps include additional verified playbooks for authentication and data syn
 - Country: Israel
 - App Status: New
 - Live URL: https://host-whisperer.onrender.com/?view=shop
-- Testing instructions: Open the live URL. No setup is needed — the plugin is installed. Click **Checkout** to reproduce the 503. Wait five seconds for the agent dialog to appear beside the error, open it, and tell Codex: “@Browser ask Host Whisperer to fix checkout.” Codex makes one WebMCP call and waits while the page shows generic support progress. Click **Approve resolution** when asked; Host Whisperer finishes and verifies inside the same call. When Codex says checkout is available again, click **Try checkout again**. To see the same page without the plugin, use **Show it without the plugin** in the demo controls. The developer's side is at `?view=integrate`.
+- Testing instructions: Use the latest ChatGPT desktop app with Website Tools enabled and GPT-5.6 Sol or Terra. Open the live URL in its integrated browser. No setup is needed — the plugin is installed. Click **Checkout** to reproduce the 503. Wait five seconds for the agent dialog to appear beside the error, open it, and—while keeping that page open—tell Codex: “Ask Host Whisperer to fix checkout.” Codex makes one Website Tool call and waits while the page shows generic support progress. Click **Approve resolution** when asked; Host Whisperer finishes and verifies inside the same call. When Codex says checkout is available again, click **Try checkout again**. To see the same page without the plugin, use **Show it without the plugin** in the demo controls. The developer's side is at `?view=integrate`.
 - Public repository: https://github.com/avivmag/host-whisperer
 - Tested clients: Google Chrome 152 with `WebMCPTesting` enabled and automated Vitest tool-contract tests. Add ChatGPT's in-app browser after the recorded interactive test.
 - AI tools used: OpenAI Codex for product design, implementation, testing, deployment, and debugging; Devpost's MCP server for challenge requirements and submission preparation.
@@ -75,7 +75,7 @@ See [DEMO.md](DEMO.md) for the full beat-by-beat script. In outline:
 
 **0:35–0:45 — The offer.** The agent dialog animates in beside the error and nudges. Click **Ask Codex**.
 
-**0:45–1:20 — Delegate visibly.** Say only: “@Browser ask Host Whisperer to fix checkout.” Codex calls one tool and waits. The page shows gathering data, filing the report, and sending it for inspection; technical infrastructure details stay behind Host Whisperer.
+**0:45–1:20 — Delegate visibly.** With the store open in the integrated browser, say only: “Ask Host Whisperer to fix checkout.” Codex calls one Website Tool and waits. The page shows gathering data, filing the report, and sending it for inspection; technical infrastructure details stay behind Host Whisperer.
 
 **1:20–1:45 — Approve and resolve.** Show the customer-relevant effects of **Restore checkout service**, click **Approve resolution**, and read the generic progress as Host Whisperer applies and verifies it.
 

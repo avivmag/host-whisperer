@@ -30,7 +30,7 @@ ChatGPT or another WebMCP-capable browser agent. It discovers the single support
 
 1. A customer clicks Checkout and the website's host fails the request with HTTP 503. The page can report the failure but cannot help.
 2. Five seconds later, the installed plugin offers help beside the error: a small agent dialog that nudges for attention.
-3. The customer opens it and tells their agent: **"@Browser ask Host Whisperer to fix checkout."** The explicit browser reference prevents a coding agent from treating the request as a source-editing task.
+3. With the store still open in the integrated browser, the customer tells their agent: **"Ask Host Whisperer to fix checkout."** The page's single Website Tool gives that request an unambiguous delegation target.
 4. ChatGPT calls the single `ask_host_whisperer_to_fix_issue` WebMCP tool. It does not inspect source code, the DOM, network logs, other integrations, or the web.
 5. Inside that call, Host Whisperer gathers the allowlisted context, files a support report, and inspects it. Technical evidence stays inside the runtime; the customer sees only generic support-case progress.
 6. The website shows the customer-relevant effects of the bounded resolution. The WebMCP call remains pending until the customer clicks **Approve resolution**.

@@ -368,12 +368,12 @@ function ShopDemo() {
 
         {checkout === 'placed' && <div className="checkout-success"><Check size={18} /><div><strong>Order confirmed</strong><p>Thanks! Your Aster H1 Headphones are on the way. This is a demonstration store, so no payment was taken.</p></div></div>}
 
-        {installed && checkout === 'failed' && !service.healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>Host Whisperer can work on this</strong><p>Open the dialog beside the error, then tell Codex: <b>“@Browser ask Host Whisperer to fix checkout.”</b></p></div></div>}
+        {installed && checkout === 'failed' && !service.healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>Host Whisperer can work on this</strong><p>Keep this page open, then tell Codex: <b>“Ask Host Whisperer to fix checkout.”</b></p></div></div>}
 
         <ul className="assurance-row"><li><Truck size={16} /> Free 2-day delivery</li><li><RotateCcw size={16} /> 30-day returns</li><li><Lock size={16} /> Secure payment</li><li><CreditCard size={16} /> Pay in 4</li></ul>
         <div className="demo-reset-row">
           <span>Demo controls</span>
-          <button className="reset-demo" onClick={reset}><RefreshCw size={13} /> Reset the outage</button>
+          <button className="reset-demo" onClick={reset} aria-label="Recreate the checkout outage"><RefreshCw size={13} /> Recreate outage</button>
           {installed
             ? <button className="reset-demo" onClick={restartJourney}><RefreshCw size={13} /> Show it without the plugin</button>
             : <button className="reset-demo" onClick={enablePlugin}><RefreshCw size={13} /> Turn the plugin back on</button>}

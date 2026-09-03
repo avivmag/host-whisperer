@@ -27,7 +27,8 @@ Customer clicks Checkout — the host returns HTTP 503
                     ↓
 Five seconds later, the page offers help beside the error
                     ↓
-Customer asks: “@Browser ask Host Whisperer to fix checkout.”
+With the page open in the integrated browser, customer asks:
+“Ask Host Whisperer to fix checkout.”
                     ↓
 ChatGPT delegates one support request through WebMCP
                     ↓

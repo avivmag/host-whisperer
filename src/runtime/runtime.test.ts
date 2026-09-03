@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHostWhispererRuntime } from './index';
 
-afterEach(() => { vi.useRealTimers(); document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()); });
 
 describe('generated support runtime', () => {
   it('delegates the complete repair behind one customer-safe tool and waits for approval', async () => {
@@ -43,6 +43,19 @@ describe('generated support runtime', () => {
     const result = await runtime.tools[0].execute({ issue: 'Is checkout ready?' }) as { content: Array<{ text: string }> };
     expect(JSON.parse(result.content[0].text)).toEqual({ status: 'resolved', customerMessage: 'Checkout is available. Ask the customer to try again.' });
     expect(runtime.getIncident()?.stage).toBe('recovered');
+    runtime.destroy();
+  });
+
+  it('does not claim the support agent is connected when tool registration fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => { throw new Error('disabled'); } } });
+    const runtime = createHostWhispererRuntime({ integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render', getContext: () => ({ route: '/cart' }), diagnostics: [{ id: 'health', label: 'Health', run: () => ({ status: 'pass', summary: 'Online' }) }], actions: [{ id: 'retry', label: 'Retry', description: 'Retry', effects: ['Retry'], run: () => undefined, verify: () => ({ recovered: true, summary: 'Ready' }) }] });
+    await Promise.resolve();
+    await Promise.resolve();
+    runtime.open();
+    const text = document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent;
+    expect(text).toContain('Website Tool unavailable');
+    expect(text).not.toContain('support agent connected');
     runtime.destroy();
   });
 

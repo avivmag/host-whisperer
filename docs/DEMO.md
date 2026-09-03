@@ -8,7 +8,8 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 - Use ChatGPT's in-app browser, or a Chrome build with WebMCP enabled, so the agent is real.
 - Desktop width, at least 1280px. The agent dialog anchors beside the error at desktop width and falls back to the bottom-right corner on narrow windows.
-- Open `/?view=shop` and click **Reset the outage**. The plugin is installed by default; there is no setup to perform.
+- Use the latest ChatGPT desktop app, select GPT-5.6 Sol or Terra, and enable **Website Tools** under Settings → Browser → Permissions.
+- Open `/?view=shop` and click **Recreate outage**. The plugin is installed by default; there is no setup to perform.
 - Confirm the cart shows one Aster H1 and the page shows no error yet.
 
 ## Part one — the offer (0:00 – 1:40)
@@ -28,7 +29,7 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 ### 3. The repair
 
-8. In the Codex conversation, say only: **"@Browser ask Host Whisperer to fix checkout."**
+8. Keep the store open in the integrated browser. In the Codex conversation, say only: **"Ask Host Whisperer to fix checkout."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
 9. Codex calls `ask_host_whisperer_to_fix_issue` once and waits. It does not inspect the repository, source code, DOM, network logs, other integrations, or the web.
 10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
 11. The page shows the customer-relevant effects of the only allowlisted resolution while the WebMCP call remains open.
@@ -70,5 +71,5 @@ If recovery is unavailable or verification fails, the same tool returns `needs_d
 
 On `/?view=shop`:
 
-- **Reset the outage** restores the broken deploy and clears the error, leaving the plugin installed.
+- **Recreate outage** restores the broken deploy and clears the error, leaving the plugin installed.
 - **Show it without the plugin** removes the plugin so the 503 is a genuine dead end. Use it for a before/after cut. **Turn the plugin back on** restores it.

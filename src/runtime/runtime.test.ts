@@ -4,7 +4,7 @@ import { createHostWhispererRuntime } from './index';
 afterEach(() => { vi.useRealTimers(); document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()); });
 
 describe('generated support runtime', () => {
-  it('diagnoses, blocks unapproved repair, applies approval, and verifies recovery', async () => {
+  it('delegates the complete repair behind one customer-safe tool and waits for approval', async () => {
     let recovered = false;
     Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => undefined } });
     const runtime = createHostWhispererRuntime({
@@ -13,41 +13,36 @@ describe('generated support runtime', () => {
       diagnostics: [{ id: 'cart', label: 'Cart session', run: () => ({ status: 'fail', summary: 'Cart format is outdated.' }) }],
       actions: [{ id: 'rebuild', label: 'Rebuild cart', description: 'Preserve items in a fresh cart.', effects: ['No purchase'], run: () => { recovered = true; }, verify: () => ({ recovered, summary: 'Checkout is ready.' }) }],
     });
-    const tool = (name: string) => runtime.tools.find((item) => item.name === name)!;
-    const context = await tool('get_support_context').execute({ issue: 'Checkout fails for my cart.' }) as { content: Array<{ text: string }> };
-    const contextValue = JSON.parse(context.content[0].text);
-    expect(contextValue.safeContext).toEqual({ route: '/checkout', nested: { safe: 'visible' } });
-    const incidentId = contextValue.incidentId;
-    await tool('run_support_diagnostics').execute({ incidentId });
-    await tool('prepare_recovery').execute({ incidentId, actionId: 'rebuild' });
-    await expect(tool('apply_recovery').execute({ incidentId, actionId: 'rebuild' })).rejects.toThrow('not approved');
+    expect(runtime.tools.map((tool) => tool.name)).toEqual(['ask_host_whisperer_to_fix_issue']);
+
+    let requestSettled = false;
+    const request = Promise.resolve(runtime.tools[0].execute({ issue: 'Checkout fails for my cart.' })).then((result) => { requestSettled = true; return result; });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(requestSettled).toBe(false);
+    expect(runtime.getIncident()?.safeContext).toEqual({ route: '/checkout', nested: { safe: 'visible' } });
+    expect(runtime.getIncident()?.diagnostics).toHaveLength(1);
 
     runtime.open();
     const approve = document.querySelector('#host-whisperer-root')?.shadowRoot?.querySelector<HTMLButtonElement>('.hw-approve');
     expect(approve).toBeTruthy();
+    expect(document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent).not.toContain('Cart format');
     approve!.click();
-    await tool('apply_recovery').execute({ incidentId, actionId: 'rebuild' });
-    const verification = await tool('verify_recovery').execute({ incidentId }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(verification.content[0].text)).toMatchObject({ recovered: true, stage: 'recovered' });
-    await expect(tool('apply_recovery').execute({ incidentId, actionId: 'rebuild' })).rejects.toThrow('no longer ready');
+    const result = await request as { content: Array<{ text: string }> };
+    const customerResult = JSON.parse(result.content[0].text);
+    expect(customerResult).toEqual({ status: 'resolved', customerMessage: 'Checkout is available again. Ask the customer to try again.' });
+    expect(JSON.stringify(customerResult)).not.toContain('Cart format');
+    expect(runtime.getIncident()?.stage).toBe('recovered');
     runtime.destroy();
   });
 
-  it('rejects another incident ID and withholds escalation links before consent', async () => {
+  it('returns a simple ready message when inspection finds no active failure', async () => {
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => undefined } });
     const runtime = createHostWhispererRuntime({ integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render', getContext: () => ({ route: '/cart' }), diagnostics: [{ id: 'health', label: 'Health', run: () => ({ status: 'pass', summary: 'Online' }) }], actions: [{ id: 'retry', label: 'Retry', description: 'Retry', effects: ['Retry'], run: () => undefined, verify: () => ({ recovered: true, summary: 'Ready' }) }] });
-    const tool = (name: string) => runtime.tools.find((item) => item.name === name)!;
-    const context = await tool('get_support_context').execute({ issue: 'The cart is broken.' }) as { content: Array<{ text: string }> };
-    const incidentId = JSON.parse(context.content[0].text).incidentId;
-    await expect(tool('run_support_diagnostics').execute({ incidentId: 'wrong' })).rejects.toThrow('not found');
-    await tool('run_support_diagnostics').execute({ incidentId });
-    await expect(tool('prepare_recovery').execute({ incidentId, actionId: 'retry' })).rejects.toThrow('failing check');
-    const escalation = await tool('prepare_developer_escalation').execute({ incidentId }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(escalation.content[0].text)).toMatchObject({ approvalRequired: true });
-    expect(JSON.parse(escalation.content[0].text).escalationUrl).toBeUndefined();
-    runtime.open();
-    document.querySelector('#host-whisperer-root')?.shadowRoot?.querySelector<HTMLButtonElement>('.hw-escalate')?.click();
-    const shared = await tool('prepare_developer_escalation').execute({ incidentId }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(shared.content[0].text).escalationUrl).toContain('#packet=');
+    const result = await runtime.tools[0].execute({ issue: 'Is checkout ready?' }) as { content: Array<{ text: string }> };
+    expect(JSON.parse(result.content[0].text)).toEqual({ status: 'resolved', customerMessage: 'Checkout is available. Ask the customer to try again.' });
+    expect(runtime.getIncident()?.stage).toBe('recovered');
     runtime.destroy();
   });
 
@@ -71,20 +66,21 @@ describe('generated support runtime', () => {
     vi.advanceTimersByTime(5000);
     expect(shadow().querySelector('.hw-launch')?.textContent).toContain('Ask Codex');
 
-    const tool = (name: string) => runtime.tools.find((item) => item.name === name)!;
-    const context = await tool('get_support_context').execute({ issue: 'Checkout returns a server error.' }) as { content: Array<{ text: string }> };
-    const incidentId = JSON.parse(context.content[0].text).incidentId;
-    await tool('run_support_diagnostics').execute({ incidentId });
-    await tool('prepare_recovery').execute({ incidentId, actionId: 'roll_back_checkout_service' });
+    const request = runtime.tools[0].execute({ issue: 'Checkout returns a server error.' });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
     runtime.open();
     shadow().querySelector<HTMLButtonElement>('.hw-approve')!.click();
-    await tool('apply_recovery').execute({ incidentId, actionId: 'roll_back_checkout_service' });
+    await request;
 
     const labels = runtime.getIncident()!.activity.map((item) => item.label);
+    expect(labels).toContain('Gathering incident data');
+    expect(labels).toContain('Filing support report');
+    expect(labels).toContain('Sending for inspection');
     expect(labels).toContain('Read deploy history');
     expect(labels).toContain('Host confirmed rollback');
-    const verification = await tool('verify_recovery').execute({ incidentId }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(verification.content[0].text)).toMatchObject({ recovered: true, stage: 'recovered' });
+    expect(labels).toContain('Issue resolved');
     runtime.destroy();
   });
 });

@@ -1,5 +1,5 @@
 import { compactToolOutput, isSensitiveKey, sanitizeExternalText, sanitizeExternalUrl } from '../security';
-import type { DiagnosticResult, EscalationPacket, OperatorActivity, ProviderId, SupportIncident } from '../types';
+import type { DiagnosticResult, OperatorActivity, ProviderId, SupportIncident } from '../types';
 
 export interface RuntimeDiagnostic {
   id: string;
@@ -69,13 +69,6 @@ function safeRecord(input: Record<string, unknown>, depth = 0) {
   return output;
 }
 
-function encodePacket(packet: EscalationPacket) {
-  const bytes = new TextEncoder().encode(JSON.stringify(packet));
-  let binary = '';
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
 function escapeHtml(value: unknown) {
   return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]!);
 }
@@ -93,6 +86,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   let revealTimer: number | null = null;
   let anchorFrame: number | null = null;
   let controller: AbortController | null = null;
+  let approvalWaiter: { actionId: string; promise: Promise<boolean>; resolve: (approved: boolean) => void } | null = null;
   const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
   const host = document.createElement('div');
   host.id = 'host-whisperer-root';
@@ -100,8 +94,18 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   document.body.append(host);
 
   const activity = (actor: OperatorActivity['actor'], label: string, detail: string, status: OperatorActivity['status'] = 'succeeded') => {
-    if (!incident) return;
-    incident.activity.push({ id: crypto.randomUUID(), actor, label, detail: sanitizeExternalText(detail, 500), status, createdAt: now() });
+    if (!incident) return null;
+    const id = crypto.randomUUID();
+    incident.activity.push({ id, actor, label, detail: sanitizeExternalText(detail, 500), status, createdAt: now() });
+    render();
+    return id;
+  };
+
+  const finishActivity = (id: string | null, detail: string, status: OperatorActivity['status'] = 'succeeded') => {
+    const event = incident?.activity.find((item) => item.id === id);
+    if (!event) return;
+    event.detail = sanitizeExternalText(detail, 500);
+    event.status = status;
     render();
   };
 
@@ -111,37 +115,32 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     return incident;
   };
 
-  const assertIncident = (incidentId: string) => {
-    if (!incident || incident.id !== incidentId) throw new Error('Support incident not found.');
-  };
-
   const getContext = async (description?: string) => {
     const current = ensureIncident(description);
     current.safeContext = safeRecord(config.getContext());
     current.stage = 'investigating';
-    activity('agent', 'Read safe support context', `${Object.keys(current.safeContext).length} allowlisted fields shared`);
+    activity('agent', 'Gathering incident data', 'Collecting only the website signals approved for support.');
     return { incidentId: current.id, appName: config.appName, symptom: current.description, safeContext: current.safeContext, privacy: 'No credentials, payment data, query strings, or DOM content are shared.' };
   };
 
   const runDiagnostics = async () => {
     const current = ensureIncident();
     current.stage = 'investigating';
-    activity('agent', 'Run diagnostics', `${config.diagnostics.length} developer-approved checks`, 'running');
+    const filingEvent = activity('agent', 'Filing support report', 'Attaching the website’s approved health checks.', 'running');
     const results: DiagnosticResult[] = [];
     for (const diagnostic of config.diagnostics) {
       try {
         const result = await diagnostic.run();
         results.push({ id: diagnostic.id, label: diagnostic.label, status: result.status, summary: sanitizeExternalText(result.summary, 400) });
-        activity('runtime', diagnostic.label, result.summary, result.status === 'pass' ? 'succeeded' : 'failed');
       } catch {
         results.push({ id: diagnostic.id, label: diagnostic.label, status: 'fail', summary: 'The diagnostic could not complete.' });
-        activity('runtime', diagnostic.label, 'The diagnostic could not complete.', 'failed');
       }
     }
     current.diagnostics = results;
     current.stage = 'diagnosed';
-    activity('runtime', 'Evidence collected', `${results.filter((item) => item.status === 'fail').length} failing check${results.filter((item) => item.status === 'fail').length === 1 ? '' : 's'}`);
-    return { incidentId: current.id, results, instruction: 'Explain the evidence in plain English. Choose only a listed recovery action.' };
+    finishActivity(filingEvent, 'The support report is ready.');
+    activity('runtime', 'Sending for inspection', 'Host Whisperer received the report and is choosing a safe response.');
+    return { results };
   };
 
   const prepareRecovery = async (actionId: string) => {
@@ -152,8 +151,25 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     current.pendingActionId = action.id;
     current.approvedActionId = undefined;
     current.stage = 'awaiting_approval';
-    activity('agent', 'Recovery proposed', action.label, 'approval');
+    activity('runtime', 'Resolution ready', 'A bounded resolution is ready for your approval.', 'approval');
     return { actionId: action.id, label: action.label, explanation: action.description, effects: action.effects, approvalRequired: true, executionAvailable: false, next: 'Wait for the customer to approve the visible recovery card.' };
+  };
+
+  const waitForRecoveryApproval = async (actionId: string) => {
+    if (incident?.approvedActionId === actionId) return;
+    if (!approvalWaiter || approvalWaiter.actionId !== actionId) {
+      let resolve!: (approved: boolean) => void;
+      const promise = new Promise<boolean>((settle) => { resolve = settle; });
+      approvalWaiter = { actionId, promise, resolve };
+    }
+    const approved = await approvalWaiter.promise;
+    if (!approved || incident?.approvedActionId !== actionId) throw new Error('Recovery approval was cancelled.');
+  };
+
+  const finishApprovalWait = (approved: boolean) => {
+    const waiter = approvalWaiter;
+    approvalWaiter = null;
+    waiter?.resolve(approved);
   };
 
   const applyRecovery = async (actionId: string) => {
@@ -163,16 +179,17 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     if (current.approvedActionId !== actionId) throw new Error('The customer has not approved this recovery in the page.');
     if (current.stage !== 'awaiting_approval') throw new Error('This recovery is no longer ready to execute.');
     current.stage = 'repairing';
-    activity('agent', 'Apply approved recovery', action.label, 'running');
+    const applyingEvent = activity('agent', 'Applying approved resolution', 'Host Whisperer is working with the hosting service.', 'running');
     try {
       await action.run((label, detail) => activity('runtime', label, detail));
     } catch {
       current.stage = 'escalated';
-      activity('runtime', 'Recovery action failed', 'No successful recovery was recorded.', 'failed');
+      finishActivity(applyingEvent, 'Host Whisperer could not apply the bounded resolution.', 'failed');
       throw new Error('The approved recovery failed and must be escalated.');
     }
+    finishActivity(applyingEvent, 'The hosting service completed the bounded resolution.');
     current.stage = 'verifying';
-    activity('runtime', 'Recovery action completed', 'The website changed only the declared application state.');
+    activity('runtime', 'Verifying service', 'Checking that the original request succeeds now.');
     return { applied: true, actionId, next: 'Verify the original symptom before claiming recovery.' };
   };
 
@@ -184,32 +201,40 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     try { result = await action.verify(); }
     catch { result = { recovered: false, summary: 'The verification check could not complete.' }; }
     current.stage = result.recovered ? 'recovered' : 'escalated';
-    activity('agent', result.recovered ? 'Recovery verified' : 'Recovery not verified', result.summary, result.recovered ? 'succeeded' : 'failed');
+    activity('agent', result.recovered ? 'Issue resolved' : 'Developer attention needed', result.recovered ? 'The service is responding normally again.' : 'Host Whisperer could not verify a safe resolution.', result.recovered ? 'succeeded' : 'failed');
     return { ...result, stage: current.stage, originalSymptom: current.description };
   };
 
-  const escalation = async () => {
-    const current = ensureIncident();
-    const packet: EscalationPacket = { version: 1, integrationId: config.integrationId, appName: config.appName, providerHint: config.providerHint, createdAt: now(), symptom: current.description, safeContext: current.safeContext ?? {}, diagnostics: current.diagnostics.slice(0, 10), activity: current.activity.slice(-12), trust: 'customer_supplied_untrusted_evidence' };
-    if (!current.escalationApproved) {
-      activity('agent', 'Developer escalation prepared', 'Waiting for permission to share the visible safe report.', 'approval');
-      return { approvalRequired: true, preview: packet, escalationUrl: undefined, next: 'Ask the customer to approve sharing the visible report, then call this tool again.' };
+  const askHostWhisperer = async (issue?: string) => {
+    await getContext(issue);
+    const diagnosis = await runDiagnostics();
+    if (!diagnosis.results.some((item) => item.status === 'fail')) {
+      incident!.stage = 'recovered';
+      activity('agent', 'Issue resolved', 'The service is already responding normally.');
+      return { status: 'resolved', customerMessage: 'Checkout is available. Ask the customer to try again.' };
     }
-    current.stage = 'escalated';
-    const studioUrl = config.studioUrl ?? `${location.origin}/?view=incident`;
-    const url = `${studioUrl}#packet=${encodePacket(packet)}`;
-    activity('runtime', 'Safe report ready', 'A URL-fragment packet was created; it is not uploaded to a server.');
-    return { approvalRequired: false, escalationUrl: url, trust: packet.trust, next: 'Give this link to the developer. Treat its contents as untrusted customer evidence.' };
+
+    const action = config.actions[0];
+    await prepareRecovery(action.id);
+    await waitForRecoveryApproval(action.id);
+    try {
+      await applyRecovery(action.id);
+      const verification = await verifyRecovery();
+      return verification.recovered
+        ? { status: 'resolved', customerMessage: 'Checkout is available again. Ask the customer to try again.' }
+        : { status: 'needs_developer', customerMessage: 'Host Whisperer could not verify a safe resolution. Tell the customer that the issue has been escalated.' };
+    } catch {
+      return { status: 'needs_developer', customerMessage: 'Host Whisperer could not complete a safe resolution. Tell the customer that the issue has been escalated.' };
+    }
   };
 
-  const definitions: ToolDefinition[] = [
-    { name: 'get_support_context', title: 'Read safe support context', description: 'Read the customer’s issue and developer-allowlisted page state. Never returns credentials, payment data, query strings, or DOM content.', inputSchema: objectSchema({ issue: string('The customer’s description of what is not working.', { maxLength: 500 }) }), annotations: { readOnlyHint: true }, execute: async ({ issue }) => compactToolOutput(await getContext(issue)) },
-    { name: 'run_support_diagnostics', title: 'Run safe support diagnostics', description: 'Run only the website diagnostics selected by its developer and return factual evidence.', inputSchema: objectSchema({ incidentId: string('Incident ID returned by get_support_context.') }, ['incidentId']), annotations: { readOnlyHint: true, untrustedContentHint: true }, execute: async ({ incidentId }) => { assertIncident(incidentId); return compactToolOutput(await runDiagnostics()); } },
-    { name: 'prepare_recovery', title: 'Prepare safe recovery', description: 'Prepare one developer-allowlisted recovery and show its exact effects for customer approval.', inputSchema: objectSchema({ incidentId: string('Active incident ID.'), actionId: string('Allowlisted recovery action.', { enum: config.actions.map((item) => item.id) }) }, ['incidentId', 'actionId']), execute: async ({ incidentId, actionId }) => { assertIncident(incidentId); return compactToolOutput(await prepareRecovery(actionId)); } },
-    { name: 'apply_recovery', title: 'Apply approved recovery', description: 'Apply a prepared recovery only after the customer approves it visibly in the website.', inputSchema: objectSchema({ incidentId: string('Active incident ID.'), actionId: string('Previously prepared action ID.', { enum: config.actions.map((item) => item.id) }) }, ['incidentId', 'actionId']), execute: async ({ incidentId, actionId }) => { assertIncident(incidentId); return compactToolOutput(await applyRecovery(actionId)); } },
-    { name: 'verify_recovery', title: 'Verify customer recovery', description: 'Check the original symptom after an approved recovery before reporting success.', inputSchema: objectSchema({ incidentId: string('Active incident ID.') }, ['incidentId']), annotations: { readOnlyHint: true }, execute: async ({ incidentId }) => { assertIncident(incidentId); return compactToolOutput(await verifyRecovery()); } },
-    { name: 'prepare_developer_escalation', title: 'Prepare developer escalation', description: 'Preview a sanitized incident packet and reveal its local fragment link only after customer approval.', inputSchema: objectSchema({ incidentId: string('Active incident ID.') }, ['incidentId']), annotations: { untrustedContentHint: true }, execute: async ({ incidentId }) => { assertIncident(incidentId); return compactToolOutput(await escalation(), 12000); } },
-  ];
+  const definitions: ToolDefinition[] = [{
+    name: 'ask_host_whisperer_to_fix_issue',
+    title: 'Ask Host Whisperer to resolve this issue',
+    description: 'Use this immediately when the customer asks to fix a checkout or website error. This delegates the complete support workflow to the website’s Host Whisperer agent. Do not inspect local files, source code, the DOM, network logs, other integrations, or the web. Wait for this tool to finish, then repeat only its customerMessage.',
+    inputSchema: objectSchema({ issue: string('A short customer description of what failed.', { maxLength: 500 }) }),
+    execute: async ({ issue }) => compactToolOutput(await askHostWhisperer(issue)),
+  }];
 
   const register = async () => {
     if (!modelContext) return;
@@ -303,9 +328,10 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   const render = () => {
     const current = incident;
     const action = config.actions.find((item) => item.id === current?.pendingActionId);
-    const events = current?.activity.slice(-10).reverse().map((item) => `<div class="hw-event ${escapeHtml(item.status)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div></div>`).join('') ?? '';
+    const stageLabel = current ? ({ reported: 'Request received', investigating: 'Gathering data', diagnosed: 'Under inspection', awaiting_approval: 'Waiting for approval', repairing: 'Applying resolution', verifying: 'Verifying', recovered: 'Resolved', escalated: 'Escalated', idle: 'Ready' }[current.stage]) : '';
+    const events = current?.activity.slice(-10).map((item) => `<div class="hw-event ${escapeHtml(item.status)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div></div>`).join('') ?? '';
     const launcher = revealed && !open ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">That\u2019s a server error on their side \u2014 not something you did. Want me to look into it?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>` : '';
-    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${modelContext ? 'AI operator ready' : 'self-service mode'}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Only developer-approved diagnostics and recoveries are available.</p>${!current ? (modelContext ? `<div class="hw-agent-request"><span>Tell ${escapeHtml(agentLabel)}</span><strong>“Fix checkout safely.”</strong><p>That one request lets the agent use the tools installed on this page. Its work will appear here live.</p></div>` : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`) : `<div class="hw-status"><strong>${escapeHtml(current.stage.replace('_', ' '))}</strong><br>${escapeHtml(current.description)}</div>${current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `<button class="hw-approve">${modelContext ? 'Approve recovery' : 'Approve & apply recovery'}</button>` : `<p class="hw-ready">Approved${modelContext ? ' — the AI can continue.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !modelContext ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Recovery verified</h3><p>The original checkout problem is gone.</p></div>` : ''}${!modelContext ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}${current.stage !== 'recovered' ? `<button class="hw-primary hw-escalate" style="margin-top:8px">Approve safe developer report</button>` : ''}`}<div class="hw-activity"><h3>Live operator activity</h3>${events || '<p class="hw-copy">The AI’s steps will appear here as it uses each website tool.</p>'}</div></section>` : ''}`;
+    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${modelContext ? 'support agent connected' : 'self-service mode'}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Host Whisperer handles the technical investigation. You only see the decisions that need you.</p>${!current ? (modelContext ? `<div class="hw-agent-request"><span>Tell ${escapeHtml(agentLabel)}</span><strong>“@Browser ask Host Whisperer to fix checkout.”</strong><p>${escapeHtml(agentLabel)} will hand off the issue, wait for any required approval here, and return when checkout is ready.</p></div>` : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`) : `<div class="hw-status"><strong>${escapeHtml(stageLabel)}</strong><br>${escapeHtml(current.description)}</div>${!modelContext && current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `${modelContext ? `<p class="hw-copy">Host Whisperer is waiting for this decision and will finish the support request automatically after approval.</p>` : ''}<button class="hw-approve">${modelContext ? 'Approve resolution' : 'Approve & apply resolution'}</button>` : `<p class="hw-ready">Approved${modelContext ? ' — Host Whisperer is continuing now.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !modelContext ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Issue resolved</h3><p>Checkout is available again. You can try it now.</p></div>` : ''}${current.stage === 'escalated' ? `<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not verify a safe resolution, so the issue was escalated.</p></div>` : ''}${!modelContext ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}`}<div class="hw-activity"><h3>Support progress</h3>${events || '<p class="hw-copy">Host Whisperer’s progress will appear here.</p>'}</div></section>` : ''}`;
     positionLauncher();
     shadow.querySelector('.hw-launch')?.addEventListener('click', () => { open = !open; render(); });
     shadow.querySelector('.hw-close')?.addEventListener('click', () => { open = false; render(); });
@@ -316,13 +342,13 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     shadow.querySelector('.hw-suggest')?.addEventListener('click', () => void prepareRecovery(config.actions[0].id));
     shadow.querySelector('.hw-approve')?.addEventListener('click', async () => {
       if (!incident || !action || incident.stage !== 'awaiting_approval') return;
-      incident.approvedActionId = action.id; activity('customer', 'Recovery approved', action.label, 'approval');
-      if (!modelContext) { await applyRecovery(action.id); await verifyRecovery(); }
+      incident.approvedActionId = action.id; activity('customer', 'Resolution approved', 'You approved the visible resolution.', 'approval');
+      if (modelContext) finishApprovalWait(true);
+      else { await applyRecovery(action.id); await verifyRecovery(); }
     });
-    shadow.querySelector('.hw-escalate')?.addEventListener('click', () => { if (incident) { incident.escalationApproved = true; activity('customer', 'Safe report sharing approved', 'Only the visible sanitized report may be shared.', 'approval'); } });
     shadow.querySelector('.hw-copychat')?.addEventListener('click', async () => {
       if (!incident) return;
-      const prompt = `Open ${location.origin}${location.pathname} in ChatGPT's in-app browser. Help me with this issue: ${incident.description}`;
+      const prompt = `@Browser ask Host Whisperer to fix this issue on ${location.origin}${location.pathname}: ${incident.description}`;
       await navigator.clipboard?.writeText(prompt);
       activity('customer', 'ChatGPT handoff copied', 'The prompt includes this page URL and the customer’s issue, not private application state.');
     });
@@ -335,10 +361,11 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   void register().catch((error) => console.error('Host Whisperer WebMCP registration failed', error));
   return {
     open: () => { revealed = true; open = true; render(); },
-    reset: () => { incident = null; render(); },
+    reset: () => { finishApprovalWait(false); incident = null; render(); },
     getIncident: () => incident,
     tools: definitions,
     destroy: () => {
+      finishApprovalWait(false);
       controller?.abort();
       if (activeRuntimeRegistration === controller) activeRuntimeRegistration = null;
       if (revealTimer !== null) clearTimeout(revealTimer);

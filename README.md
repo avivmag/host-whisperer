@@ -4,7 +4,7 @@
 
 **When a website's host fails, its customers get a dead end. Host Whisperer turns that page into something their own agent can fix.**
 
-A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers six WebMCP tools, and ChatGPT can inspect minimal context, run the developer's diagnostics, propose the one allowlisted recovery, wait for the customer to approve it on the page, apply it, and verify the original symptom is gone before claiming success.
+A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers one WebMCP handoff. ChatGPT delegates the support request to Host Whisperer, which privately gathers the approved signals, inspects the incident, waits for visible customer approval, applies the one allowlisted resolution, verifies it, and returns only what the customer needs to know.
 
 The configuration product does not embed ChatGPT and does not itself need WebMCP. WebMCP belongs in the generated plugin running on the customer website.
 
@@ -27,31 +27,26 @@ Customer clicks Checkout — the host returns HTTP 503
                     ↓
 Five seconds later, the page offers help beside the error
                     ↓
-Customer asks their agent, in one sentence, to fix it
+Customer asks: “@Browser ask Host Whisperer to fix checkout.”
                     ↓
-ChatGPT reads safe context and runs the developer's diagnostics
+ChatGPT delegates one support request through WebMCP
                     ↓
-ChatGPT proposes the one allowlisted recovery
+Host Whisperer gathers data, files the report, and inspects it privately
                     ↓
 Customer approves it on the page — until then, it will not run
                     ↓
-The repair runs, streaming the host conversation into the page
+Host Whisperer applies and verifies the developer-approved resolution
                     ↓
-ChatGPT verifies the symptom is gone, and the retry succeeds
+ChatGPT receives “resolved,” and the customer retries successfully
 ```
 
 In the Northstar demo, `POST /api/checkout` returns 503 because deploy `dep-8f2c1a` of the store's checkout service is crash-looping. The only recovery rolls that service back to `dep-8e0b47`, the last deploy that passed health checks. It leaves the cart untouched, places no order, and reads no payment data. The rollback is simulated in browser state; real provider access would require narrow authenticated server-side endpoints.
 
-## Runtime tools
+## Runtime tool
 
-- `get_support_context`
-- `run_support_diagnostics`
-- `prepare_recovery`
-- `apply_recovery`
-- `verify_recovery`
-- `prepare_developer_escalation`
+- `ask_host_whisperer_to_fix_issue`
 
-These tools are registered by the installed runtime in `src/runtime/index.ts`. They are bounded by exact origin, developer-supplied handlers, incident identity, visible customer consent, single-use transitions, and post-recovery verification.
+The installed runtime registers this tool in `src/runtime/index.ts`. The tool delegates to a deterministic support agent inside the runtime and returns only a resolved-or-escalated customer message. The internal workflow remains bounded by exact origin, developer-supplied handlers, visible customer consent, a single-use recovery transition, and post-recovery verification.
 
 ## Documentation
 

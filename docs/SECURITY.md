@@ -8,7 +8,7 @@ Untrusted for provider credentials and broad administrative authority. It may ho
 
 ### Browser agent
 
-Allowed to discover and invoke the tools registered by the active page. It is not automatically trusted to perform consequential actions. Tool input, order, incident identity, and approval must be validated by the runtime and backend.
+Allowed to discover and invoke the support handoff registered by the active page. It is not trusted with technical evidence or consequential-action authority. Incident state, action selection, approval, execution, and verification remain inside the runtime and backend.
 
 ### Website backend
 
@@ -21,16 +21,16 @@ Trusted for installation, provider authorization, playbook selection, and high-i
 ## Security invariants
 
 1. Exact origin binding: the runtime refuses to start outside the configured origin.
-2. Explicit capability lists: only configured diagnostics and actions become callable.
+2. One narrow handoff: the browser agent can request support but cannot invoke individual diagnostics or recovery actions.
 3. Minimal context: callbacks provide selected fields; the runtime does not scrape arbitrary DOM content.
 4. Recursive sanitization: secret-like keys are removed, token-shaped strings are redacted, and URL queries/fragments are stripped from contextual paths.
-5. Bounded inputs and outputs: descriptions, results, arrays, tool counts, and escalation packets have size limits.
-6. Incident binding: every call after context creation must present the active incident ID.
+5. Bounded inputs and outputs: the issue description is bounded, and WebMCP returns only a status plus customer message.
+6. Private incident binding: the runtime owns the active incident ID and never exposes it to the browser agent.
 7. Diagnosis before repair: a recovery cannot be prepared before a failing diagnostic exists.
 8. Visible consent: a prepared recovery cannot run until the customer approves the exact action in the page.
 9. Single-use transition: recovery runs only from `awaiting_approval`; replay after execution is rejected.
 10. Verification: the runtime never reports recovery until the configured verification function succeeds.
-11. Separate escalation consent: preparing a report does not reveal its link until the customer approves sharing.
+11. Honest escalation: an unavailable or unverified resolution returns `needs_developer`; it never becomes a false success.
 12. No browser credentials: cloud and hosting credentials are never generated into the adapter or returned to the agent.
 
 ## Hosting-access boundary

@@ -4,19 +4,19 @@
 
 ## One-sentence proposition
 
-Host Whisperer lets developers install a safe WebMCP support layer in one file, so that when their host fails, a stranded customer can ask their own browser agent to diagnose it, approve a bounded repair, and watch it verified — on the page where the failure happened.
+Host Whisperer lets developers install a safe WebMCP support layer in one file, so that when their host fails, a stranded customer can ask their browser agent to delegate the issue, approve a bounded resolution, and retry after Host Whisperer verifies it — on the page where the failure happened.
 
 ## Problem
 
 When a website's host fails, the customer gets a generic message and a support link. The failure is not theirs to fix and not theirs to understand: they cannot see which service is down, they cannot tell a retry from a real outage, and the website's useful live state disappears before anyone investigates it. Support receives an incomplete report hours later.
 
-The website already knows the route, application version, error code, session state, and safe recovery options. It needs a structured, constrained way to share only the relevant evidence and actions with the customer's agent.
+The website already knows the route, application version, error code, session state, and safe recovery options. It needs a structured, constrained way to hand that evidence to Host Whisperer without making the customer's agent interpret infrastructure details.
 
 ## Users
 
 ### Plugin operator
 
-The developer who runs the website. On the connect page they name their origin, pick their host, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the diagnostics and the single recovery their customers' agents are allowed to propose.
+The developer who runs the website. On the connect page they name their origin, pick their host, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the private diagnostics and the single recovery Host Whisperer is allowed to propose.
 
 ### Customer
 
@@ -24,18 +24,18 @@ The person experiencing a problem on the installed website. They describe the sy
 
 ### Browser agent
 
-ChatGPT or another WebMCP-capable browser agent. It discovers the tools registered by the active customer page and calls them in the supported order.
+ChatGPT or another WebMCP-capable browser agent. It discovers the single support handoff registered by the active customer page, delegates the issue, waits, and repeats the customer-safe outcome.
 
 ## End-to-end flow
 
 1. A customer clicks Checkout and the website's host fails the request with HTTP 503. The page can report the failure but cannot help.
 2. Five seconds later, the installed plugin offers help beside the error: a small agent dialog that nudges for attention.
-3. The customer opens it and asks their agent, in one sentence, to fix checkout.
-4. ChatGPT reads safe context through `get_support_context` and runs the developer's diagnostics through `run_support_diagnostics`.
-5. ChatGPT explains the evidence — the storefront and cart are healthy; one deploy of the checkout service is crash-looping — and calls `prepare_recovery` for the only allowlisted action.
-6. The website shows the exact effects of that action. The customer approves it on the page. Until they do, `apply_recovery` refuses.
-7. `apply_recovery` runs, and the Host Whisperer ↔ host exchange streams into the customer's activity timeline as it happens: connect, read deploy history, read logs, request rollback, host confirms.
-8. `verify_recovery` re-checks the original symptom. Only then is success reported, and the page invites the customer to retry.
+3. The customer opens it and tells their agent: **"@Browser ask Host Whisperer to fix checkout."** The explicit browser reference prevents a coding agent from treating the request as a source-editing task.
+4. ChatGPT calls the single `ask_host_whisperer_to_fix_issue` WebMCP tool. It does not inspect source code, the DOM, network logs, other integrations, or the web.
+5. Inside that call, Host Whisperer gathers the allowlisted context, files a support report, and inspects it. Technical evidence stays inside the runtime; the customer sees only generic support-case progress.
+6. The website shows the customer-relevant effects of the bounded resolution. The WebMCP call remains pending until the customer clicks **Approve resolution**.
+7. Host Whisperer applies the developer-approved resolution, streams generic progress, and verifies the original symptom internally.
+8. The tool returns only `resolved` or `needs_developer` plus a short customer message. ChatGPT tells the customer to retry only after a verified resolution.
 9. The customer retries checkout and the order goes through.
 10. If recovery is unavailable or verification fails, the customer may approve a sanitized developer escalation instead of being told the problem is solved.
 
@@ -95,6 +95,6 @@ Use precise claims:
 - Turning the plugin off restores a genuine dead end, with no agent offer at all.
 - The connect page contains no ChatGPT button, WebMCP connection status, or registered tools.
 - The downloaded plugin contains the runtime and the developer's configuration, and contains no credentials.
-- The customer page exposes six WebMCP tools.
+- The customer page exposes one high-level WebMCP delegation tool; implementation details remain inside Host Whisperer.
 - A customer can complete diagnosis, consent, recovery, verification, and a successful retry in one coherent browser-agent session.
 - No secret or payment data is exposed at any point.

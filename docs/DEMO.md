@@ -28,13 +28,13 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 ### 3. The repair
 
-8. In the ChatGPT conversation, say: **"Fix checkout safely."**
-9. ChatGPT calls `get_support_context`, then `run_support_diagnostics`. Show the three results: storefront healthy, cart intact, **checkout service failing**.
-10. Point out what the page shared: seven allowlisted fields. No payment data, no credentials, no query strings, no scraped DOM.
-11. ChatGPT calls `prepare_recovery`. The page shows the exact effects of the only allowlisted action.
-12. Say that ChatGPT cannot run it yet, then click **Approve recovery**. This is the customer-input beat.
-13. ChatGPT calls `apply_recovery`. Read the host conversation as it streams into the timeline: connected to the host with a read-only deploy scope, read deploy history, read service logs, requested rollback, host confirmed.
-14. ChatGPT calls `verify_recovery`. Only now does the page claim success.
+8. In the Codex conversation, say only: **"@Browser ask Host Whisperer to fix checkout."**
+9. Codex calls `ask_host_whisperer_to_fix_issue` once and waits. It does not inspect the repository, source code, DOM, network logs, other integrations, or the web.
+10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
+11. The page shows the customer-relevant effects of the only allowlisted resolution while the WebMCP call remains open.
+12. Click **Approve resolution**. Do not send another chat message: Host Whisperer continues inside the same pending call.
+13. Read the remaining generic progress: **Applying approved resolution → Verifying service → Issue resolved**.
+14. Codex receives only the verified result and tells the customer that checkout is available again.
 
 ### 4. The close
 
@@ -60,11 +60,11 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 ## Closing line
 
-Sixty seconds of developer setup turns every 5xx page on a website from a dead end into something the customer's own agent can diagnose, get permission for, repair, and prove.
+Sixty seconds of developer setup turns every 5xx page on a website from a dead end into a support case the customer's own agent can hand to Host Whisperer for an approved, verified resolution.
 
 ## Escalation, if you have time
 
-If recovery is unavailable or verification fails, ChatGPT calls `prepare_developer_escalation`. The first call previews the sanitized packet. After separate customer approval, a second call returns a URL whose fragment carries the report. `/?view=incident#packet=...` renders it, labeled as untrusted customer-supplied evidence.
+If recovery is unavailable or verification fails, the same tool returns `needs_developer` instead of claiming success. The runtime marks the case escalated and the page tells the customer it was sent to the developer.
 
 ## Demo controls
 

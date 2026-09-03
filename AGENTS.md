@@ -10,7 +10,7 @@ Read `docs/HACKATHON.md` before planning work. It records the official prompt, e
 
 ## Product intent
 
-Within the hackathon demonstration, Host Whisperer generates a framework-neutral plugin that a developer installs on an existing website. The installed plugin registers WebMCP tools on the customer-facing page so a browser agent such as ChatGPT can diagnose supported problems, propose a bounded recovery, wait for visible customer approval, apply it, and verify the result.
+Within the hackathon demonstration, Host Whisperer generates a framework-neutral plugin that a developer installs on an existing website. The installed plugin registers one customer-facing WebMCP handoff. A browser agent such as ChatGPT delegates the issue to Host Whisperer's deterministic support agent, which privately diagnoses supported problems, proposes a bounded recovery, waits for visible customer approval, applies it, verifies the result, and returns a minimal customer-safe outcome.
 
 The generator is not itself an AI chat product. WebMCP belongs in the generated customer runtime, not in the Host Whisperer configuration UI.
 
@@ -51,7 +51,7 @@ The demo uses local browser state to model generation and installation:
 - `northstar-demo-cart` stores the cart item, which stays intact through the whole incident.
 - `northstar-demo-service` stores `{ healthy, deploy, lastGood }` for the checkout service, defaulting to the broken `dep-8f2c1a` with `dep-8e0b47` as the last healthy deploy.
 
-The incident is a **host outage**, not an application bug. `POST /api/checkout` returns HTTP 503 because deploy `dep-8f2c1a` of `checkout-service` is crash-looping (OOMKilled). Three diagnostics run: storefront health (pass), cart contents (pass), checkout service (fail). The single allowlisted recovery, `roll_back_checkout_service`, rolls the service back to `dep-8e0b47`, streams the Host Whisperer ↔ host exchange into the customer's activity timeline through the `report` callback, and leaves the cart untouched. After verification the error card becomes **Try checkout again**, which reaches order confirmation.
+The incident is a **host outage**, not an application bug. `POST /api/checkout` returns HTTP 503 because deploy `dep-8f2c1a` of `checkout-service` is crash-looping (OOMKilled). Internally, three diagnostics run: storefront health (pass), cart contents (pass), checkout service (fail). Those technical details are not returned to the customer's browser agent. The single allowlisted recovery, `roll_back_checkout_service`, rolls the service back to `dep-8e0b47`, reports only generic support-case progress to the customer, and leaves the cart untouched. After verification the error card becomes **Try checkout again**, which reaches order confirmation.
 
 ## Source map
 

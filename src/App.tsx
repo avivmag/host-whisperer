@@ -156,18 +156,18 @@ function Overview() {
         <div className="hero-copy">
           <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
           <h1>Turn a 500 page into <em>a fix that actually happens.</em></h1>
-          <p>When a website’s host fails, the customer gets a generic error and a dead end. Host Whisperer gives that website a small set of WebMCP tools, so the customer’s agent can diagnose the failure, get permission, repair it with the host, and prove it worked.</p>
+          <p>When a website’s host fails, the customer gets a generic error and a dead end. Host Whisperer gives that website one WebMCP handoff, so the customer’s agent can delegate the technical work and return with a verified answer.</p>
           <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Connect your host</a></div>
-          <dl className="hero-facts"><div><dt>Runtime tools</dt><dd>6</dd></div><div><dt>Bound origins</dt><dd>1</dd></div><div><dt>Credentials in the plugin</dt><dd>0</dd></div><div><dt>Unapproved fixes</dt><dd>0</dd></div></dl>
+          <dl className="hero-facts"><div><dt>Customer handoffs</dt><dd>1</dd></div><div><dt>Bound origins</dt><dd>1</dd></div><div><dt>Credentials in the plugin</dt><dd>0</dd></div><div><dt>Unapproved fixes</dt><dd>0</dd></div></dl>
         </div>
         <aside className="hero-console">
           <div className="console-chrome"><i /><i /><i /><span>operator activity — northstar-commerce-demo</span></div>
           <ol className="console-log">{([
-            ['done', 'get_support_context', 'route /product/aster-h1 · checkout 503'],
-            ['done', 'run_support_diagnostics', '2 checks pass · checkout-service fails'],
-            ['hold', 'prepare_recovery', 'roll_back_checkout_service · awaiting approval'],
-            ['done', 'apply_recovery', 'host rolled back dep-8f2c1a → dep-8e0b47'],
-            ['done', 'verify_recovery', 'checkout returns 200 · cart preserved'],
+            ['done', 'gathering_data', 'approved support signals collected'],
+            ['done', 'filing_report', 'case sent to Host Whisperer'],
+            ['hold', 'awaiting_approval', 'one bounded resolution is ready'],
+            ['done', 'applying_resolution', 'host accepted the request'],
+            ['done', 'verified', 'checkout is available · cart preserved'],
           ] as Array<[string, string, string]>).map(([status, tool, detail]) => <li key={tool} className={status}><i /><div><b>{tool}</b><span>{detail}</span></div></li>)}</ol>
           <div className="console-foot"><ShieldCheck size={14} /> Nothing is repaired until the customer approves it on screen.</div>
         </aside>
@@ -250,12 +250,12 @@ function ConnectHost() {
 
       <section className="studio-panel connect-panel">
         <div className="panel-heading"><div><Download size={16} /><span>Your plugin</span></div><small>step 2</small></div>
-        <p className="connect-copy">One JavaScript file. It contains the WebMCP runtime and your integration settings — the six support tools, the diagnostics they run, and the single recovery they are allowed to propose.</p>
-        <div className="plugin-file"><Code2 size={15} /><div><strong>host-whisperer-plugin.js</strong><span>WebMCP runtime · registerTool × 6 · no credentials</span></div></div>
+        <p className="connect-copy">One JavaScript file. It contains the WebMCP handoff, the diagnostics Host Whisperer may run, and the single recovery it is allowed to propose.</p>
+        <div className="plugin-file"><Code2 size={15} /><div><strong>host-whisperer-plugin.js</strong><span>WebMCP handoff · one support agent · no credentials</span></div></div>
         <button className="primary-button" onClick={() => void download()} disabled={!fingerprint}><Download size={17} /> Download plugin</button>
         {!fingerprint && <p className="prepare-hint">Connect your host to enable the download.</p>}
         <div className="install-tag"><span>Then add this to your pages</span><code>&lt;script type="module" src="/host-whisperer-plugin.js"&gt;&lt;/script&gt;</code><button onClick={() => void copyInstall()}><Copy size={14} /> {copied ? 'Copied' : 'Copy'}</button></div>
-        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>Tools it registers</strong></div><div className="strip-items">{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
+        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>What the support agent handles</strong></div><div className="strip-items">{['Gather safe data', 'File the report', 'Inspect the incident', 'Wait for approval', 'Apply', 'Verify'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
       </section>
     </main><AppFooter label="Host Whisperer" /></div>;
 }
@@ -306,17 +306,17 @@ function ShopDemo() {
       ],
       actions: [{
         id: 'roll_back_checkout_service',
-        label: 'Roll back the checkout service',
-        description: 'Ask Host Whisperer to roll the checkout service back to the last deploy that passed its health checks.',
-        effects: [`Restores deploy ${readService().lastGood}, the last version that passed health checks`, 'Leaves your cart and its items exactly as they are', 'Does not place an order or read your payment details', 'Takes about twenty seconds; the storefront stays online'],
+        label: 'Restore checkout service',
+        description: 'Let Host Whisperer restore the most recent verified version of checkout.',
+        effects: ['Restores the checkout service to its most recent verified version', 'Leaves your cart and its items exactly as they are', 'Does not place an order or read your payment details', 'Keeps the storefront online while the service is restored'],
         run: async (report) => {
           const current = readService();
           const beats: Array<[string, string]> = [
-            ['Host Whisperer connected to Render', 'read-only deploy scope for this one service'],
-            ['Read deploy history', `${current.deploy} failing · ${current.lastGood} last healthy`],
-            ['Read service logs', 'OOMKilled × 14 in the last six minutes'],
-            ['Requested rollback', `target ${current.lastGood}`],
-            ['Host confirmed rollback', 'checkout-service is reporting healthy'],
+            ['Support request accepted', 'The hosting service accepted the bounded request.'],
+            ['Inspection started', 'Host Whisperer is checking the affected service.'],
+            ['Safe resolution selected', 'A developer-approved resolution is available.'],
+            ['Resolution applied', 'The hosting service completed the requested change.'],
+            ['Service responded normally', 'Host Whisperer received a healthy response.'],
           ];
           for (const [label, detail] of beats) { await wait(750); report?.(label, detail); }
           writeService({ healthy: true, deploy: current.lastGood, lastGood: current.lastGood });
@@ -368,7 +368,7 @@ function ShopDemo() {
 
         {checkout === 'placed' && <div className="checkout-success"><Check size={18} /><div><strong>Order confirmed</strong><p>Thanks! Your Aster H1 Headphones are on the way. This is a demonstration store, so no payment was taken.</p></div></div>}
 
-        {installed && checkout === 'failed' && !service.healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>{agentLabel} can work on this</strong><p>Open the dialog beside the error, then ask: <b>“Fix checkout for me.”</b></p></div></div>}
+        {installed && checkout === 'failed' && !service.healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>Host Whisperer can work on this</strong><p>Open the dialog beside the error, then tell Codex: <b>“@Browser ask Host Whisperer to fix checkout.”</b></p></div></div>}
 
         <ul className="assurance-row"><li><Truck size={16} /> Free 2-day delivery</li><li><RotateCcw size={16} /> 30-day returns</li><li><Lock size={16} /> Secure payment</li><li><CreditCard size={16} /> Pay in 4</li></ul>
         <div className="demo-reset-row">
@@ -444,7 +444,7 @@ function StoreAdmin() {
             <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted page and checkout context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Roll back the checkout service after customer approval</span><span><Check size={13} /> Verify checkout before reporting success</span></div>
             <button className={installing ? 'admin-install installing' : 'admin-install'} onClick={install} disabled={installing}><Plug size={16} /> {installing ? 'Deploying plugin to storefront…' : 'Install plugin on storefront'}</button>
           </div>}
-          {installed && <div className="admin-live"><div><span className="admin-live-mark"><Check size={20} /></span><div><strong>Host Whisperer is active</strong><p>Six WebMCP support tools and the customer help dialog are deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={14} /></a></div>}
+          {installed && <div className="admin-live"><div><span className="admin-live-mark"><Check size={20} /></span><div><strong>Host Whisperer is active</strong><p>One WebMCP support handoff and the customer help dialog are deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={14} /></a></div>}
         </section>
 
         <section className="admin-activity">

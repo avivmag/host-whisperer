@@ -11,15 +11,15 @@ This repository exists solely for OpenAI's WebMCP Challenge. The governing objec
 - Branch: `main`
 - Last committed revision: `8e7d33d`
 - The demo rework described below is present as uncommitted changes in `src/App.tsx`, `src/studio.ts`, `src/runtime/index.ts`, `src/styles.css`, both test files, and the documentation.
-- Validation after the rework: `npx tsc -b` clean, 13 tests passed across 3 files, and both builds passed (`dist/assets/index-*.js` and `dist/runtime/host-whisperer.js`, 22.34 kB).
+- Validation after the single-tool delegation change: 13 tests passed across 3 files, and both builds passed (`dist/assets/index-*.js` and `dist/runtime/host-whisperer.js`, 20.84 kB).
 - The rework had not been deployed at the time of the audit.
 
 ## Verified in the browser
 
-Checked at 1440px against `npm run dev`, and the plugin download re-checked against the production build served by `vite preview`:
+Before the latest delegation change, the flow was checked at 1440px against `npm run dev`, and the plugin download was re-checked against the production build served by `vite preview`. The new one-tool handoff is unit- and build-verified but still needs a final run in ChatGPT's in-app browser:
 
 - `/?view=shop` — Checkout produces the 503 card; the agent dialog appears five seconds later, anchored beside the error, and nudges. It falls back to the bottom-right corner at 760px.
-- All six tools are registered and were driven end to end through the real `document.modelContext` API: context → diagnostics → prepare → **apply refused before approval** → approve on the page → apply → verify. The host conversation streams into the activity timeline. The retry then reaches order confirmation.
+- The runtime now registers one high-level tool. The intended sequence is: Codex delegates once → Host Whisperer gathers and inspects privately → **the call waits for visible approval** → approve on the page → Host Whisperer applies and verifies internally → Codex receives only the retry message.
 - `/` — the diagram auto-plays all nine steps; the tone changes to red on failure steps and mint on recovery; the customer's face changes with it.
 - `/?view=integrate` — connecting masks the token to a fingerprint and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the DOM, and not in the downloaded plugin.
 - The production download is one self-contained 23 kB file containing `registerTool` and no credentials.
@@ -32,7 +32,8 @@ Checked at 1440px against `npm run dev`, and the plugin download re-checked agai
 - Animated nine-step inline-SVG flow diagram with auto-play, step list, and prev/next/pause
 - Connect-your-host page: host dropdown, token field, simulated handshake, masked fingerprint, one-file plugin download, install tag
 - Plugin installed by default, so the demo needs no setup; before/after still available in demo controls
-- Six runtime WebMCP tools, registered only by the installed customer runtime
+- One runtime WebMCP delegation tool, registered only by the installed customer runtime
+- Same-call visible approval: `ask_host_whisperer_to_fix_issue` stays pending while Host Whisperer waits for the customer, then applies and verifies internally without another chat message
 - Safe-context filtering and output limits
 - Incident-bound approval, replay prevention, and post-recovery verification
 - Customer-approved escalation preview and URL-fragment packet

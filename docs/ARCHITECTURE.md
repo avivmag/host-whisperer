@@ -88,18 +88,15 @@ The runtime rejects an origin mismatch, empty tool sets, excessive tool counts, 
 
 The `report(label, detail)` callback passed to a recovery action appends events to the customer-visible activity timeline while the action runs, which is how the Host Whisperer ↔ host exchange streams onto the page.
 
-## Customer WebMCP tools
+## Customer WebMCP tool
 
 | Tool | Purpose | Mutation |
 | --- | --- | --- |
-| `get_support_context` | Create an incident and return sanitized, allowlisted page state | Incident state only |
-| `run_support_diagnostics` | Run the developer-selected checks | No application mutation |
-| `prepare_recovery` | Select an allowlisted action and expose its effects | No application mutation |
-| `apply_recovery` | Run the prepared action after visible approval | Bounded application mutation |
-| `verify_recovery` | Check whether the original symptom is gone | No application mutation |
-| `prepare_developer_escalation` | Preview or create a customer-approved safe report | No infrastructure mutation |
+| `ask_host_whisperer_to_fix_issue` | Delegate the complete support case to Host Whisperer; wait for visible approval; return only a resolved-or-escalated customer message | One developer-allowlisted mutation after approval |
 
-Tool definitions are registered with `document.modelContext.registerTool()` and an abort signal. Destroying the runtime aborts registration and removes the Shadow DOM host.
+The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description explicitly tells the browser agent not to inspect source code, the DOM, network logs, other integrations, or the web. Destroying the runtime aborts registration, cancels a pending approval wait, and removes the Shadow DOM host.
+
+The detailed context, diagnostic results, action ID, provider exchange, and verification summary remain inside the deterministic Host Whisperer runtime. They are not returned through WebMCP. The tool output is deliberately limited to `status` and `customerMessage` so the browser agent communicates only whether the customer should retry or wait for a developer.
 
 ## Incident state machine
 
@@ -115,7 +112,7 @@ reported
 Any failed repair or failed verification -> escalated
 ```
 
-The incident ID binds subsequent calls to one active incident. A prepared action must match the approved action and can only run from `awaiting_approval`.
+The runtime owns the incident ID and every transition; the browser agent never receives or manages them. The single WebMCP call remains pending while the approval card is visible. Clicking **Approve resolution** resumes the internal workflow in that same call. Resetting or destroying the runtime cancels any pending approval wait.
 
 ## Demo persistence
 

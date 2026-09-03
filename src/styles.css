@@ -19,7 +19,7 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 
 /* =====================================================================
    SURFACE 1 — HOST WHISPERER
-   Vendor product site: walkthrough, Integration Studio, escalation view.
+   Vendor product site: walkthrough, connect page, escalation view.
    Light technical workbench: sage graph paper, lime signal blocks,
    window chrome, monospace metadata. Nothing here is soft or rounded
    the way the admin console is, and nothing is warm the way the shop is.
@@ -214,21 +214,21 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .panel-heading small { text-align: right; font: 500 10.5px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); }
 
 .field-stack { display: grid; gap: 15px; margin: 18px 0; }
-.config-panel label { display: block; font: 500 11.5px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); }
-.config-panel label small { font-family: 'Inter', sans-serif; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
-.config-panel input, .config-panel select {
+.config-panel label, .connect-panel label { display: block; font: 500 11.5px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); }
+.config-panel label small, .connect-panel label small { font-family: 'Inter', sans-serif; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
+.config-panel input, .config-panel select, .connect-panel input, .connect-panel select {
   display: block; width: 100%; margin-top: 8px; padding: 11px 12px;
   border: 1px solid var(--line-2); border-radius: 9px; background: var(--bg-2); color: var(--text);
   font: 400 14.5px 'JetBrains Mono', monospace; text-transform: none; letter-spacing: normal;
 }
-.config-panel input:focus, .config-panel select:focus { outline: 0; border-color: #7ba90f; box-shadow: 0 0 0 3px rgba(123, 169, 15, .18); }
-.config-panel select {
+.config-panel input:focus, .config-panel select:focus, .connect-panel input:focus, .connect-panel select:focus { outline: 0; border-color: #7ba90f; box-shadow: 0 0 0 3px rgba(123, 169, 15, .18); }
+.config-panel select, .connect-panel select {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%);
   background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
   background-size: 5px 5px; background-repeat: no-repeat;
 }
-.config-panel option { background: #ffffff; color: #14170f; }
+.config-panel option, .connect-panel option { background: #ffffff; color: #14170f; }
 
 .privacy-note { display: flex; gap: 11px; padding: 14px; border: 1px solid #9ed6c9; border-radius: 11px; background: var(--mint-soft); }
 .privacy-note svg { margin-top: 1px; color: var(--mint); }
@@ -558,3 +558,98 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
   .assurance-row { grid-template-columns: 1fr; }
   .hero-facts { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   HOW IT WORKS — the animated flow diagram on the Host Whisperer home.
+   Geometry lives in the SVG; everything here is colour and state.
+   ===================================================================== */
+
+.diagram-section { margin-top: clamp(58px, 8vw, 94px); }
+.diagram-section h2 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24.5px, 3vw, 35.5px); font-weight: 600; letter-spacing: -.03em; margin: 0; }
+.diagram-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); gap: 18px; align-items: start; }
+.diagram-stage { min-width: 0; padding: 12px 12px 0; border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); box-shadow: 0 14px 34px rgba(28, 38, 18, .07); }
+.hw-diagram { display: block; width: 100%; height: auto; }
+
+.hw-diagram .dnode > rect { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.5; transition: fill .4s ease, stroke .4s ease; }
+.hw-diagram .dnode.on > rect { fill: var(--accent-soft); stroke: #a9d431; }
+.hw-diagram.bad .dnode.on > rect { fill: var(--rose-soft); stroke: #e7a49b; }
+.hw-diagram.good .dnode.on > rect { fill: var(--mint-soft); stroke: #9ed6c9; }
+.hw-diagram .dtitle { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 600; fill: var(--text); text-anchor: middle; }
+.hw-diagram .dlabel { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; fill: var(--dim); text-anchor: middle; }
+.hw-diagram .face-bg { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; }
+.hw-diagram .ink { fill: var(--text); }
+.hw-diagram .line { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; }
+.hw-diagram .bot rect { fill: #fff; stroke: var(--text); stroke-width: 2; }
+.hw-diagram .bot circle { fill: var(--text); }
+.hw-diagram .dlane rect { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; transition: fill .35s ease, stroke .35s ease; }
+.hw-diagram .dlane text { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: .08em; fill: var(--dim); text-anchor: middle; }
+.hw-diagram .dlane.on rect { fill: var(--accent-fill); stroke: var(--accent); }
+.hw-diagram .dlane.on text { fill: var(--on-accent); font-weight: 700; }
+.hw-diagram .cloud > * { fill: #3f4a34; stroke: none; transition: fill .4s ease; }
+.hw-diagram .dnode.on .cloud > * { fill: var(--accent); }
+.hw-diagram.bad .dnode.on .cloud > * { fill: var(--rose); }
+
+.hw-diagram .dedge { fill: none; stroke: var(--line-2); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 7 8; transition: stroke .35s ease, stroke-width .35s ease; }
+.hw-diagram .dedge.on { stroke: var(--accent); stroke-width: 3.4; stroke-dasharray: none; }
+.hw-diagram .dedge.on.bad { stroke: var(--rose); }
+.hw-diagram .dedge.on.good { stroke: var(--mint); }
+.hw-diagram .ddot { fill: var(--accent); }
+.hw-diagram .ddot.bad { fill: var(--rose); }
+.hw-diagram .ddot.good { fill: var(--mint); }
+
+.diagram-controls { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0 14px; }
+.diagram-controls button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--panel); color: var(--text); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.diagram-controls button:hover { border-color: var(--text); }
+.diagram-controls .play { padding: 8px 16px; }
+
+.diagram-steps { list-style: none; display: grid; gap: 3px; margin: 0; padding: 10px; border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); box-shadow: 0 14px 34px rgba(28, 38, 18, .07); }
+.diagram-steps button { display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; background: transparent; color: var(--faint); text-align: left; cursor: pointer; }
+.diagram-steps li.done button { color: var(--dim); }
+.diagram-steps li.on button { background: var(--accent-soft); color: var(--text); }
+.diagram-steps .dstep-num { padding-top: 2px; font: 500 11.5px 'JetBrains Mono', monospace; letter-spacing: .1em; }
+.diagram-steps strong { font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; }
+.diagram-steps p { grid-column: 2; margin: 5px 0 2px; font-size: 13.5px; line-height: 1.55; color: var(--dim); }
+
+@media (max-width: 1040px) { .diagram-layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* =====================================================================
+   CONNECT YOUR HOST — hosting credentials and the single plugin file.
+   ===================================================================== */
+
+.connect-grid { flex: 1; display: grid; align-content: start; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; width: min(1060px, 94vw); margin: 26px auto 56px; }
+.connect-panel { display: flex; flex-direction: column; padding: 18px 20px 20px; }
+.connect-panel .primary-button { width: 100%; margin-top: 16px; padding: 13px; }
+.connect-copy { margin: 16px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--dim); }
+.plugin-file { display: flex; align-items: center; gap: 11px; margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-2); }
+.plugin-file > svg { color: var(--accent); }
+.plugin-file strong { display: block; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+.plugin-file span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--dim); }
+
+.connected-state { margin-top: 16px; padding: 14px; border: 1px solid #bcdc70; border-radius: 12px; background: var(--accent-soft); animation: hw-pop .32s ease-out; }
+.connected-head { display: flex; align-items: center; gap: 11px; }
+.connected-head > svg { color: var(--accent); }
+.connected-head strong { display: block; font-size: 15px; }
+.connected-head span { display: block; margin-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--dim); }
+.connected-state ul { list-style: none; display: grid; gap: 7px; margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid #bcdc70; }
+.connected-state li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--accent); }
+
+.install-tag { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-2); }
+.install-tag > span { display: block; font: 500 10.5px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .12em; color: var(--faint); }
+.install-tag code { display: block; margin: 9px 0 11px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #2f3627; }
+.install-tag button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--panel); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.install-tag button:hover { border-color: var(--text); }
+.connect-panel .capability-strip { margin-top: 16px; }
+
+/* =====================================================================
+   STOREFRONT — the 5xx card. This must read as a server fault instantly.
+   ===================================================================== */
+
+.checkout-error { display: block; }
+.error-head { display: flex; align-items: center; gap: 13px; }
+.error-head > svg { flex: none; color: #b04a26; }
+.error-head strong { font-family: 'JetBrains Mono', monospace; font-size: 31px; font-weight: 700; line-height: 1; letter-spacing: -.02em; color: #b04a26; }
+.error-head span { display: block; margin-top: 5px; font-size: 15.5px; font-weight: 600; color: var(--sh-ink); }
+.error-trace { margin: 13px 0 0; padding: 11px 12px; overflow-x: auto; border-radius: 5px; background: #f6e2d9; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: #8f3d1c; }
+.hw-diagram.bad .dlane.on rect { fill: var(--rose); stroke: var(--rose); }
+.hw-diagram.good .dlane.on rect { fill: var(--mint); stroke: var(--mint); }
+.hw-diagram.bad .dlane.on text, .hw-diagram.good .dlane.on text { fill: #fff; }

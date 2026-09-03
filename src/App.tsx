@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Activity, ArrowRight, ArrowUpRight, Bell, Bot, Boxes, Check, ChevronRight, CircleAlert, Clock, Code2, Copy, CreditCard, Download, Gauge, LayoutDashboard, Lock, PackageCheck, Plug, RefreshCw, RotateCcw, Search, Settings, ShieldCheck, ShoppingBag, Sparkles, Star, TerminalSquare, Truck, UserRound, Wrench } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Activity, ArrowRight, ArrowUpRight, Bell, Bot, Boxes, Check, ChevronLeft, ChevronRight, CircleAlert, Clock, Code2, Copy, CreditCard, Download, Gauge, KeyRound, LayoutDashboard, Lock, PackageCheck, Pause, Play, Plug, RefreshCw, RotateCcw, Search, ServerCrash, Settings, ShieldCheck, ShoppingBag, Sparkles, Star, TerminalSquare, Truck, UserRound } from 'lucide-react';
 import { createHostWhispererRuntime } from './runtime';
-import { generatedAdapter, getStudioSnapshot, hydrateStudio, prepareStudioBundle, subscribeStudio, updateStudioProfile } from './studio';
+import { buildPluginFile, getStudioSnapshot, hydrateStudio, prepareStudioBundle, subscribeStudio, updateStudioProfile } from './studio';
 import { providers, type EscalationPacket, type ProviderId } from './types';
 
 const providerNames: Record<ProviderId, string> = { aws: 'AWS', gcp: 'Google Cloud', cloudflare: 'Cloudflare', vercel: 'Vercel', netlify: 'Netlify', render: 'Render', shopify: 'Shopify' };
+const tokenPrefixes: Record<ProviderId, string> = { aws: 'akia', gcp: 'gcp', cloudflare: 'cf', vercel: 'vc', netlify: 'ntl', render: 'rnd', shopify: 'shpat' };
 const demoInstallKey = 'host-whisperer-northstar-installed';
 const demoBundleKey = 'host-whisperer-northstar-bundle-ready';
+const agentLabel = 'Codex';
 
 function downloadText(filename: string, value: string, type = 'text/javascript') {
   const url = URL.createObjectURL(new Blob([value], { type }));
@@ -14,155 +16,393 @@ function downloadText(filename: string, value: string, type = 'text/javascript')
   anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url);
 }
 
-/* ------------------------------------------------------------------ */
-/* Surface 1 — Host Whisperer: the vendor's own dark operator console.  */
-/* ------------------------------------------------------------------ */
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function AppHeader({ section }: { section: string }) {
-  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span className="brand-name">Host Whisperer</span></a><nav className="topbar-nav"><a href="/">Walkthrough</a><a href="/?view=integrate">Integration Studio</a><a href="/?view=shop">Live demo</a></nav><span className="topbar-section">{section}</span></header>;
+  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span className="brand-name">Host Whisperer</span></a><nav className="topbar-nav"><a href="/">How it works</a><a href="/?view=integrate">Connect your host</a><a href="/?view=shop">Live demo</a></nav><span className="topbar-section">{section}</span></header>;
 }
 
 function AppFooter({ label }: { label: string }) {
   return <footer className="hw-footer"><span className="brand-glyph small">hw</span><span className="hw-footer-name">{label}</span><span className="hw-footer-note">Developers define the boundaries. Customers stay in control.</span></footer>;
 }
 
-const operatorLog: Array<[string, string, string]> = [
-  ['done', 'get_support_context', 'route /product/aster-h1 · cart schema v1'],
-  ['done', 'run_support_diagnostics', '2 checks pass · 1 check fails'],
-  ['hold', 'prepare_recovery', 'rebuild_cart_session · awaiting approval'],
-  ['done', 'apply_recovery', 'cart session migrated v1 → v2'],
-  ['done', 'verify_recovery', 'checkout ready · item preserved'],
+/* ------------------------------------------------------------------ */
+/* Surface 1 — Host Whisperer: how it works, as an animated diagram.    */
+/* ------------------------------------------------------------------ */
+
+type EdgeId = 'req' | 'host' | 'mcp' | 'hw' | 'host2';
+type NodeId = 'customer' | 'website' | 'host' | 'hw';
+type Mood = 'neutral' | 'angry' | 'thinking' | 'happy';
+
+/* Geometry lives once in <defs>; every line and every travelling dot
+   references it, so the drawing and the motion can never drift apart. */
+const edgeGeometry: Record<EdgeId, string> = {
+  req: 'M258,224 H430',
+  host: 'M680,224 C762,224 784,245 852,245',
+  mcp: 'M258,316 H430',
+  hw: 'M555,382 C555,432 596,452 660,452',
+  host2: 'M860,510 C932,500 954,418 954,330',
+};
+
+type DiagramStep = { title: string; body: string; edges: Array<{ id: EdgeId; back?: boolean }>; nodes: NodeId[]; tone?: 'bad' | 'good'; mood: Mood };
+
+const diagramSteps: DiagramStep[] = [
+  { title: 'The customer asks for something', body: 'An ordinary request — add to cart, check out, sign in — goes to the website over its REST API.', edges: [{ id: 'req' }], nodes: ['customer', 'website'], mood: 'neutral' },
+  { title: 'The website asks the host', body: 'To answer, the website calls the service running on its host.', edges: [{ id: 'host' }], nodes: ['website', 'host'], mood: 'neutral' },
+  { title: 'The host fails', body: 'The service is unhealthy — a bad deploy, an exhausted instance — and answers with a 5xx.', edges: [{ id: 'host', back: true }], nodes: ['host'], tone: 'bad', mood: 'neutral' },
+  { title: 'The failure reaches the customer', body: 'The website has nothing better to show than a generic error page.', edges: [{ id: 'req', back: true }], nodes: ['website', 'customer'], tone: 'bad', mood: 'neutral' },
+  { title: 'The customer is stuck', body: 'No context, no fix, nobody to ask. This is where most journeys quietly end.', edges: [], nodes: ['customer'], tone: 'bad', mood: 'angry' },
+  { title: 'The agent steps in', body: 'Their browser agent reads the safe page context and calls the WebMCP tools this website registered for exactly this situation.', edges: [{ id: 'mcp' }], nodes: ['customer', 'website'], mood: 'thinking' },
+  { title: 'Host Whisperer works the problem', body: 'On the other side of WebMCP, Host Whisperer talks to the host: read the deploys, read the logs, propose one bounded fix, apply it only after the customer approves.', edges: [{ id: 'hw' }, { id: 'host2' }], nodes: ['hw', 'host'], mood: 'thinking' },
+  { title: 'The answer comes back', body: 'Either the fix is applied and verified, or the customer gets an honest handoff — a sanitized report a human can act on.', edges: [{ id: 'hw', back: true }, { id: 'mcp', back: true }], nodes: ['website', 'customer'], tone: 'good', mood: 'thinking' },
+  { title: 'The customer is unblocked', body: 'They retry, it works, and nobody had to open a support ticket.', edges: [], nodes: ['customer'], tone: 'good', mood: 'happy' },
 ];
 
+/* Each node is its own component so an illustrated <image href="…"> can
+   replace any one of them later without touching the wiring. */
+function CustomerNode({ mood, on }: { mood: Mood; on: boolean }) {
+  return <g className={`dnode ${on ? 'on' : ''}`}>
+    <rect x="48" y="196" width="210" height="176" rx="20" />
+    <circle className="face-bg" cx="108" cy="252" r="30" />
+    <circle className="ink" cx="98" cy="245" r="3.2" /><circle className="ink" cx="118" cy="245" r="3.2" />
+    {mood === 'neutral' && <path className="line" d="M98,264 H118" />}
+    {mood === 'happy' && <path className="line" d="M95,258 Q108,270 121,258" />}
+    {mood === 'angry' && <><path className="line" d="M91,236 L104,241" /><path className="line" d="M125,236 L112,241" /><path className="line" d="M96,267 Q108,257 120,267" /></>}
+    {mood === 'thinking' && <><path className="line" d="M99,264 H115" /><circle className="ink" cx="140" cy="222" r="2.4" /><circle className="ink" cx="149" cy="212" r="3.2" /><circle className="ink" cx="160" cy="200" r="4.2" /></>}
+    <g className="bot"><rect x="172" y="230" width="50" height="44" rx="13" /><circle cx="187" cy="251" r="3.8" /><circle cx="207" cy="251" r="3.8" /><path className="line" d="M197,230 V218" /><circle cx="197" cy="214" r="4" /></g>
+    <text className="dlabel" x="153" y="348">Customer + agent</text>
+  </g>;
+}
+
+function WebsiteNode({ on, lane }: { on: boolean; lane: 'rest' | 'mcp' | null }) {
+  return <g className={`dnode ${on ? 'on' : ''}`}>
+    <rect x="430" y="132" width="250" height="250" rx="20" />
+    <text className="dtitle" x="555" y="168">Website</text>
+    <g className={`dlane ${lane === 'rest' ? 'on' : ''}`}><rect x="452" y="186" width="206" height="76" rx="13" /><text x="555" y="231">REST API</text></g>
+    <g className={`dlane mcp ${lane === 'mcp' ? 'on' : ''}`}><rect x="452" y="278" width="206" height="76" rx="13" /><text x="555" y="323">WebMCP</text></g>
+  </g>;
+}
+
+function HostNode({ on, provider }: { on: boolean; provider: string }) {
+  return <g className={`dnode ${on ? 'on' : ''}`}>
+    <rect x="852" y="160" width="204" height="170" rx="20" />
+    <g className="cloud"><circle cx="928" cy="234" r="20" /><circle cx="958" cy="223" r="27" /><circle cx="989" cy="236" r="18" /><rect x="911" y="236" width="94" height="24" rx="12" /></g>
+    <text className="dtitle" x="954" y="298">Host</text>
+    <text className="dlabel" x="954" y="318">{provider}</text>
+  </g>;
+}
+
+function WhispererNode({ on }: { on: boolean }) {
+  return <g className={`dnode hw ${on ? 'on' : ''}`}>
+    <rect x="560" y="452" width="300" height="150" rx="20" />
+    <text className="dtitle" x="710" y="500">Host Whisperer + agent</text>
+    <text className="dlabel" x="710" y="527">reads deploys · reads logs</text>
+    <text className="dlabel" x="710" y="547">proposes one bounded fix</text>
+    <text className="dlabel" x="710" y="567">never without approval</text>
+  </g>;
+}
+
+function FlowDiagram() {
+  const reduceMotion = useMemo(() => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches, []);
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(!reduceMotion);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => setIndex((value) => (value + 1) % diagramSteps.length), 3400);
+    return () => window.clearInterval(timer);
+  }, [playing]);
+
+  const step = diagramSteps[index];
+  const activeEdges = new Map(step.edges.map((edge) => [edge.id, edge] as const));
+  const on = (node: NodeId) => step.nodes.includes(node);
+  const lane = activeEdges.has('req') ? 'rest' as const : activeEdges.has('mcp') || activeEdges.has('hw') ? 'mcp' as const : null;
+  const tone = step.tone ?? '';
+
+  return <section className="diagram-section">
+    <div className="section-head"><div className="section-kicker">How it works</div><h2>One failure, seen from every side</h2></div>
+    <div className="diagram-layout">
+      <div className="diagram-stage">
+        <svg viewBox="0 0 1100 640" className={`hw-diagram ${tone}`} role="img" aria-label={`Step ${index + 1} of ${diagramSteps.length}. ${step.title}. ${step.body}`}>
+          <defs>{(Object.entries(edgeGeometry) as Array<[EdgeId, string]>).map(([id, d]) => <path key={id} id={`edge-${id}`} d={d} />)}</defs>
+          {(Object.keys(edgeGeometry) as EdgeId[]).map((id) => <use key={id} href={`#edge-${id}`} className={`dedge ${activeEdges.has(id) ? `on ${tone}` : ''}`} />)}
+          {!reduceMotion && step.edges.map((edge) => <circle key={`${index}-${edge.id}`} className={`ddot ${tone}`} r="7">
+            <animateMotion dur="1.5s" repeatCount="indefinite" calcMode="linear" keyPoints={edge.back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#edge-${edge.id}`} /></animateMotion>
+          </circle>)}
+          <CustomerNode mood={step.mood} on={on('customer')} />
+          <WebsiteNode on={on('website')} lane={lane} />
+          <HostNode on={on('host')} provider={providerNames[providers[index % providers.length]]} />
+          <WhispererNode on={on('hw')} />
+        </svg>
+        <div className="diagram-controls">
+          <button onClick={() => { setPlaying(false); setIndex((value) => (value + diagramSteps.length - 1) % diagramSteps.length); }} aria-label="Previous step"><ChevronLeft size={16} /></button>
+          <button className="play" onClick={() => setPlaying((value) => !value)} aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? 'Pause' : 'Play'}</button>
+          <button onClick={() => { setPlaying(false); setIndex((value) => (value + 1) % diagramSteps.length); }} aria-label="Next step"><ChevronRight size={16} /></button>
+        </div>
+      </div>
+      <ol className="diagram-steps">
+        {diagramSteps.map((item, position) => <li key={item.title} className={position === index ? 'on' : position < index ? 'done' : ''}>
+          <button onClick={() => { setPlaying(false); setIndex(position); }}><span className="dstep-num">{String(position + 1).padStart(2, '0')}</span><strong>{item.title}</strong>{position === index && <p>{item.body}</p>}</button>
+        </li>)}
+      </ol>
+    </div>
+  </section>;
+}
+
 function Overview() {
-  const installed = localStorage.getItem(demoInstallKey) === 'true';
-  const steps: Array<[string, string, string]> = [
-    ['01', 'A customer hits an error', 'The existing website fails normally. Before installation, no Host Whisperer interface or developer link is present.'],
-    ['02', 'The developer defines safe tools', 'In the separate Integration Studio, the developer chooses exactly what the AI may inspect, repair, and verify.'],
-    ['03', 'The store admin installs it', 'The generated package moves to Northstar Admin, where the store owner applies it to the customer website.'],
-    ['04', 'ChatGPT diagnoses and repairs', 'The customer asks in plain English, approves the bounded fix, and watches every tool call happen live.'],
-  ];
-  const surfaces: Array<[string, string, string, string]> = [
-    ['Customer', 'Northstar Market', 'Shop the store and run into the checkout failure.', '/?view=shop'],
-    ['Operator', 'Host Whisperer Studio', 'Define the safe tools and generate the plugin.', '/?view=integrate'],
-    ['Store developer', 'Northstar Admin', 'Review the package and install it on the storefront.', '/?view=admin'],
-  ];
-  return <div className="app-shell hw-home"><AppHeader section="Product walkthrough" />
+  return <div className="app-shell hw-home"><AppHeader section="How it works" />
     <main className="overview">
       <section className="overview-hero">
         <div className="hero-copy">
           <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
-          <h1>Turn website errors into <em>guided AI recovery.</em></h1>
-          <p>Host Whisperer generates a safe support layer for an existing website. Developers set the boundaries once; customers can then ask ChatGPT to diagnose and repair supported problems without opening a ticket.</p>
-          <div className="hero-actions"><a className="primary-link" href="/?view=integrate"><Wrench size={16} /> Open Integration Studio <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=shop"><ShoppingBag size={16} /> View Northstar website</a></div>
-          <dl className="hero-facts"><div><dt>Runtime tools</dt><dd>6</dd></div><div><dt>Bound origins</dt><dd>1</dd></div><div><dt>Credentials exposed</dt><dd>0</dd></div><div><dt>Unapproved fixes</dt><dd>0</dd></div></dl>
+          <h1>Turn a 500 page into <em>a fix that actually happens.</em></h1>
+          <p>When a website’s host fails, the customer gets a generic error and a dead end. Host Whisperer gives that website a small set of WebMCP tools, so the customer’s agent can diagnose the failure, get permission, repair it with the host, and prove it worked.</p>
+          <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Connect your host</a></div>
+          <dl className="hero-facts"><div><dt>Runtime tools</dt><dd>6</dd></div><div><dt>Bound origins</dt><dd>1</dd></div><div><dt>Credentials in the plugin</dt><dd>0</dd></div><div><dt>Unapproved fixes</dt><dd>0</dd></div></dl>
         </div>
         <aside className="hero-console">
           <div className="console-chrome"><i /><i /><i /><span>operator activity — northstar-commerce-demo</span></div>
-          <ol className="console-log">{operatorLog.map(([status, tool, detail]) => <li key={tool} className={status}><i /><div><b>{tool}</b><span>{detail}</span></div></li>)}</ol>
+          <ol className="console-log">{([
+            ['done', 'get_support_context', 'route /product/aster-h1 · checkout 503'],
+            ['done', 'run_support_diagnostics', '2 checks pass · checkout-service fails'],
+            ['hold', 'prepare_recovery', 'roll_back_checkout_service · awaiting approval'],
+            ['done', 'apply_recovery', 'host rolled back dep-8f2c1a → dep-8e0b47'],
+            ['done', 'verify_recovery', 'checkout returns 200 · cart preserved'],
+          ] as Array<[string, string, string]>).map(([status, tool, detail]) => <li key={tool} className={status}><i /><div><b>{tool}</b><span>{detail}</span></div></li>)}</ol>
           <div className="console-foot"><ShieldCheck size={14} /> Nothing is repaired until the customer approves it on screen.</div>
         </aside>
       </section>
 
-      <section className="walkthrough">
-        <div className="section-head"><div className="section-kicker">The complete walkthrough</div><h2>From a dead end to a verified recovery</h2></div>
-        <ol className="step-rail">{steps.map(([number, title, body]) => <li key={number}><span className="step-num">{number}</span><h3>{title}</h3><p>{body}</p></li>)}</ol>
-      </section>
+      <FlowDiagram />
 
       <section className="webmcp-explainer">
         <div className="explainer-mark"><Bot size={22} /></div>
-        <div className="explainer-body"><h2>WebMCP lives in the installed plugin</h2><p>Host Whisperer itself is a normal developer tool. It generates an adapter that registers safe support tools on the customer’s website. When that website is open in ChatGPT’s browser, the agent can discover those tools and help with the live problem.</p></div>
+        <div className="explainer-body"><h2>WebMCP lives in the installed plugin</h2><p>Host Whisperer is a normal developer tool. It generates one JavaScript file that registers the support tools on your customer-facing pages. When a customer opens that page in an agent-capable browser, the agent discovers those tools and can work the live problem with them.</p></div>
         <a className="explainer-link" href="/?view=shop">See the customer website <ArrowRight size={15} /></a>
       </section>
 
       <section className="surface-switcher">
-        <div className="section-kicker">Three surfaces, three audiences</div>
-        <div className="surface-grid">{surfaces.map(([role, name, copy, href]) => <a key={name} className="surface-card" href={href}><span className="surface-role">{role}</span><strong>{name}</strong><p>{copy}</p><em>Open<ArrowUpRight size={14} /></em></a>)}</div>
+        <div className="section-kicker">Two surfaces, two audiences</div>
+        <div className="surface-grid">{([
+          ['Customer', 'Northstar Market', 'Hit the checkout outage and watch the agent resolve it.', '/?view=shop'],
+          ['Developer', 'Connect your host', 'Link your hosting account and download the plugin.', '/?view=integrate'],
+        ] as Array<[string, string, string, string]>).map(([role, name, copy, href]) => <a key={name} className="surface-card" href={href}><span className="surface-role">{role}</span><strong>{name}</strong><p>{copy}</p><em>Open<ArrowUpRight size={14} /></em></a>)}</div>
       </section>
-
-      <section className="demo-state"><div className="demo-state-dot" data-on={installed}><i /></div><div><strong>Current browser demo state</strong><span>{installed ? 'Plugin installed on Northstar Market' : 'Northstar Market has no plugin installed'}</span></div><a href="/?view=shop">Open the customer website <ArrowRight size={14} /></a></section>
     </main><AppFooter label="Host Whisperer" /></div>;
 }
 
-function Studio() {
+/* ------------------------------------------------------------------ */
+/* Surface 2 — Connect your host and download the plugin.               */
+/* ------------------------------------------------------------------ */
+
+const grantedScopes = ['Read deploy history', 'Read service logs and health', 'Roll back to a previous deploy'];
+
+function ConnectHost() {
   const profile = useSyncExternalStore(subscribeStudio, getStudioSnapshot, getStudioSnapshot);
-  const code = useMemo(() => generatedAdapter(profile), [profile]);
+  /* The token lives here and nowhere else: it is never persisted, never
+     sent, and never written into the file the developer downloads. */
+  const [token, setToken] = useState('');
+  const [fingerprint, setFingerprint] = useState('');
+  const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [sentToAdmin, setSentToAdmin] = useState(() => localStorage.getItem(demoBundleKey) === 'true');
 
   useEffect(() => { void hydrateStudio(); }, []);
 
   const update = (input: Parameters<typeof updateStudioProfile>[0]) => void updateStudioProfile(input).catch((error) => window.alert(error instanceof Error ? error.message : String(error)));
-  const copyInstall = async () => {
-    await navigator.clipboard.writeText(`<script type="module" src="/support/host-whisperer-adapter.js"></script>`);
-    setCopied(true); window.setTimeout(() => setCopied(false), 1600);
-  };
-  const sendToAdmin = () => {
-    setSending(true);
+
+  const connect = () => {
+    if (token.trim().length < 8) { window.alert('Enter the API token for your host to connect.'); return; }
+    setConnecting(true);
     window.setTimeout(() => {
+      setFingerprint(`${tokenPrefixes[profile.provider]}_${'•'.repeat(6)}${token.trim().slice(-4)}`);
+      setToken('');
+      setConnecting(false);
+      void prepareStudioBundle();
       localStorage.setItem(demoBundleKey, 'true');
-      setSentToAdmin(true);
-      setSending(false);
     }, 1500);
   };
-  const lines = code.split('\n');
 
-  return <div className="app-shell hw-studio"><AppHeader section="Developer integration" />
+  const download = async () => downloadText('host-whisperer-plugin.js', await buildPluginFile(profile));
+  const copyInstall = async () => {
+    await navigator.clipboard?.writeText('<script type="module" src="/host-whisperer-plugin.js"></script>');
+    setCopied(true); window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  return <div className="app-shell hw-studio"><AppHeader section="Developer setup" />
     <div className="integration-intro">
-      <div><div className="eyebrow"><Plug size={14} /> Integration Studio</div><h1>Configure the support boundary</h1><p>This developer-only page generates the adapter that will be added to your website. Nothing is installed until you review and prepare the plugin.</p></div>
-      <div className="intro-meta"><span className="intro-role">Developer configuration</span><span className="intro-build">playbook · {profile.playbook}</span></div>
+      <div><div className="eyebrow"><Plug size={14} /> Setup</div><h1>Connect your host</h1><p>Link the hosting account that runs your website, then drop one file into it. That file is what registers the WebMCP support tools for your customers.</p></div>
+      <div className="intro-meta"><span className="intro-role">Developer configuration</span><span className="intro-build">{fingerprint ? 'connected' : 'not connected'}</span></div>
     </div>
-    <main className="studio-grid">
-      <section className="studio-panel config-panel">
-        <div className="panel-heading"><div><Wrench size={16} /><span>Integration profile</span></div><small>developer configuration</small></div>
+
+    <main className="connect-grid">
+      <section className="studio-panel connect-panel">
+        <div className="panel-heading"><div><KeyRound size={16} /><span>Hosting account</span></div><small>step 1</small></div>
         <div className="field-stack">
-          <label>Application name<input value={profile.appName} onChange={(event) => update({ appName: event.target.value })} /></label>
-          <label>Allowed website origin<input key={profile.allowedOrigin} defaultValue={profile.allowedOrigin} onBlur={(event) => update({ allowedOrigin: event.target.value })} /></label>
-          <label>Hosting provider <small>used only as escalation context</small><select value={profile.provider} onChange={(event) => update({ provider: event.target.value as ProviderId })}>{providers.map((provider) => <option key={provider} value={provider}>{providerNames[provider]}</option>)}</select></label>
-          <label>Verified playbook<select value={profile.playbook} onChange={(event) => update({ playbook: event.target.value as 'commerce-cart' })}><option value="commerce-cart">Commerce · broken cart session</option></select></label>
+          <label>Your website origin<input key={profile.allowedOrigin} defaultValue={profile.allowedOrigin} onBlur={(event) => update({ allowedOrigin: event.target.value })} /></label>
+          <label>Host<select value={profile.provider} onChange={(event) => update({ provider: event.target.value as ProviderId })}>{providers.map((provider) => <option key={provider} value={provider}>{providerNames[provider]}</option>)}</select></label>
+          <label>API token<input type="password" autoComplete="off" spellCheck={false} placeholder={`${tokenPrefixes[profile.provider]}_…`} value={token} onChange={(event) => setToken(event.target.value)} /></label>
         </div>
-        <div className="privacy-note"><ShieldCheck size={18} /><div><strong>Customer-safe boundary</strong><p>The generated adapter excludes provider credentials, service references, payment data, URL queries, and unrestricted scripts.</p></div></div>
-        <button className="primary-button" onClick={() => void prepareStudioBundle()}><PackageCheck size={17} /> Generate support plugin</button>
+        <div className="privacy-note"><Lock size={18} /><div><strong>Where this token goes</strong><p>It is sent to Host Whisperer’s servers over TLS and stays there. It is never stored in your browser, and it never appears in the plugin you download — open the file and check.</p></div></div>
+        {!fingerprint
+          ? <button className={`primary-button ${connecting ? 'installing' : ''}`} onClick={connect} disabled={connecting}><Plug size={17} /> {connecting ? `Connecting to ${providerNames[profile.provider]}…` : `Connect ${providerNames[profile.provider]}`}</button>
+          : <div className="connected-state"><div className="connected-head"><Check size={18} /><div><strong>{providerNames[profile.provider]} connected</strong><span>{fingerprint}</span></div></div><ul>{grantedScopes.map((scope) => <li key={scope}><Check size={13} /> {scope}</li>)}</ul></div>}
       </section>
 
-      <section className="studio-panel code-panel">
-        <div className="code-chrome"><span className="chrome-dots"><i /><i /><i /></span><span className="chrome-title"><Code2 size={14} /> Generated universal adapter</span><span className="language">JavaScript · ESM</span></div>
-        <div className="code-body"><ol className="code-gutter" aria-hidden="true">{lines.map((_, index) => <li key={index}>{index + 1}</li>)}</ol><pre>{code}</pre></div>
-        <div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={15} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={15} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={15} /> {copied ? 'Copied' : 'Install tag'}</button></div>
-        {!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before exporting it.</p>}
-        {profile.bundlePrepared && !sentToAdmin && <button className={`demo-install-button ${sending ? 'installing' : ''}`} onClick={sendToAdmin} disabled={sending}><PackageCheck size={17} /> {sending ? 'Preparing package for Northstar…' : 'Send package to Northstar Admin'}</button>}
-        {sentToAdmin && <div className="install-complete"><Check size={18} /><div><strong>Integration package is ready</strong><span>Host Whisperer generated the files; the store owner must install them.</span></div><a href="/?view=admin">Open Northstar Admin <ArrowRight size={14} /></a></div>}
+      <section className="studio-panel connect-panel">
+        <div className="panel-heading"><div><Download size={16} /><span>Your plugin</span></div><small>step 2</small></div>
+        <p className="connect-copy">One JavaScript file. It contains the WebMCP runtime and your integration settings — the six support tools, the diagnostics they run, and the single recovery they are allowed to propose.</p>
+        <div className="plugin-file"><Code2 size={15} /><div><strong>host-whisperer-plugin.js</strong><span>WebMCP runtime · registerTool × 6 · no credentials</span></div></div>
+        <button className="primary-button" onClick={() => void download()} disabled={!fingerprint}><Download size={17} /> Download plugin</button>
+        {!fingerprint && <p className="prepare-hint">Connect your host to enable the download.</p>}
+        <div className="install-tag"><span>Then add this to your pages</span><code>&lt;script type="module" src="/host-whisperer-plugin.js"&gt;&lt;/script&gt;</code><button onClick={() => void copyInstall()}><Copy size={14} /> {copied ? 'Copied' : 'Copy'}</button></div>
+        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>Tools it registers</strong></div><div className="strip-items">{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
       </section>
-
-      <section className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>Generated customer tools</strong></div><div className="strip-items">{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></section>
-    </main><AppFooter label="Host Whisperer Studio" /></div>;
+    </main><AppFooter label="Host Whisperer" /></div>;
 }
 
-type Cart = { schemaVersion: number; items: Array<{ sku: string; name: string; price: number; quantity: number }> };
+/* ------------------------------------------------------------------ */
+/* Surface 3 — Northstar Market: the customer-facing retail storefront. */
+/* ------------------------------------------------------------------ */
+
+type Cart = { items: Array<{ sku: string; name: string; price: number; quantity: number }> };
+type Service = { healthy: boolean; deploy: string; lastGood: string };
 const cartKey = 'northstar-demo-cart';
-const brokenCart = (): Cart => ({ schemaVersion: 1, items: [{ sku: 'ASTER-H1', name: 'Aster H1 Headphones', price: 149, quantity: 1 }] });
-const readCart = () => { try { return JSON.parse(localStorage.getItem(cartKey) || '') as Cart; } catch { const cart = brokenCart(); localStorage.setItem(cartKey, JSON.stringify(cart)); return cart; } };
+const serviceKey = 'northstar-demo-service';
+const requestId = '7f31c9';
+const fullCart = (): Cart => ({ items: [{ sku: 'ASTER-H1', name: 'Aster H1 Headphones', price: 149, quantity: 1 }] });
+const brokenService = (): Service => ({ healthy: false, deploy: 'dep-8f2c1a', lastGood: 'dep-8e0b47' });
+const readCart = () => { try { return JSON.parse(localStorage.getItem(cartKey) || '') as Cart; } catch { const cart = fullCart(); localStorage.setItem(cartKey, JSON.stringify(cart)); return cart; } };
+const readService = () => { try { return JSON.parse(localStorage.getItem(serviceKey) || '') as Service; } catch { const service = brokenService(); localStorage.setItem(serviceKey, JSON.stringify(service)); return service; } };
+const writeService = (service: Service) => localStorage.setItem(serviceKey, JSON.stringify(service));
+
+function ShopDemo() {
+  const [cart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) localStorage.setItem(cartKey, JSON.stringify(fullCart())); return readCart(); });
+  const [service, setService] = useState<Service>(() => { if (!localStorage.getItem(serviceKey)) writeService(brokenService()); return readService(); });
+  const [checkout, setCheckout] = useState<'idle' | 'failed' | 'placed'>('idle');
+  const [helpArmed, setHelpArmed] = useState(false);
+  /* The plugin ships installed: part one of the demo needs no setup. */
+  const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) !== 'false');
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  const tryCheckout = () => { if (readService().healthy) { setCheckout('placed'); return; } setCheckout('failed'); setHelpArmed(true); };
+
+  useEffect(() => {
+    const refresh = () => setService(readService());
+    window.addEventListener('hostwhisperer:service-restored', refresh);
+    if (!installed || !helpArmed) return () => window.removeEventListener('hostwhisperer:service-restored', refresh);
+    const runtime = createHostWhispererRuntime({
+      integrationId: 'northstar-commerce-demo', appName: 'Northstar Shop', allowedOrigin: location.origin, providerHint: 'render', studioUrl: `${location.origin}/?view=incident`,
+      agentLabel, revealDelayMs: 5000, anchorTo: () => errorRef.current,
+      getContext: () => {
+        const current = readService();
+        return { route: location.pathname, appVersion: '2.4.0', checkoutStatus: current.healthy ? 200 : 503, lastErrorCode: current.healthy ? 'NONE' : 'CHECKOUT_SERVICE_UNAVAILABLE', failingDeploy: current.healthy ? 'none' : current.deploy, cartItemCount: readCart().items.length, cartIntact: true };
+      },
+      diagnostics: [
+        { id: 'storefront_health', label: 'Storefront health', run: () => ({ status: 'pass', summary: 'Product pages and assets are serving normally.' }) },
+        { id: 'cart_contents', label: 'Cart contents', run: () => ({ status: 'pass', summary: `The cart is intact: ${readCart().items.length} item, Aster H1 Headphones.` }) },
+        { id: 'checkout_service', label: 'Checkout service', run: () => readService().healthy
+          ? ({ status: 'pass' as const, summary: 'checkout-service is answering with HTTP 200.' })
+          : ({ status: 'fail' as const, summary: `checkout-service returned HTTP 503 on 14 consecutive attempts. Deploy ${readService().deploy} is crash-looping (OOMKilled).` }) },
+      ],
+      actions: [{
+        id: 'roll_back_checkout_service',
+        label: 'Roll back the checkout service',
+        description: 'Ask Host Whisperer to roll the checkout service back to the last deploy that passed its health checks.',
+        effects: [`Restores deploy ${readService().lastGood}, the last version that passed health checks`, 'Leaves your cart and its items exactly as they are', 'Does not place an order or read your payment details', 'Takes about twenty seconds; the storefront stays online'],
+        run: async (report) => {
+          const current = readService();
+          const beats: Array<[string, string]> = [
+            ['Host Whisperer connected to Render', 'read-only deploy scope for this one service'],
+            ['Read deploy history', `${current.deploy} failing · ${current.lastGood} last healthy`],
+            ['Read service logs', 'OOMKilled × 14 in the last six minutes'],
+            ['Requested rollback', `target ${current.lastGood}`],
+            ['Host confirmed rollback', 'checkout-service is reporting healthy'],
+          ];
+          for (const [label, detail] of beats) { await wait(750); report?.(label, detail); }
+          writeService({ healthy: true, deploy: current.lastGood, lastGood: current.lastGood });
+          window.dispatchEvent(new Event('hostwhisperer:service-restored'));
+        },
+        verify: () => readService().healthy
+          ? ({ recovered: true, summary: 'POST /api/checkout now returns HTTP 200. Retry your checkout — the Aster H1 is still in the cart.' })
+          : ({ recovered: false, summary: 'checkout-service is still returning HTTP 503.' }),
+      }],
+    });
+    return () => { window.removeEventListener('hostwhisperer:service-restored', refresh); runtime.destroy(); };
+  }, [installed, helpArmed]);
+
+  const reset = () => { writeService(brokenService()); setService(readService()); setCheckout('idle'); setHelpArmed(false); };
+  const restartJourney = () => { writeService(brokenService()); localStorage.setItem(demoInstallKey, 'false'); localStorage.removeItem(demoBundleKey); setService(readService()); setInstalled(false); setCheckout('idle'); setHelpArmed(false); };
+  const enablePlugin = () => { localStorage.removeItem(demoInstallKey); setInstalled(true); };
+
+  return <div className="shop-shell">
+    <div className="shop-promo">Free delivery on orders over $50 <b>·</b> 30-day returns <b>·</b> 2-year warranty</div>
+    <header className="shop-nav">
+      <a href="/?view=shop" className="shop-logo">NORTHSTAR</a>
+      <nav><span>Audio</span><span>Workspace</span><span>Travel</span><span>Journal</span></nav>
+      <div className="shop-nav-tools"><Search size={17} /><UserRound size={17} /><span className="shop-bag"><ShoppingBag size={17} /><b>{cart.items.length}</b></span></div>
+    </header>
+    <main className="product-layout">
+      <section className="product-visual">
+        <span className="product-badge">Editor’s choice</span>
+        <div className="headphone-art"><i /><i /><b>H1</b></div>
+        <div className="thumb-row"><span className="active" /><span /><span /></div>
+      </section>
+      <section className="product-details">
+        <div className="crumb">Audio <i>/</i> Wireless headphones</div>
+        <h1>Aster H1</h1>
+        <p className="product-sub">Studio sound. All-day calm.</p>
+        <div className="rating"><span className="stars">{[0, 1, 2, 3, 4].map((index) => <Star key={index} size={13} fill="currentColor" strokeWidth={0} />)}</span><span>4.8 · 2,104 reviews</span></div>
+        <div className="price-row"><strong className="price">$149</strong><span className="price-was">$189</span><span className="price-tag">Save $40</span></div>
+        <p className="description">Adaptive noise cancellation, spatial audio, and a 38-hour battery in a lightweight aluminum frame.</p>
+        <div className="color-row"><b>Color</b><span className="swatch active" /><span className="swatch dark" /><span className="swatch sand" /><em>Sea Salt</em></div>
+
+        {checkout !== 'placed' && <button className="checkout-button" onClick={tryCheckout}><ShoppingBag size={18} /> {checkout === 'failed' && service.healthy ? 'Try checkout again' : 'Checkout'}</button>}
+
+        {checkout === 'failed' && !service.healthy && <div className="checkout-error" data-hw-error ref={errorRef}>
+          <div className="error-head"><ServerCrash size={22} /><div><strong>503</strong><span>Service Unavailable</span></div></div>
+          <p>Checkout is failing on the store’s side. Your cart is safe and no payment was attempted.</p>
+          <pre className="error-trace">{`HTTP 503 · Service Unavailable\nPOST /api/checkout        x-request-id: ${requestId}\nupstream: checkout-service — no healthy instances`}</pre>
+        </div>}
+
+        {checkout === 'failed' && service.healthy && <div className="checkout-success"><Check size={18} /><div><strong>Checkout is back online</strong><p>The checkout service was rolled back to a healthy deploy. Your Aster H1 is still in the cart — try again.</p></div></div>}
+
+        {checkout === 'placed' && <div className="checkout-success"><Check size={18} /><div><strong>Order confirmed</strong><p>Thanks! Your Aster H1 Headphones are on the way. This is a demonstration store, so no payment was taken.</p></div></div>}
+
+        {installed && checkout === 'failed' && !service.healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>{agentLabel} can work on this</strong><p>Open the dialog beside the error, then ask: <b>“Fix checkout for me.”</b></p></div></div>}
+
+        <ul className="assurance-row"><li><Truck size={16} /> Free 2-day delivery</li><li><RotateCcw size={16} /> 30-day returns</li><li><Lock size={16} /> Secure payment</li><li><CreditCard size={16} /> Pay in 4</li></ul>
+        <div className="demo-reset-row">
+          <span>Demo controls</span>
+          <button className="reset-demo" onClick={reset}><RefreshCw size={13} /> Reset the outage</button>
+          {installed
+            ? <button className="reset-demo" onClick={restartJourney}><RefreshCw size={13} /> Show it without the plugin</button>
+            : <button className="reset-demo" onClick={enablePlugin}><RefreshCw size={13} /> Turn the plugin back on</button>}
+        </div>
+      </section>
+    </main>
+    <footer className="shop-footer"><span>Northstar demonstration store · No real purchases</span><span>{installed ? 'AI support enabled' : 'Secure checkout'}</span></footer>
+  </div>;
+}
 
 /* ------------------------------------------------------------------ */
-/* Surface 2 — Northstar Admin: the store owner's enterprise console.   */
+/* Surface 4 — Northstar Admin: kept for the deeper developer story.    */
 /* ------------------------------------------------------------------ */
 
 function StoreAdmin() {
   const [bundleReady] = useState(() => localStorage.getItem(demoBundleKey) === 'true');
-  const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
+  const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) !== 'false');
   const [installing, setInstalling] = useState(false);
   const install = () => {
     if (!bundleReady) return;
     setInstalling(true);
     window.setTimeout(() => {
-      localStorage.setItem(demoInstallKey, 'true');
+      localStorage.removeItem(demoInstallKey);
       setInstalled(true);
       setInstalling(false);
     }, 1700);
   };
   const activity: Array<[string, string, string, string]> = [
-    ['warn', '09:42', 'Checkout error reported', 'CART_SESSION_OUTDATED · 1 session affected'],
+    ['warn', '09:42', 'Checkout returning 503', 'checkout-service · deploy dep-8f2c1a crash-looping'],
     ['ok', '09:31', 'Inventory sync completed', '412 SKUs reconciled · no changes'],
     ['ok', '08:55', 'Payment gateway heartbeat', 'All regions responding under 180 ms'],
     ['ok', '08:10', 'Storefront theme published', 'Version 2.4.0 by Alex Morgan'],
@@ -189,7 +429,7 @@ function StoreAdmin() {
         <div className="admin-head"><div><span className="admin-eyebrow">Developer workspace</span><h1>Store integrations</h1><p>Apps and code packages applied to the Northstar customer website.</p></div><div className="admin-head-meta"><Clock size={13} /> Synced a moment ago</div></div>
 
         <section className="admin-stats">
-          <article><span>Store status</span><strong className="online"><i /> Online</strong><small>All checkout regions healthy</small></article>
+          <article><span>Store status</span><strong className="online"><i /> Online</strong><small>Storefront healthy · checkout degraded</small></article>
           <article><span>Active integrations</span><strong>{installed ? '1' : '0'}</strong><small>{installed ? 'Host Whisperer support operator' : 'No apps installed yet'}</small></article>
           <article><span>Checkout incidents</span><strong className="warning">1 open</strong><small>Opened 09:42 · unresolved</small></article>
           <article><span>Sessions today</span><strong>3,481</strong><small className="up">+12.4% vs. last week</small></article>
@@ -197,14 +437,14 @@ function StoreAdmin() {
 
         <section className="admin-integration">
           <div className="admin-section-head"><div><span className="section-mark"><Plug size={17} /></span><div><h2>Support integration</h2><p>Code packages applied to the Northstar customer website.</p></div></div><span className={installed ? 'admin-badge live' : 'admin-badge'}>{installed ? 'Active' : 'Not installed'}</span></div>
-          {!bundleReady && <div className="admin-empty"><PackageCheck size={26} /><h3>No integration package received</h3><p>Generate a customer-support adapter in Host Whisperer, then return here to install it.</p><a href="/?view=integrate">Open Host Whisperer <ArrowRight size={14} /></a></div>}
+          {!bundleReady && !installed && <div className="admin-empty"><PackageCheck size={26} /><h3>No integration package received</h3><p>Connect a host in Host Whisperer and download the plugin, then return here to install it.</p><a href="/?view=integrate">Open Host Whisperer <ArrowRight size={14} /></a></div>}
           {bundleReady && !installed && <div className="package-review">
-            <div className="package-title"><span className="package-icon">HW</span><div><strong>Host Whisperer support operator</strong><p>Prepared for Northstar Shop · Commerce cart playbook</p></div><span className="package-version">v0.1.0</span></div>
-            <div className="package-files"><span><Code2 size={14} /> host-whisperer-adapter.js</span><span><Code2 size={14} /> host-whisperer.js</span></div>
-            <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted cart context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Rebuild cart only after customer approval</span><span><Check size={13} /> Verify checkout compatibility</span></div>
+            <div className="package-title"><span className="package-icon">HW</span><div><strong>Host Whisperer support operator</strong><p>Prepared for Northstar Shop · hosting recovery playbook</p></div><span className="package-version">v0.1.0</span></div>
+            <div className="package-files"><span><Code2 size={14} /> host-whisperer-plugin.js</span></div>
+            <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted page and checkout context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Roll back the checkout service after customer approval</span><span><Check size={13} /> Verify checkout before reporting success</span></div>
             <button className={installing ? 'admin-install installing' : 'admin-install'} onClick={install} disabled={installing}><Plug size={16} /> {installing ? 'Deploying plugin to storefront…' : 'Install plugin on storefront'}</button>
           </div>}
-          {installed && <div className="admin-live"><div><span className="admin-live-mark"><Check size={20} /></span><div><strong>Host Whisperer is active</strong><p>Six WebMCP support tools and the customer help control are now deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={14} /></a></div>}
+          {installed && <div className="admin-live"><div><span className="admin-live-mark"><Check size={20} /></span><div><strong>Host Whisperer is active</strong><p>Six WebMCP support tools and the customer help dialog are deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={14} /></a></div>}
         </section>
 
         <section className="admin-activity">
@@ -213,68 +453,6 @@ function StoreAdmin() {
         </section>
       </main>
     </div>
-  </div>;
-}
-
-/* ------------------------------------------------------------------ */
-/* Surface 3 — Northstar Market: the customer-facing retail storefront. */
-/* ------------------------------------------------------------------ */
-
-function ShopDemo() {
-  const [cart, setCart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) localStorage.setItem(cartKey, JSON.stringify(brokenCart())); return readCart(); });
-  const [checkoutTried, setCheckoutTried] = useState(false);
-  const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
-
-  useEffect(() => {
-    const refresh = () => setCart(readCart());
-    window.addEventListener('hostwhisperer:cart-rebuilt', refresh);
-    if (!installed || !checkoutTried) return () => window.removeEventListener('hostwhisperer:cart-rebuilt', refresh);
-    const runtime = createHostWhispererRuntime({
-      integrationId: 'northstar-commerce-demo', appName: 'Northstar Shop', allowedOrigin: location.origin, providerHint: 'render', studioUrl: `${location.origin}/?view=incident`,
-      getContext: () => ({ route: location.pathname, appVersion: '2.4.0', cartItemCount: readCart().items.length, cartSchemaVersion: readCart().schemaVersion, expectedCartSchemaVersion: 2, lastErrorCode: readCart().schemaVersion === 2 ? 'NONE' : 'CART_SESSION_OUTDATED' }),
-      diagnostics: [
-        { id: 'store_health', label: 'Store health', run: () => ({ status: 'pass', summary: 'The storefront and checkout service are reachable.' }) },
-        { id: 'inventory', label: 'Inventory availability', run: () => ({ status: 'pass', summary: 'Aster H1 Headphones are in stock.' }) },
-        { id: 'cart_session', label: 'Cart session compatibility', run: () => readCart().schemaVersion === 2 ? ({ status: 'pass', summary: 'The cart uses the current session format.' }) : ({ status: 'fail', summary: 'The cart uses session format v1, but checkout requires v2.' }) },
-      ],
-      actions: [{ id: 'rebuild_cart_session', label: 'Rebuild cart session', description: 'Create a current cart session and restore the same product IDs and quantities.', effects: ['Preserves the Aster H1 Headphones in this cart', 'Does not place an order', 'Does not read or change payment details'], run: () => { const current = readCart(); localStorage.setItem(cartKey, JSON.stringify({ ...current, schemaVersion: 2 })); window.dispatchEvent(new Event('hostwhisperer:cart-rebuilt')); }, verify: () => ({ recovered: readCart().schemaVersion === 2, summary: readCart().schemaVersion === 2 ? 'Checkout is ready with the original item preserved.' : 'Checkout still cannot read the cart.' }) }],
-    });
-    return () => { window.removeEventListener('hostwhisperer:cart-rebuilt', refresh); runtime.destroy(); };
-  }, [installed, checkoutTried]);
-
-  const reset = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); setCart(readCart()); setCheckoutTried(false); };
-  const restartJourney = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); localStorage.removeItem(demoInstallKey); localStorage.removeItem(demoBundleKey); setCart(readCart()); setInstalled(false); setCheckoutTried(false); };
-  const healthy = cart.schemaVersion === 2;
-  return <div className="shop-shell">
-    <div className="shop-promo">Free delivery on orders over $50 <b>·</b> 30-day returns <b>·</b> 2-year warranty</div>
-    <header className="shop-nav">
-      <a href="/?view=shop" className="shop-logo">NORTHSTAR</a>
-      <nav><span>Audio</span><span>Workspace</span><span>Travel</span><span>Journal</span></nav>
-      <div className="shop-nav-tools"><Search size={17} /><UserRound size={17} /><span className="shop-bag"><ShoppingBag size={17} /><b>{cart.items.length}</b></span></div>
-    </header>
-    <main className="product-layout">
-      <section className="product-visual">
-        <span className="product-badge">Editor’s choice</span>
-        <div className="headphone-art"><i /><i /><b>H1</b></div>
-        <div className="thumb-row"><span className="active" /><span /><span /></div>
-      </section>
-      <section className="product-details">
-        <div className="crumb">Audio <i>/</i> Wireless headphones</div>
-        <h1>Aster H1</h1>
-        <p className="product-sub">Studio sound. All-day calm.</p>
-        <div className="rating"><span className="stars">{[0, 1, 2, 3, 4].map((index) => <Star key={index} size={13} fill="currentColor" strokeWidth={0} />)}</span><span>4.8 · 2,104 reviews</span></div>
-        <div className="price-row"><strong className="price">$149</strong><span className="price-was">$189</span><span className="price-tag">Save $40</span></div>
-        <p className="description">Adaptive noise cancellation, spatial audio, and a 38-hour battery in a lightweight aluminum frame.</p>
-        <div className="color-row"><b>Color</b><span className="swatch active" /><span className="swatch dark" /><span className="swatch sand" /><em>Sea Salt</em></div>
-        <button className="checkout-button" onClick={() => setCheckoutTried(true)}>{healthy ? <><Check size={18} /> Continue to secure checkout</> : <><ShoppingBag size={18} /> Checkout</>}</button>
-        {checkoutTried && !healthy && <div className="checkout-error"><CircleAlert size={18} /><div><strong>We couldn’t open checkout</strong><p>{installed ? 'Your cart is still here. Ask AI for help—no payment was attempted.' : 'Something went wrong. Please try again later.'}</p><code>CART_SESSION_OUTDATED</code></div></div>}
-        {healthy && <div className="checkout-success"><Check size={18} /><div><strong>Everything is running smoothly</strong><p>Checkout is ready and your Aster H1 is still in the cart. No order has been placed.</p></div></div>}
-        {installed && !healthy && <div className="demo-callout installed"><Bot size={18} /><div><strong>AI support is now available</strong><p>Click “Ask AI to fix this,” then tell ChatGPT: <b>“Fix checkout safely.”</b></p></div></div>}
-        <ul className="assurance-row"><li><Truck size={16} /> Free 2-day delivery</li><li><RotateCcw size={16} /> 30-day returns</li><li><Lock size={16} /> Secure payment</li><li><CreditCard size={16} /> Pay in 4</li></ul>
-        <div className="demo-reset-row"><span>Demo controls</span><button className="reset-demo" onClick={reset}><RefreshCw size={13} /> Reset error only</button><button className="reset-demo" onClick={restartJourney}><RefreshCw size={13} /> Restart full story</button></div>
-      </section>
-    </main>
-    <footer className="shop-footer"><span>Northstar demonstration store · No real purchases</span><span>{installed ? 'AI support enabled' : 'Secure checkout'}</span></footer>
   </div>;
 }
 
@@ -304,8 +482,8 @@ function IncidentView() {
           <section className="wide"><span>Safe context</span><pre>{JSON.stringify(packet.safeContext, null, 2)}</pre></section>
           <section className="wide"><span>Diagnostics</span>{packet.diagnostics.map((item) => <p key={item.id} className="diagnostic"><b className={item.status}>{item.status}</b> {item.label}: {item.summary}</p>)}</section>
         </div>
-      </> : <p className="empty-copy">Open a customer-approved escalation link generated by an installed Host Whisperer widget.</p>}
-      <a className="primary-link" href="/?view=integrate"><ChevronRight size={15} /> Return to Integration Studio</a>
+      </> : <p className="empty-copy">Open a customer-approved escalation link generated by an installed Host Whisperer plugin.</p>}
+      <a className="primary-link" href="/?view=integrate"><ChevronRight size={15} /> Return to setup</a>
     </main><AppFooter label="Host Whisperer" /></div>;
 }
 
@@ -314,6 +492,6 @@ export default function App() {
   if (view === 'shop') return <ShopDemo />;
   if (view === 'admin') return <StoreAdmin />;
   if (view === 'incident') return <IncidentView />;
-  if (view === 'integrate') return <Studio />;
+  if (view === 'integrate') return <ConnectHost />;
   return <Overview />;
 }

@@ -62,36 +62,58 @@ export async function prepareStudioBundle() {
   return profile;
 }
 
-export function generatedAdapter(value = profile) {
+export function generatedBootstrap(value = profile, withImport = false) {
   const publicConfig = { integrationId: value.id, appName: value.appName, allowedOrigin: value.allowedOrigin, providerHint: value.provider };
-  return `import { createHostWhispererRuntime } from './host-whisperer.js';
-
-createHostWhispererRuntime({
+  return `${withImport ? "import { createHostWhispererRuntime } from './host-whisperer.js';\n\n" : ''}createHostWhispererRuntime({
   ...${JSON.stringify(publicConfig, null, 2)},
+
+  // Wait five seconds after the failure, then offer help beside the error itself.
+  revealDelayMs: 5000,
+  anchorTo: () => document.querySelector('[data-hw-error]'),
+
   getContext: () => ({
     route: location.pathname,
     appVersion: window.APP_VERSION,
-    cartItemCount: window.storefront.cart.itemCount(),
-    cartSchemaVersion: window.storefront.cart.schemaVersion(),
+    lastErrorCode: window.storefront.lastErrorCode(),
     // Add only non-sensitive, customer-safe application state.
   }),
+
   diagnostics: [
     {
-      id: 'cart_session',
-      label: 'Cart session compatibility',
-      run: async () => window.storefront.cart.diagnose(),
+      id: 'checkout_service',
+      label: 'Checkout service',
+      run: async () => window.storefront.probeCheckout(),
     },
   ],
+
   actions: [
     {
-      id: 'rebuild_cart_session',
-      label: 'Rebuild cart session',
-      description: 'Create a current cart and restore the same items.',
-      effects: ['Preserves item IDs and quantities', 'Does not place an order or access payment data'],
-      run: async () => window.storefront.cart.rebuild(),
-      verify: async () => window.storefront.cart.verifyCheckout(),
+      id: 'roll_back_checkout_service',
+      label: 'Roll back the checkout service',
+      description: 'Roll the checkout service back to the last deploy that passed its health checks.',
+      effects: [
+        'Restores the last deploy that passed health checks',
+        'Leaves the customer cart exactly as it is',
+        'Does not place an order or read payment details',
+      ],
+      // \`report\` streams each step of the host conversation into the customer's timeline.
+      run: async (report) => window.hostWhisperer.rollbackCheckout(report),
+      verify: async () => window.storefront.verifyCheckout(),
     },
   ],
 });
 `;
+}
+
+/** Your host credentials never reach this file. They stay on the Host Whisperer server. */
+export async function buildPluginFile(value = profile) {
+  try {
+    const response = await fetch('/runtime/host-whisperer.js');
+    // `npm run dev` answers unknown paths with index.html, so check the body, not just the status.
+    const source = response.ok ? await response.text() : '';
+    if (source.includes('createHostWhispererRuntime')) return `${source}\n${generatedBootstrap(value, false)}`;
+  } catch {
+    // The runtime is not reachable at all; fall back to the two-file form.
+  }
+  return generatedBootstrap(value, true);
 }

@@ -1,38 +1,46 @@
 # Host Whisperer
 
-Host Whisperer generates a safe WebMCP support layer for an existing website.
+> **Hackathon project:** This repository exists solely as an entry for [OpenAI's WebMCP Challenge](https://openai.com/webmcp-challenge/). It is a deterministic competition demo, not a production product and not intended for real-world use. See the [challenge mission, judging strategy, requirements, and deadline](docs/HACKATHON.md).
 
-A developer configures and installs a framework-neutral plugin. When a customer later experiences a supported problem, ChatGPT can use the tools registered by that customer page to inspect minimal context, run diagnostics, propose an allowlisted recovery, wait for visible approval, apply it, and verify the result.
+**When a website's host fails, its customers get a dead end. Host Whisperer turns that page into something their own agent can fix.**
+
+A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers six WebMCP tools, and ChatGPT can inspect minimal context, run the developer's diagnostics, propose the one allowlisted recovery, wait for the customer to approve it on the page, apply it, and verify the original symptom is gone before claiming success.
 
 The configuration product does not embed ChatGPT and does not itself need WebMCP. WebMCP belongs in the generated plugin running on the customer website.
 
 ## Live surfaces
 
-- [Product walkthrough](https://host-whisperer.onrender.com/)
-- [Host Whisperer Integration Studio](https://host-whisperer.onrender.com/?view=integrate)
-- [Northstar Admin](https://host-whisperer.onrender.com/?view=admin)
-- [Northstar Market](https://host-whisperer.onrender.com/?view=shop)
+- [How it works](https://host-whisperer.onrender.com/) — the animated nine-step flow
+- [Connect your host](https://host-whisperer.onrender.com/?view=integrate) — the developer's whole setup
+- [Northstar Market](https://host-whisperer.onrender.com/?view=shop) — **the demo**: the storefront with the plugin installed
 - [Standalone runtime](https://host-whisperer.onrender.com/runtime/host-whisperer.js)
+- [Northstar Admin](https://host-whisperer.onrender.com/?view=admin) — legacy install console, off the demo path
 
 The live deployment may lag behind the current worktree. See [implementation status](docs/STATUS.md) before relying on it.
 
 ## Product flow
 
 ```text
-Customer encounters an ordinary website error
+Developer connects their host and drops in one file
                     ↓
-Developer configures Host Whisperer
+Customer clicks Checkout — the host returns HTTP 503
                     ↓
-Host Whisperer generates adapter + runtime
+Five seconds later, the page offers help beside the error
                     ↓
-Store developer installs them through Northstar Admin
+Customer asks their agent, in one sentence, to fix it
                     ↓
-Customer page registers WebMCP support tools
+ChatGPT reads safe context and runs the developer's diagnostics
                     ↓
-ChatGPT diagnoses, requests approval, repairs, and verifies
+ChatGPT proposes the one allowlisted recovery
+                    ↓
+Customer approves it on the page — until then, it will not run
+                    ↓
+The repair runs, streaming the host conversation into the page
+                    ↓
+ChatGPT verifies the symptom is gone, and the retry succeeds
 ```
 
-The Northstar demo uses an outdated cart session. The recovery migrates only the cart schema, preserves the original product and quantity, and cannot place an order or access payment information.
+In the Northstar demo, `POST /api/checkout` returns 503 because deploy `dep-8f2c1a` of the store's checkout service is crash-looping. The only recovery rolls that service back to `dep-8e0b47`, the last deploy that passed health checks. It leaves the cart untouched, places no order, and reads no payment data. The rollback is simulated in browser state; real provider access would require narrow authenticated server-side endpoints.
 
 ## Runtime tools
 
@@ -47,11 +55,12 @@ These tools are registered by the installed runtime in `src/runtime/index.ts`. T
 
 ## Documentation
 
+- [Hackathon mission and submission target](docs/HACKATHON.md)
 - [Product specification](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security model](docs/SECURITY.md)
 - [Implementation status and next work](docs/STATUS.md)
-- [Demo runbook](docs/DEMO.md)
+- [Demo video script](docs/DEMO.md)
 - [Devpost submission draft](docs/SUBMISSION.md)
 - [Research archive](docs/research/README.md)
 - [Instructions for coding agents](AGENTS.md)
@@ -77,7 +86,7 @@ Use ChatGPT's in-app browser or a WebMCP-enabled Chrome build for the real agent
 
 ## Technology
 
-React, TypeScript, Vite, IndexedDB, Shadow DOM, localStorage for deterministic demo state, and the imperative `document.modelContext.registerTool()` API.
+React, TypeScript, Vite, IndexedDB, Shadow DOM, inline SVG animation, localStorage for deterministic demo state, and the imperative `document.modelContext.registerTool()` API.
 
 ## License
 

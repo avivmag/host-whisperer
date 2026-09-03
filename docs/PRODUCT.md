@@ -1,12 +1,14 @@
 # Product Specification
 
+> This specification describes the product fiction used for the WebMCP Challenge demonstration. Host Whisperer is being built solely for that hackathon and is not intended for production or post-hackathon use. Competition goals and requirements are authoritative in [HACKATHON.md](HACKATHON.md).
+
 ## One-sentence proposition
 
-Host Whisperer lets developers generate and install a safe WebMCP support layer so customers can ask their browser agent to diagnose and resolve supported website problems where those problems occur.
+Host Whisperer lets developers install a safe WebMCP support layer in one file, so that when their host fails, a stranded customer can ask their own browser agent to diagnose it, approve a bounded repair, and watch it verified — on the page where the failure happened.
 
 ## Problem
 
-Web applications usually handle customer-facing failures with a generic message and a support link. The customer lacks technical context, support receives an incomplete report, and the website's useful live state disappears before anyone investigates it.
+When a website's host fails, the customer gets a generic message and a support link. The failure is not theirs to fix and not theirs to understand: they cannot see which service is down, they cannot tell a retry from a real outage, and the website's useful live state disappears before anyone investigates it. Support receives an incomplete report hours later.
 
 The website already knows the route, application version, error code, session state, and safe recovery options. It needs a structured, constrained way to share only the relevant evidence and actions with the customer's agent.
 
@@ -14,11 +16,7 @@ The website already knows the route, application version, error code, session st
 
 ### Plugin operator
 
-The person using Host Whisperer to configure an integration. They choose the target origin, application identity, support playbook, diagnostics, recoveries, and safety policy.
-
-### Store developer
-
-The owner of the target website and its trusted backend. They review the generated files and capabilities, connect handler stubs to application logic, and install the plugin.
+The developer who runs the website. On the connect page they name their origin, pick their host, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the diagnostics and the single recovery their customers' agents are allowed to propose.
 
 ### Customer
 
@@ -30,27 +28,32 @@ ChatGPT or another WebMCP-capable browser agent. It discovers the tools register
 
 ## End-to-end flow
 
-1. A customer encounters a normal website error. Before installation, the website offers no Host Whisperer control.
-2. An operator opens Host Whisperer and configures a support integration using a normal developer form.
-3. Host Whisperer generates a runtime and an origin-bound adapter containing developer-selected diagnostics and recovery handlers.
-4. The store developer receives the package in Northstar Admin, reviews its requested capabilities, and installs it.
-5. The same customer-facing website now registers WebMCP tools after the relevant problem occurs.
-6. The customer opens the page in a WebMCP-capable browser and asks ChatGPT for help.
-7. ChatGPT reads safe context and runs the configured diagnostics.
-8. ChatGPT explains the evidence and prepares an allowlisted recovery.
-9. The customer sees the exact effects and approves the action in the website.
-10. ChatGPT applies the recovery and verifies the original symptom is gone.
-11. If recovery is unavailable or verification fails, the customer may approve a sanitized developer escalation.
+1. A customer clicks Checkout and the website's host fails the request with HTTP 503. The page can report the failure but cannot help.
+2. Five seconds later, the installed plugin offers help beside the error: a small agent dialog that nudges for attention.
+3. The customer opens it and asks their agent, in one sentence, to fix checkout.
+4. ChatGPT reads safe context through `get_support_context` and runs the developer's diagnostics through `run_support_diagnostics`.
+5. ChatGPT explains the evidence — the storefront and cart are healthy; one deploy of the checkout service is crash-looping — and calls `prepare_recovery` for the only allowlisted action.
+6. The website shows the exact effects of that action. The customer approves it on the page. Until they do, `apply_recovery` refuses.
+7. `apply_recovery` runs, and the Host Whisperer ↔ host exchange streams into the customer's activity timeline as it happens: connect, read deploy history, read logs, request rollback, host confirms.
+8. `verify_recovery` re-checks the original symptom. Only then is success reported, and the page invites the customer to retry.
+9. The customer retries checkout and the order goes through.
+10. If recovery is unavailable or verification fails, the customer may approve a sanitized developer escalation instead of being told the problem is solved.
+
+The developer's side of this is one page and one file: connect the host, download the plugin, add one `<script>` tag.
 
 ## Demo scenario
 
-Northstar Market contains an Aster H1 headphone cart using session schema version 1 while checkout expects version 2. The plugin exposes three diagnostics:
+Northstar Market has one Aster H1 headphone in the cart. Checkout fails with **HTTP 503 Service Unavailable** because deploy `dep-8f2c1a` of the store's `checkout-service` is crash-looping (OOMKilled) on its host. This is deliberately a *server* failure: the customer did nothing wrong, and no amount of retrying or cache-clearing will help.
 
-- Storefront and checkout reachability
-- Inventory availability
-- Cart-session compatibility
+The plugin exposes three diagnostics:
 
-The only recovery is `rebuild_cart_session`. It creates a version 2 cart while preserving the original SKU and quantity. It cannot place an order or access payment information.
+- Storefront health — pass; pages and assets serve normally
+- Cart contents — pass; the cart is intact
+- Checkout service — **fail**; 503 on 14 consecutive attempts, deploy `dep-8f2c1a` crash-looping
+
+The only recovery is `roll_back_checkout_service`. It restores `dep-8e0b47`, the last deploy that passed health checks. It leaves the cart exactly as it is, places no order, and reads no payment data. It reports each step of its conversation with the host as it happens, so the customer watches the repair rather than waiting on a spinner.
+
+The repair is simulated in browser state. Real provider access would require the server-side design described under Out of scope.
 
 ## Scope
 
@@ -87,12 +90,11 @@ Use precise claims:
 
 ## Success criteria
 
-- A fresh customer page shows no Host Whisperer UI before installation.
-- The checkout error appears only after the customer clicks Checkout.
-- The Integration Studio contains no ChatGPT button, WebMCP connection status, or registered tools.
-- Host Whisperer generates a reviewable adapter and runtime package.
-- Northstar Admin is the only demo surface that marks the plugin installed.
-- After installation, the customer page exposes six WebMCP tools.
-- A customer can complete diagnosis, consent, recovery, and verification in one coherent browser-agent session.
+- The checkout error appears only after the customer clicks Checkout, and reads unmistakably as a 5xx server fault.
+- No Host Whisperer control appears until five seconds after the error, and then it appears beside the error.
+- Turning the plugin off restores a genuine dead end, with no agent offer at all.
+- The connect page contains no ChatGPT button, WebMCP connection status, or registered tools.
+- The downloaded plugin contains the runtime and the developer's configuration, and contains no credentials.
+- The customer page exposes six WebMCP tools.
+- A customer can complete diagnosis, consent, recovery, verification, and a successful retry in one coherent browser-agent session.
 - No secret or payment data is exposed at any point.
-

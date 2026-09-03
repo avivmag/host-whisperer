@@ -1,13 +1,28 @@
 const secretPattern = /(secret|token|password|private[_-]?key|api[_-]?key|credential)/i;
 const tokenValuePattern = /(?:sk|ghp|glpat|xox[baprs]|eyJ)[-_A-Za-z0-9.]{12,}/g;
+const sensitiveValuePattern = /(?:sk|ghp|glpat|xox[baprs]|eyJ)[-_A-Za-z0-9.]{12,}/;
 
 export function isSensitiveKey(key: string): boolean {
   return secretPattern.test(key);
 }
 
+export function containsSensitiveValue(value: unknown): boolean {
+  return typeof value === 'string' && sensitiveValuePattern.test(value);
+}
+
 export function sanitizeExternalText(value: string, maxLength = 4000): string {
   const redacted = value.replace(tokenValuePattern, '[REDACTED]');
   return redacted.slice(0, maxLength);
+}
+
+export function sanitizeExternalUrl(value?: string): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function compactToolOutput<T>(value: T, maxLength = 1450) {

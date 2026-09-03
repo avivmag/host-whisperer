@@ -1,18 +1,40 @@
 # Host Whisperer
 
-Create, debug, and operate cloud projects through conversation.
+Your AI operator for when software breaks.
 
-Host Whisperer is a WebMCP-native project room for indie developers. A human chooses a provider and describes a goal; an agent turns it into a visible provider plan, waits for approval, hands the action to the provider's official MCP, and records the result for later debugging and maintenance.
+Host Whisperer lets a non-expert describe a production problem in plain English. The agent investigates the existing deployment with the provider's official MCP, explains the likely cause, prepares the smallest repair, waits for human approval, and verifies that the original symptom is gone.
 
 **Live app:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
 
-## Why WebMCP
+## The missing layer between chat and provider MCPs
 
-Provider MCP servers can operate infrastructure, but they do not own the web page where a person reviews a plan. Host Whisperer uses WebMCP to keep the human, agent, and visible interface synchronized. The page exposes structured tools for creating rooms, preparing operations, recording provider results, and diagnosing failures. Write operations cannot pass the approval gate through an agent call—the user must click the visible approval control.
+Provider MCP servers expose infrastructure operations. They do not provide a durable incident workflow or the web interface where a person can understand what the agent found and control what happens next.
 
-## Provider support
+Host Whisperer adds that operating layer:
 
-| Provider | Starter | Status |
+1. **Report** — the user describes the symptom without knowing cloud terminology.
+2. **Investigate** — the agent inspects status, logs, and health through read-only provider tools.
+3. **Explain** — evidence becomes a concise, plain-English diagnosis with a confidence level.
+4. **Approve** — a configuration or redeploy repair appears in the page for human approval.
+5. **Verify** — the agent checks the original symptom and records the recovery.
+
+WebMCP keeps this incident state shared between the human interface and the agent. The page exposes structured tools for reporting incidents, preparing evidence checks, recording provider evidence, explaining diagnoses, preparing repairs, and verifying recovery.
+
+## WebMCP safety properties
+
+- Read-only evidence checks do not require approval.
+- Mutating execution handoffs are withheld from WebMCP responses until the user clicks the visible approval control.
+- Provider logs are untrusted data, never agent instructions.
+- Secret-like configuration keys are refused in chat-mediated repairs.
+- Token-shaped content is redacted and long output is truncated.
+- A mutating provider result cannot be recorded before visible approval.
+- Source-code incidents become structured Codex repair briefs.
+
+The approval flow coordinates the Host Whisperer workflow; it is not a cryptographic restriction on provider tools an agent might access independently.
+
+## Provider connections
+
+| Provider | Project type | Status |
 | --- | --- | --- |
 | AWS | Lambda API | Handoff ready |
 | Google Cloud | Cloud Run service | Handoff ready |
@@ -22,7 +44,7 @@ Provider MCP servers can operate infrastructure, but they do not own the web pag
 | Render | Static site | Live tested |
 | Shopify | Hydrogen storefront | Manual CLI handoff |
 
-These labels are deliberate: Render earned its live-tested label through the recorded failure-and-recovery proof. MCP-B is a compatibility/testing option, not a hosting provider.
+These are connection recipes, not provider rankings or claims of identical support. Render earned its live-tested label through the recorded failure, diagnosis, repair, and recovery proof. MCP-B is a compatibility/testing option, not a hosting provider.
 
 ## Run locally
 
@@ -33,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Open the page in ChatGPT's in-app browser, or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled. In an ordinary browser the human interface works, but the page reports that WebMCP is unavailable.
+Open the page in ChatGPT's in-app browser, or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled. The human interface remains usable without WebMCP, but agent tools are unavailable.
 
 ## Verify
 
@@ -42,7 +64,7 @@ npm test
 npm run build
 ```
 
-The intentional Render proof fixture has two outcomes:
+The intentional Render incident fixture has two outcomes:
 
 ```bash
 cd demo/render-static
@@ -51,16 +73,14 @@ npm run build # expected to fail with a missing PUBLIC_SITE_TITLE message
 PUBLIC_SITE_TITLE="It shipped." npm run build # expected to pass
 ```
 
-See [the demo runbook](docs/DEMO.md) for the complete create → fail → diagnose → approve → fix → redeploy flow.
+See [the demo runbook](docs/DEMO.md) for the plain-English report → investigate → explain → approve → repair → verify flow.
 
-## Security model
+## Persistence and credentials
 
 - Provider OAuth remains between the user, agent host, and official vendor MCP.
-- Host Whisperer stores project rooms locally in IndexedDB and supports JSON export/import.
-- Secret-like configuration keys are refused in chat-mediated fixes.
-- Provider responses and logs are marked untrusted, escaped by React, length-limited, and token-redacted.
-- Create, configuration, and redeploy operations require a user click before a result can be recorded.
-- Source-code repairs become structured Codex handoffs; the browser app does not silently patch repositories.
+- Host Whisperer stores incident rooms locally in IndexedDB and supports JSON export/import.
+- The application does not store cloud credentials.
+- External content is escaped by React before it is rendered.
 
 ## Research archive
 

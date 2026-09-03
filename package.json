@@ -1,5 +1,6 @@
 {
   "name": "host-whisperer",
+  "description": "A WebMCP incident room where an AI operator investigates, repairs, and verifies broken deployments.",
   "private": true,
   "version": "0.1.0",
   "type": "module",

@@ -1,7 +1,7 @@
 export const providers = ['aws', 'gcp', 'cloudflare', 'vercel', 'netlify', 'render', 'shopify'] as const;
 export type ProviderId = (typeof providers)[number];
 export type CapabilityStatus = 'proof-ready' | 'live-tested' | 'handoff-ready' | 'manual';
-export type RoomStage = 'draft' | 'planned' | 'awaiting_approval' | 'approved' | 'executing' | 'succeeded' | 'failed' | 'diagnosing' | 'fix_pending' | 'fixed';
+export type RoomStage = 'reported' | 'investigating' | 'diagnosed' | 'awaiting_approval' | 'repairing' | 'verifying' | 'recovered' | 'failed';
 export type OperationType = 'create' | 'inspect' | 'fetch_logs' | 'update_config' | 'redeploy' | 'health_check';
 
 export interface CostNote {
@@ -31,11 +31,10 @@ export interface ProviderRecipe {
 export interface ProjectIntent {
   id: string;
   name: string;
-  goal: string;
+  reportedIssue: string;
+  resourceRef?: string;
   provider: ProviderId;
   recipeId: string;
-  requirements: string[];
-  configKeys: string[];
   createdAt: string;
   updatedAt: string;
 }

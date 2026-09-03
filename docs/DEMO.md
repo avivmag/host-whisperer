@@ -1,17 +1,17 @@
 # Three-minute demo runbook
 
-1. Open Host Whisperer in ChatGPT's in-app browser and show **WebMCP ready**.
-2. Ask ChatGPT to list Render recipes and create a project room for the Render proof site.
-3. Ask it to prepare project creation. Approve the visible card, then call Render's `create_static_site` with this repository, build command `cd demo/render-static && npm ci && npm run build`, and publish path `demo/render-static/dist`.
-4. Record the failed result and the log line `Missing required configuration: PUBLIC_SITE_TITLE`.
-5. Ask the agent to diagnose the failure. Show that the log is treated as untrusted evidence.
-6. Prepare the non-secret fix `{ "PUBLIC_SITE_TITLE": "It shipped." }` and approve it.
-7. Call Render's `update_environment_variables`; if it does not deploy automatically, call `trigger_deploy`. Record and verify the successful URL.
-8. End on the green deployment state and explain the seven recipe families and honest capability labels.
+1. Open [Host Whisperer](https://host-whisperer.onrender.com) in ChatGPT's in-app browser and show **AI operator ready**.
+2. Say: “My Render deployment failed and I don't understand the error. Investigate it for me.”
+3. Let the agent open an incident room from that plain-English symptom.
+4. Ask the agent to inspect the service and fetch the relevant logs through read-only provider MCP operations.
+5. Record the evidence line `Missing required configuration: PUBLIC_SITE_TITLE` and ask for an explanation without cloud jargon.
+6. Show the diagnosis, confidence level, and proposed non-secret configuration repair.
+7. Ask the agent to prepare the repair. Point out that its provider execution handoff is withheld until the visible **Approve repair** button is clicked.
+8. Approve `PUBLIC_SITE_TITLE=It shipped.`, apply it through Render MCP, and show the recovery deploy.
+9. Run the health check tied to the original symptom and open [the verified proof](https://host-whisperer-proof.onrender.com).
+10. End on the recovered incident state: the user never needed a CLI, dashboard, or provider vocabulary.
 
-Never show OAuth tokens, API keys, account identifiers, or other secrets in the recording.
-
-Production app: [`https://host-whisperer.onrender.com`](https://host-whisperer.onrender.com)
+Never show OAuth tokens, API keys, workspace IDs, or other account identifiers in the recording.
 
 ## Verified proof
 

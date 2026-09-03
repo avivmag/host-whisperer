@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.research-cache/
+.DS_Store
+*.local
+coverage/
+playwright-report/
+test-results/
+demo/render-static/generated/
+demo/render-static/dist/

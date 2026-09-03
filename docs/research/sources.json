@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-09-03",
+  "policy": "Cache official public documentation for local research. Respect each source's license and terms; do not redistribute the cache.",
+  "sources": [
+    {"id":"challenge-openai","category":"challenge","url":"https://openai.com/webmcp-challenge/","cachePath":"challenge/openai.html","license":"site terms"},
+    {"id":"challenge-devpost","category":"challenge","url":"https://webmcp.devpost.com/","cachePath":"challenge/devpost.html","license":"site terms"},
+    {"id":"challenge-rules","category":"challenge","url":"https://webmcp.devpost.com/rules","cachePath":"challenge/rules.html","license":"site terms"},
+    {"id":"challenge-resources","category":"challenge","url":"https://webmcp.devpost.com/resources","cachePath":"challenge/resources.html","license":"site terms"},
+    {"id":"webmcp-spec","category":"webmcp","url":"https://webmachinelearning.github.io/webmcp/","cachePath":"webmcp/spec.html","license":"W3C Community Contributor License"},
+    {"id":"webmcp-explainer","category":"webmcp","url":"https://raw.githubusercontent.com/webmachinelearning/webmcp/main/README.md","cachePath":"webmcp/explainer.md","license":"repository license"},
+    {"id":"chrome-overview","category":"webmcp","url":"https://developer.chrome.com/docs/ai/webmcp","cachePath":"webmcp/chrome-overview.html","license":"CC BY 4.0 / Apache 2.0 samples"},
+    {"id":"chrome-security","category":"webmcp","url":"https://developer.chrome.com/docs/ai/webmcp/secure-tools","cachePath":"webmcp/chrome-security.html","license":"CC BY 4.0 / Apache 2.0 samples"},
+    {"id":"chrome-evals","category":"webmcp","url":"https://developer.chrome.com/docs/ai/webmcp/evals","cachePath":"webmcp/chrome-evals.html","license":"CC BY 4.0 / Apache 2.0 samples"},
+    {"id":"mcp-b","category":"compatibility","url":"https://mcp-b.ai/","cachePath":"compatibility/mcp-b.html","license":"site terms"},
+    {"id":"aws-mcp","category":"provider","url":"https://docs.aws.amazon.com/agent-toolkit/latest/userguide/mcp-server.html","cachePath":"providers/aws-mcp.html","license":"AWS site terms"},
+    {"id":"gcp-mcp","category":"provider","url":"https://docs.cloud.google.com/mcp/overview","cachePath":"providers/gcp-mcp.html","license":"CC BY 4.0 / Apache 2.0 samples"},
+    {"id":"cloudflare-mcp","category":"provider","url":"https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/","cachePath":"providers/cloudflare-mcp.html","license":"Cloudflare docs license"},
+    {"id":"vercel-mcp","category":"provider","url":"https://vercel.com/docs/agent-resources/vercel-mcp","cachePath":"providers/vercel-mcp.html","license":"site terms"},
+    {"id":"netlify-mcp","category":"provider","url":"https://www.netlify.com/blog/netlify-mcp-server-ai-agents-deploy-your-code/","cachePath":"providers/netlify-mcp.html","license":"site terms"},
+    {"id":"render-mcp","category":"provider","url":"https://render.com/docs/mcp-server","cachePath":"providers/render-mcp.html","license":"site terms"},
+    {"id":"shopify-mcp","category":"provider","url":"https://shopify.dev/docs/apps/build/storefront-mcp","cachePath":"providers/shopify-mcp.html","license":"Shopify site terms"},
+    {"id":"webmcp-source","kind":"git","category":"source","url":"https://github.com/webmachinelearning/webmcp.git","cachePath":"repos/webmcp","license":"repository license"},
+    {"id":"chrome-webmcp-tools","kind":"git","category":"source","url":"https://github.com/GoogleChromeLabs/webmcp-tools.git","cachePath":"repos/webmcp-tools","license":"Apache-2.0"},
+    {"id":"mcp-b-packages","kind":"git","category":"source","url":"https://github.com/WebMCP-org/npm-packages.git","cachePath":"repos/mcp-b-packages","license":"repository licenses"},
+    {"id":"render-mcp-source","kind":"git","category":"source","url":"https://github.com/render-oss/render-mcp-server.git","cachePath":"repos/render-mcp-server","license":"Apache-2.0"}
+  ]
+}

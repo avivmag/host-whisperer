@@ -1,0 +1,11 @@
+{
+  "name": "host-whisperer-render-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prebuild": "node scripts/check-config.mjs",
+    "build": "vite build generated --outDir ../dist --emptyOutDir"
+  },
+  "devDependencies": { "vite": "latest" }
+}

@@ -47,36 +47,40 @@ const edgeGeometry: Record<EdgeId, string> = {
 /* An edge can carry a dot outwards, a dot on the way back, or — with
    `both` — one of each at once, for the steps that are a conversation
    rather than a one-way hop. */
-type DiagramStep = { title: string; body: string; edges: Array<{ id: EdgeId; back?: boolean; both?: boolean }>; nodes: NodeId[]; tone?: 'bad' | 'good'; mood: Mood };
+type DiagramStep = { title: string; body: string; edges: Array<{ id: EdgeId; back?: boolean; both?: boolean }>; nodes: NodeId[]; focus: 'customer' | 'agent'; tone?: 'bad' | 'good'; mood: Mood };
 
 const diagramSteps: DiagramStep[] = [
-  { title: 'The request travels over the API', body: 'An ordinary ask — add to cart, check out, sign in — goes to the website over its REST API, and the website calls the service on its host to answer it.', edges: [{ id: 'req' }, { id: 'host' }], nodes: ['customer', 'website', 'host'], mood: 'neutral' },
-  { title: 'The failure travels back', body: 'The service is unhealthy — a bad deploy, an exhausted instance — so a 5xx returns down the same API and the website has nothing better to show than a generic error page.', edges: [{ id: 'host', back: true }, { id: 'req', back: true }], nodes: ['customer', 'website', 'host'], tone: 'bad', mood: 'neutral' },
-  { title: 'The customer is stuck', body: 'No context, no fix, nobody to ask. This is where most journeys quietly end.', edges: [], nodes: ['customer'], tone: 'bad', mood: 'angry' },
-  { title: 'The agent calls through WebMCP', body: 'Their browser agent reads the safe page context and calls the WebMCP tools this website registered — and that call carries straight through to Host Whisperer.', edges: [{ id: 'mcp' }, { id: 'hw' }], nodes: ['customer', 'website', 'hw'], mood: 'thinking' },
-  { title: 'Host Whisperer works the host', body: 'A back-and-forth with the host: read the deploys, read the logs, propose one bounded fix, apply it only after the customer approves.', edges: [{ id: 'host2', both: true }], nodes: ['hw', 'host'], mood: 'thinking' },
-  { title: 'The answer comes back', body: 'Either the fix is applied and verified, or the customer gets an honest handoff — a sanitized report a human can act on.', edges: [{ id: 'hw', back: true }, { id: 'mcp', back: true }], nodes: ['website', 'customer'], tone: 'good', mood: 'thinking' },
-  { title: 'The customer is unblocked', body: 'They retry and traffic flows both ways again — customer, website, host, all healthy — and nobody had to open a support ticket.', edges: [{ id: 'req', both: true }, { id: 'host', both: true }], nodes: ['customer', 'website', 'host'], tone: 'good', mood: 'happy' },
+  { title: 'The request travels over the API', body: 'A customer action — add to cart, check out, sign in — reaches the website over its REST API, and the website calls the service on its host.', edges: [{ id: 'req' }, { id: 'host' }], nodes: ['customer', 'website', 'host'], focus: 'customer', mood: 'neutral' },
+  { title: 'A failure travels back', body: 'The service is unhealthy — a bad deploy, an exhausted instance — so a 5xx returns down the same path and the website can show only a generic error.', edges: [{ id: 'host', back: true }, { id: 'req', back: true }], nodes: ['customer', 'website', 'host'], focus: 'customer', tone: 'bad', mood: 'neutral' },
+  { title: 'The customer is stuck', body: 'No context, no recovery, nobody to ask. This is where most journeys quietly end.', edges: [], nodes: ['customer'], focus: 'customer', tone: 'bad', mood: 'angry' },
+  { title: 'The agent calls through WebMCP', body: 'The browser agent invokes the WebMCP handoff registered by the open website and delegates the incident to Host Whisperer.', edges: [{ id: 'mcp' }, { id: 'hw' }], nodes: ['customer', 'website', 'hw'], focus: 'agent', mood: 'thinking' },
+  { title: 'Host Whisperer works the host', body: 'Host Whisperer privately diagnoses the host, applies the bounded fix after visible approval, and verifies the original request itself.', edges: [{ id: 'host2', both: true }], nodes: ['hw', 'host'], focus: 'agent', mood: 'thinking' },
+  { title: 'The outcome comes back', body: 'The agent receives a clear outcome: the issue is resolved and safe to retry, or a sanitized incident is ready for a developer.', edges: [{ id: 'hw', back: true }, { id: 'mcp', back: true }], nodes: ['website', 'customer'], focus: 'agent', tone: 'good', mood: 'thinking' },
+  { title: 'The customer is unblocked', body: 'With the service healthy again, the customer retries and continues without opening a support ticket.', edges: [{ id: 'req', both: true }, { id: 'host', both: true }], nodes: ['customer', 'website', 'host'], focus: 'customer', tone: 'good', mood: 'happy' },
 ];
 
 /* Each node is its own component so an illustrated <image href="…"> can
    replace any one of them later without touching the wiring. */
-function CustomerNode({ mood, on }: { mood: Mood; on: boolean }) {
+function CustomerNode({ mood, on, focus }: { mood: Mood; on: boolean; focus: 'customer' | 'agent' }) {
   return <g className={`dnode ${on ? 'on' : ''}`}>
     <rect className="node-shell" x="38" y="184" width="220" height="198" rx="22" />
-    <rect className="customer-screen" x="56" y="202" width="184" height="112" rx="13" />
-    <circle className="avatar-halo" cx="103" cy="252" r="33" />
-    <circle className="face-bg" cx="103" cy="250" r="25" />
-    <path className="hair" d="M80 244c1-17 11-26 24-26 14 0 24 10 25 27-7-9-16-13-27-13-8 0-16 4-22 12Z" />
-    <circle className="ink" cx="95" cy="249" r="2.7" /><circle className="ink" cx="112" cy="249" r="2.7" />
-    {mood === 'neutral' && <path className="line" d="M96,264 H111" />}
-    {mood === 'happy' && <path className="line" d="M94,259 Q103,270 113,259" />}
-    {mood === 'angry' && <><path className="line" d="M90,242 L99,245" /><path className="line" d="M117,242 L109,245" /><path className="line" d="M94,267 Q103,258 113,267" /></>}
-    {mood === 'thinking' && <path className="line" d="M96,264 Q103,267 111,263" />}
-    <g className="chat-card"><rect x="139" y="219" width="83" height="63" rx="12" /><path d="M158 282l-8 10 2-13" /><circle cx="158" cy="248" r="3" /><circle cx="169" cy="248" r="3" /><circle cx="180" cy="248" r="3" /><path className="chat-line" d="M157 260h45" /></g>
-    <g className="bot"><rect x="175" y="288" width="48" height="35" rx="11" /><circle cx="188" cy="305" r="3" /><circle cx="207" cy="305" r="3" /><path className="line" d="M199,288 V280" /><circle cx="199" cy="277" r="3.5" /></g>
-    <text className="dtitle node-title-left" x="57" y="348">Customer</text>
-    <text className="dlabel node-label-left" x="57" y="367">with browser agent</text>
+    <g className={`customer-role customer-person ${focus === 'customer' ? 'active' : ''}`}>
+      <rect x="50" y="196" width="196" height="76" rx="12" />
+      <circle className="face-bg" cx="78" cy="226" r="17" />
+      <path className="hair" d="M62 224c1-11 7-17 16-17 10 0 16 7 17 18-5-6-11-9-18-9-6 0-11 3-15 8Z" />
+      <circle className="ink" cx="72" cy="226" r="1.8" /><circle className="ink" cx="84" cy="226" r="1.8" />
+      {mood === 'happy' ? <path className="line" d="M71 233q7 8 14 0" /> : mood === 'angry' ? <path className="line" d="M71 237q7-7 14 0" /> : <path className="line" d="M72 236h12" />}
+      <path className="person-shoulders" d="M58 257c4-12 11-18 20-18s17 6 21 18" />
+      <text className="dtitle node-title-left" x="108" y="224">Customer</text>
+      <text className="dlabel node-label-left" x="108" y="244">uses the website</text>
+    </g>
+    <path className="role-divider" d="M56 282h184" />
+    <g className={`customer-role customer-agent ${focus === 'agent' ? 'active' : ''}`}>
+      <rect x="50" y="292" width="196" height="78" rx="12" />
+      <g className="bot"><rect x="61" y="310" width="36" height="32" rx="9" /><circle cx="72" cy="326" r="2.5" /><circle cx="86" cy="326" r="2.5" /><path className="line" d="M68 348h22" /></g>
+      <text className="dtitle node-title-left" x="108" y="320">Browser agent</text>
+      <text className="dlabel node-label-left" x="108" y="340">handles the handoff</text>
+    </g>
   </g>;
 }
 
@@ -84,7 +88,7 @@ function WebsiteNode({ on, lane }: { on: boolean; lane: 'rest' | 'mcp' | null })
   return <g className={`dnode ${on ? 'on' : ''}`}>
     <rect className="node-shell" x="420" y="116" width="270" height="278" rx="22" />
     <g className="browser-window"><rect x="440" y="139" width="230" height="94" rx="12" /><path d="M440 164h230" /><circle cx="456" cy="151.5" r="3.5" /><circle cx="468" cy="151.5" r="3.5" /><circle cx="480" cy="151.5" r="3.5" /><rect x="457" y="178" width="74" height="8" rx="4" /><rect x="457" y="194" width="128" height="6" rx="3" /><rect x="601" y="177" width="49" height="28" rx="7" /></g>
-    <text className="dtitle node-title-left" x="440" y="262">Customer website</text>
+    <text className="dtitle node-title-left" x="440" y="262">Website in browser</text>
     <g className={`dlane ${lane === 'rest' ? 'on' : ''}`}><rect x="440" y="278" width="103" height="88" rx="13" /><path className="lane-icon" d="M465 310h52M465 321h36M465 332h44" /><text x="491.5" y="351">REST</text></g>
     <g className={`dlane mcp ${lane === 'mcp' ? 'on' : ''}`}><rect x="557" y="278" width="113" height="88" rx="13" /><path className="mcp-mark" d="M580 312l10-10 10 10-10 10-10-10Zm26 0 10-10 10 10-10 10-10-10Zm-13 15 10-10 10 10-10 10-10-10Z" /><text x="613.5" y="351">WebMCP</text></g>
   </g>;
@@ -96,18 +100,16 @@ function HostNode({ on }: { on: boolean }) {
     <g className="host-rack"><rect x="865" y="174" width="168" height="92" rx="12" />{[0, 1, 2].map((row) => <g key={row}><rect x="879" y={186 + row * 23} width="140" height="15" rx="4" /><circle cx="1008" cy={193.5 + row * 23} r="3" /><path d={`M890 ${193.5 + row * 23}h35`} /></g>)}</g>
     <circle className="status-light" cx="879" cy="294" r="5" />
     <text className="dtitle node-title-left" x="893" y="301">Cloud host</text>
-    <text className="dlabel node-label-left" x="879" y="321">checkout service</text>
   </g>;
 }
 
 function WhispererNode({ on }: { on: boolean }) {
   return <g className={`dnode hw ${on ? 'on' : ''}`}>
-    <rect className="node-shell" x="548" y="438" width="322" height="170" rx="22" />
+    <rect className="node-shell" x="548" y="438" width="322" height="130" rx="22" />
     <g className="hw-orb"><circle cx="592" cy="482" r="24" /><path d="M581 482c8-14 16-14 23 0-7 14-15 14-23 0Z" /><circle cx="592" cy="482" r="4" /></g>
     <text className="dtitle node-title-left" x="628" y="476">Host Whisperer</text>
     <text className="dlabel node-label-left" x="628" y="497">deterministic support agent</text>
-    <g className="action-pills"><rect x="572" y="522" width="82" height="29" rx="8" /><text x="613" y="541">diagnose</text><rect x="664" y="522" width="82" height="29" rx="8" /><text x="705" y="541">approve</text><rect x="756" y="522" width="90" height="29" rx="8" /><text x="801" y="541">verify</text></g>
-    <path className="approval-rule" d="M572 571h274" /><circle cx="579" cy="571" r="5" /><text className="dlabel node-label-left" x="592" y="578">one allowlisted fix · visible consent</text>
+    <g className="action-pills"><rect x="572" y="522" width="82" height="29" rx="8" /><text x="613" y="541">diagnose</text><rect x="664" y="522" width="82" height="29" rx="8" /><text x="705" y="541">fix</text><rect x="756" y="522" width="90" height="29" rx="8" /><text x="801" y="541">verify</text></g>
   </g>;
 }
 
@@ -140,9 +142,9 @@ function FlowDiagram() {
           {(Object.keys(edgeGeometry) as EdgeId[]).map((id) => <use key={id} href={`#edge-${id}`} className={`dedge ${activeEdges.has(id) ? `on ${tone}` : ''}`} />)}
           {!reduceMotion && step.edges.flatMap((edge) => (edge.both ? [false, true] : [Boolean(edge.back)]).map((back, pass) =>
             <circle key={`${index}-${edge.id}-${pass}`} className={`ddot ${tone}`} r="7">
-              <animateMotion dur="1.5s" begin={`${pass * 0.75}s`} repeatCount="indefinite" calcMode="linear" keyPoints={back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#edge-${edge.id}`} /></animateMotion>
+              <animateMotion dur="2.6s" begin={`${pass * 1.3}s`} repeatCount="indefinite" calcMode="linear" keyPoints={back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#edge-${edge.id}`} /></animateMotion>
             </circle>))}
-          <CustomerNode mood={step.mood} on={on('customer')} />
+          <CustomerNode mood={step.mood} on={on('customer')} focus={step.focus} />
           <WebsiteNode on={on('website')} lane={lane} />
           <HostNode on={on('host')} />
           <WhispererNode on={on('hw')} />
@@ -181,15 +183,7 @@ const consoleBeats: ConsoleBeat[] = [
 
 /* A line lands roughly every beat; the approval line holds, because in
    the real run that is where the agent stops and waits for a person. */
-const beatDelay = (index: number) => (consoleBeats[index]?.tone === 'hold' ? 2300 : 950);
-
-function ProgressRing({ value, state, label }: { value: number; state: string; label: string }) {
-  const circumference = 2 * Math.PI * 15.5;
-  return <div className={`progress-ring ${state}`} role="img" aria-label={label}>
-    <svg viewBox="0 0 36 36"><circle className="ring-track" cx="18" cy="18" r="15.5" /><circle className="ring-fill" cx="18" cy="18" r="15.5" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value)} /></svg>
-    <span>{Math.round(value * 100)}</span>
-  </div>;
-}
+const beatDelay = (index: number) => (consoleBeats[index]?.tone === 'hold' ? 3200 : 1650);
 
 function SupportConsole() {
   const reduceMotion = useMemo(() => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches, []);
@@ -199,23 +193,19 @@ function SupportConsole() {
     if (reduceMotion) return;
     const timer = window.setTimeout(
       () => setShown((count) => (count >= consoleBeats.length ? 0 : count + 1)),
-      shown === 0 ? 600 : shown >= consoleBeats.length ? 4200 : beatDelay(shown - 1),
+      shown === 0 ? 900 : shown >= consoleBeats.length ? 5200 : beatDelay(shown - 1),
     );
     return () => window.clearTimeout(timer);
   }, [shown, reduceMotion]);
 
-  const waiting = consoleBeats[shown - 1]?.tone === 'hold';
   const complete = shown >= consoleBeats.length;
-  const progress = shown / consoleBeats.length;
 
   return <aside className="hero-console">
-    <div className="console-chrome"><i /><i /><i /><span>support activity — big-pink-demo</span>
-      <ProgressRing value={progress} state={complete ? 'done' : waiting ? 'waiting' : ''} label={`Repair progress ${Math.round(progress * 100)} percent`} />
-    </div>
+    <div className="console-chrome"><i /><i /><i /><span>support activity — big-pink-demo</span></div>
     <ol className="console-log" aria-live="polite">{consoleBeats.slice(0, shown).map((beat, index) => <li key={beat.label} className={`${beat.tone} ${index === shown - 1 && !complete ? 'live' : ''}`}>
       <i /><div><b>{beat.label}</b><span>{beat.detail}</span></div>
     </li>)}</ol>
-    <div className="console-foot"><ShieldCheck size={14} /> One thing to approve. Nothing on the store changes before you say yes.</div>
+    <div className="console-foot"><ShieldCheck size={14} /> Diagnosed, fixed, and verified from one support handoff.</div>
   </aside>;
 }
 
@@ -225,13 +215,13 @@ function Overview() {
       <section className="overview-hero">
         <div className="hero-copy">
           <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
-          <h1>Turn a 500 page into <em>a fix that actually happens.</em></h1>
-          <p>When a website’s host fails, the customer gets a generic error and a dead end. Host Whisperer gives that website one WebMCP handoff, so the customer’s agent can delegate the technical work and return with a verified answer.</p>
+          <h1>Host Whisperer. <em>What if 5xx errors came with a recovery path?</em></h1>
+          <p>Host Whisperer turns supported hosting failures into end-to-end recovery: the customer’s agent hands off the incident, Host Whisperer diagnoses and fixes the host, and SREs sleep better at night.</p>
           <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Connect your host</a></div>
           <ul className="hero-proof">
             <li><Check size={14} /> One script tag to install</li>
             <li><Check size={14} /> No hosting credentials in the browser</li>
-            <li><Check size={14} /> One fix, and only after you approve it</li>
+            <li><Check size={14} /> Diagnose, fix, and verify end to end</li>
           </ul>
         </div>
         <SupportConsole />
@@ -241,8 +231,8 @@ function Overview() {
 
       <section className="webmcp-explainer">
         <div className="explainer-mark"><Bot size={22} /></div>
-        <div className="explainer-body"><h2>WebMCP lives in the installed plugin</h2><p>Host Whisperer is a normal developer tool. It generates one JavaScript file that registers the support tools on your customer-facing pages. When a customer opens that page in an agent-capable browser, the agent discovers those tools and can work the live problem with them.</p></div>
-        <a className="explainer-link" href="/?view=shop">See the customer website <ArrowRight size={15} /></a>
+        <div className="explainer-body"><h2>Give your website an end-to-end recovery path</h2><p>Host Whisperer is a developer integration that generates one JavaScript file and registers a WebMCP support handoff on your customer-facing pages. When a customer encounters a supported failure, their browser agent can delegate it to Host Whisperer for diagnosis, repair, and verification.</p></div>
+        <a className="explainer-link" href="/?view=integrate"><Plug size={15} /> Connect your host <ArrowRight size={15} /></a>
       </section>
 
       <section className="surface-switcher">
@@ -341,27 +331,29 @@ function ConnectHost() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Surface 3 — Big Pink: the customer-facing inflatable-flamingo shop.  */
+/* Surface 3 — Big Pink: the customer-facing inflatable pool-float shop. */
 /* ------------------------------------------------------------------ */
 
 type CartItem = { sku: string; name: string; price: number; quantity: number };
 type Cart = { items: CartItem[] };
 type Service = { healthy: boolean; deploy: string; lastGood: string };
-type Product = { sku: string; name: string; tagline: string; price: number; was?: number; category: string; blurb: string; reviews: number };
+type FloatShape = 'flamingo' | 'flock' | 'swan' | 'donut' | 'watermelon' | 'lounger';
+type Product = { sku: string; name: string; tagline: string; price: number; was?: number; category: string; blurb: string; reviews: number; shape: FloatShape; color: number };
 
 const cartKey = 'bigpink-demo-cart';
 const serviceKey = 'bigpink-demo-service';
 const requestId = '7f31c9';
 
-const categories = ['Flamingos', 'Flocks', 'Poolside', 'Upkeep'] as const;
+const categories = ['Flamingos', 'Flocks', 'Rings', 'Loungers'] as const;
 
 const catalog: Product[] = [
-  { sku: 'GERALD-XL', name: 'Gerald XL', tagline: 'Six feet of unbothered pink.', price: 89, was: 119, category: 'Flamingos', blurb: 'The flagship bird. Six feet of reinforced vinyl, a neck engineered to survive cannonballs, and a cup holder nobody asked for but everybody uses.', reviews: 2104 },
-  { sku: 'GERALD-MINI', name: 'Gerald Mini', tagline: 'Same attitude, smaller lake.', price: 29, category: 'Flamingos', blurb: 'Gerald, scaled down for bathtubs, office desks, and people whose landlords have opinions about pools.', reviews: 812 },
-  { sku: 'FLOCK-SIX', name: 'The Flock', tagline: 'Six birds. One regrettable decision.', price: 149, was: 199, category: 'Flocks', blurb: 'Six Gerald Minis in one box, so your pool finally looks like the group chat you promised everyone.', reviews: 340 },
-  { sku: 'BEV-SWAN', name: 'Beverly', tagline: 'A swan. We do not discuss it.', price: 79, category: 'Poolside', blurb: 'Legally a swan. Emotionally a flamingo. Ships in unmarked packaging out of respect for both.', reviews: 96 },
-  { sku: 'PUFF-01', name: 'Huff & Puff', tagline: 'For people with other plans.', price: 24, category: 'Upkeep', blurb: 'A rechargeable pump that inflates Gerald in 40 seconds, which is 39 minutes faster than your lungs.', reviews: 511 },
-  { sku: 'PATCH-KIT', name: 'The Patch Kit', tagline: 'For when Gerald meets a hedge.', price: 12, category: 'Upkeep', blurb: 'Twelve pink patches and one small tube of glue. Every flamingo has a past.', reviews: 274 },
+  { sku: 'GERALD-XL', name: 'Gerald XL', tagline: 'Six feet of unbothered pink.', price: 89, was: 119, category: 'Flamingos', blurb: 'An unmistakable inflatable flamingo with a wide pool ring, sturdy handles, and enough neck to judge every cannonball.', reviews: 2104, shape: 'flamingo', color: 0 },
+  { sku: 'GERALD-MINI', name: 'Gerald Mini', tagline: 'Same attitude, less pool.', price: 29, category: 'Flamingos', blurb: 'A compact flamingo float for smaller swimmers, smaller pools, and extremely ambitious bathtubs.', reviews: 812, shape: 'flamingo', color: 2 },
+  { sku: 'FLOCK-SIX', name: 'The Flock', tagline: 'Your pool has a group chat now.', price: 149, was: 199, category: 'Flocks', blurb: 'Six mini flamingo floats that drift together until one of them decides it needs space.', reviews: 340, shape: 'flock', color: 0 },
+  { sku: 'BEV-SWAN', name: 'Beverly', tagline: 'Graceful until the first splash.', price: 79, category: 'Flocks', blurb: 'A roomy inflatable swan for anyone who wants the serenity of a lake and the balance of a shopping cart.', reviews: 96, shape: 'swan', color: 1 },
+  { sku: 'MELON-RING', name: 'Melon Drama', tagline: 'Seedless. Not speechless.', price: 34, category: 'Rings', blurb: 'A watermelon pool ring with two handles and absolutely no ability to keep a secret.', reviews: 511, shape: 'watermelon', color: 1 },
+  { sku: 'SPRINKLE-RING', name: 'The Big Dip', tagline: 'Donut disturb.', price: 32, category: 'Rings', blurb: 'A frosted donut ring built for floating, snacking nearby, and ignoring every notification.', reviews: 274, shape: 'donut', color: 0 },
+  { sku: 'SIESTA-LONG', name: 'Siesta Long', tagline: 'Meetings cannot reach you here.', price: 64, category: 'Loungers', blurb: 'A full-length inflatable lounger with a raised pillow and a strict no-laptops policy.', reviews: 188, shape: 'lounger', color: 2 },
 ];
 
 const tints = [
@@ -369,13 +361,6 @@ const tints = [
   { id: 'coral', name: 'Sunset Coral', base: '#ff7d5c', light: '#ffa98f' },
   { id: 'neon', name: 'Highlighter', base: '#ff2d8f', light: '#ff77b6' },
 ];
-
-const views = [
-  { id: 'afloat', label: 'Afloat' },
-  { id: 'poolside', label: 'Poolside' },
-  { id: 'packed', label: 'In the box' },
-] as const;
-type ViewId = (typeof views)[number]['id'];
 
 const findProduct = (sku: string) => catalog.find((item) => item.sku === sku) ?? catalog[0];
 const startingCart = (): Cart => ({ items: [{ sku: 'GERALD-XL', name: 'Gerald XL', price: 89, quantity: 1 }] });
@@ -388,32 +373,21 @@ const cartCount = (cart: Cart) => cart.items.reduce((total, item) => total + ite
 const cartTotal = (cart: Cart) => cart.items.reduce((total, item) => total + item.quantity * item.price, 0);
 const cartSummary = (cart: Cart) => cart.items.map((item) => `${item.quantity} × ${item.name}`).join(', ') || 'nothing yet';
 
-/* One bird, drawn once, recoloured and re-posed by the controls the
-   customer actually clicks. */
-function FlamingoArt({ tint, view }: { tint: (typeof tints)[number]; view: ViewId }) {
-  return <svg className="flamingo-art" viewBox="0 0 320 300" role="img" aria-label={`${tint.name} inflatable flamingo, ${view}`}>
+function PoolFloatArt({ product, tint, decorative = false }: { product: Product; tint: (typeof tints)[number]; decorative?: boolean }) {
+  const ring = <><ellipse cx="160" cy="205" rx="104" ry="58" fill={tint.base} /><ellipse cx="160" cy="202" rx="55" ry="28" fill="#e7f3f3" /><path d="M72 207c21 35 56 51 88 51s70-17 89-51" fill="none" stroke={tint.light} strokeWidth="8" opacity=".7" /></>;
+  return <svg className="flamingo-art" viewBox="0 0 320 300" role={decorative ? undefined : 'img'} aria-hidden={decorative || undefined} aria-label={decorative ? undefined : `${tint.name} ${product.name} inflatable pool float`}>
     <ellipse className="fl-shadow" cx="160" cy="268" rx="104" ry="16" />
-    {view === 'packed' ? <g>
-      <rect x="70" y="128" width="180" height="126" rx="9" fill="#dcc19c" />
-      <rect x="70" y="128" width="180" height="30" rx="8" fill="#c8a97f" />
-      <path d="M160,128 V254" stroke="#c8a97f" strokeWidth="3" />
-      <circle cx="118" cy="200" r="19" fill={tint.base} />
-      <path d="M132,193 L162,203 L131,211 Z" fill={tint.light} />
-      <circle cx="112" cy="195" r="3" fill="#2a2521" />
-      <text className="fl-box-text" x="196" y="206" textAnchor="middle">BIG PINK</text>
-    </g> : <g>
-      <ellipse cx="160" cy="218" rx="99" ry="35" fill="none" stroke={tint.light} strokeWidth="34" />
-      <path d="M84,166 L22,140 L86,150 Z" fill={tint.light} />
-      <ellipse cx="152" cy="180" rx="74" ry="49" fill={tint.base} />
-      <ellipse cx="140" cy="168" rx="40" ry="22" fill={tint.light} opacity=".55" />
-      <path d="M182,152 C202,112 142,104 158,66" stroke={tint.base} strokeWidth="25" fill="none" strokeLinecap="round" />
-      <circle cx="158" cy="62" r="21" fill={tint.base} />
-      <path d="M174,54 L212,66 L172,75 Z" fill={tint.light} />
-      <path d="M200,60 L212,66 L198,70 Z" fill="#2a2521" />
-      {view === 'poolside'
-        ? <g><rect x="140" y="52" width="38" height="13" rx="6.5" fill="#2a2521" /><path d="M178,56 L190,52" stroke="#2a2521" strokeWidth="3" strokeLinecap="round" /></g>
-        : <circle cx="152" cy="55" r="3.4" fill="#2a2521" />}
+    {(product.shape === 'flamingo' || product.shape === 'swan') && <g>{ring}
+      <path d="M191 166 C218 127 176 104 190 65" stroke={product.shape === 'swan' ? '#fff9ef' : tint.base} strokeWidth="27" fill="none" strokeLinecap="round" />
+      <circle cx="190" cy="60" r="22" fill={product.shape === 'swan' ? '#fff9ef' : tint.base} />
+      <path d="M205 56 L244 66 L205 74 Z" fill={product.shape === 'swan' ? '#f0a24b' : '#ffd067'} />
+      <circle cx="184" cy="54" r="3.5" fill="#2a2521" /><path d="M74 203 L38 184 L77 187 Z" fill={tint.light} />
     </g>}
+    {product.shape === 'flock' && <g transform="translate(0 25) scale(.82) translate(35 15)">{ring}<path d="M190 166 C218 127 176 104 190 65" stroke={tint.base} strokeWidth="27" fill="none" strokeLinecap="round" /><circle cx="190" cy="60" r="22" fill={tint.base} /><path d="M205 56 L244 66 L205 74 Z" fill="#ffd067" /><circle cx="184" cy="54" r="3.5" fill="#2a2521" /></g>}
+    {(product.shape === 'donut' || product.shape === 'watermelon') && <g>{ring}
+      {product.shape === 'donut' ? <g fill="#fff4dc"><circle cx="92" cy="181" r="5" /><circle cx="126" cy="235" r="5" /><circle cx="208" cy="226" r="5" /><circle cx="229" cy="181" r="5" /></g> : <g fill="#2b6f48"><ellipse cx="91" cy="201" rx="4" ry="8" /><ellipse cx="123" cy="238" rx="4" ry="8" /><ellipse cx="211" cy="232" rx="4" ry="8" /><ellipse cx="230" cy="195" rx="4" ry="8" /></g>}
+    </g>}
+    {product.shape === 'lounger' && <g transform="rotate(-7 160 190)"><rect x="55" y="120" width="210" height="118" rx="38" fill={tint.base} /><rect x="73" y="137" width="174" height="82" rx="28" fill={tint.light} /><rect x="84" y="144" width="152" height="24" rx="12" fill={tint.base} opacity=".8" /><path d="M105 178h110M105 198h110" stroke={tint.base} strokeWidth="7" strokeLinecap="round" /></g>}
   </svg>;
 }
 
@@ -426,7 +400,6 @@ function ShopDemo() {
   const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) !== 'false');
   const [sku, setSku] = useState(catalog[0].sku);
   const [tint, setTint] = useState(tints[0]);
-  const [view, setView] = useState<ViewId>('afloat');
   const [category, setCategory] = useState<(typeof categories)[number] | null>(null);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -435,6 +408,7 @@ function ShopDemo() {
   const [signedIn, setSignedIn] = useState(true);
   const [added, setAdded] = useState('');
   const errorRef = useRef<HTMLDivElement>(null);
+  const productRef = useRef<HTMLElement>(null);
   const flockRef = useRef<HTMLElement>(null);
 
   const product = findProduct(sku);
@@ -451,7 +425,12 @@ function ShopDemo() {
   const removeItem = (target: string) => updateCart({ items: cart.items.filter((entry) => entry.sku !== target) });
 
   const browse = (value: (typeof categories)[number]) => { setCategory((current) => current === value ? null : value); setQuery(''); flockRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-  const showProduct = (value: string) => { setSku(value); setView('afloat'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const showProduct = (value: string) => {
+    const next = findProduct(value);
+    setSku(value);
+    setTint(tints[next.color]);
+    productRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  };
 
   const tryCheckout = () => { if (!cart.items.length) return; setBagOpen(false); if (readService().healthy) { setCheckout('placed'); return; } setCheckout('failed'); setHelpArmed(true); };
 
@@ -476,16 +455,16 @@ function ShopDemo() {
       actions: [{
         id: 'roll_back_checkout_service',
         label: 'Restore checkout service',
-        description: 'Let Host Whisperer restore the most recent verified version of checkout.',
+        description: 'Restore the most recent verified version of checkout.',
         effects: ['Restores the checkout service to its most recent verified version', 'Leaves your bag and its items exactly as they are', 'Does not place an order or read your payment details', 'Keeps the storefront online while the service is restored'],
         run: async (report) => {
           const current = readService();
           const beats: Array<[string, string]> = [
             ['Support request accepted', 'The hosting service accepted the bounded request.'],
-            ['Inspection started', 'Host Whisperer is checking the affected service.'],
+            ['Inspection started', 'Store support is checking the affected service.'],
             ['Safe resolution selected', 'A developer-approved resolution is available.'],
             ['Resolution applied', 'The hosting service completed the requested change.'],
-            ['Service responded normally', 'Host Whisperer received a healthy response.'],
+            ['Service responded normally', 'Store support received a healthy response.'],
           ];
           for (const [label, detail] of beats) { await wait(750); report?.(label, detail); }
           writeService({ healthy: true, deploy: current.lastGood, lastGood: current.lastGood });
@@ -515,7 +494,7 @@ function ShopDemo() {
           <button className="shop-tool" aria-label="Account" onClick={() => setAccountOpen((open) => !open)}><UserRound size={17} /></button>
           {accountOpen && <div className="account-pop">
             {signedIn
-              ? <><strong>Alex Morgan</strong><span>alex@bigpink.example</span><p>2 orders · 14 flamingos</p><button onClick={() => { setSignedIn(false); setAccountOpen(false); }}><LogOut size={13} /> Sign out</button></>
+              ? <><strong>Your account</strong><span>Signed in</span><p>2 orders · 14 pool floats</p><button onClick={() => { setSignedIn(false); setAccountOpen(false); }}><LogOut size={13} /> Sign out</button></>
               : <><strong>Not signed in</strong><span>Guest checkout is on</span><button onClick={() => { setSignedIn(true); setAccountOpen(false); }}><UserRound size={13} /> Sign back in</button></>}
           </div>}
         </div>
@@ -540,11 +519,10 @@ function ShopDemo() {
     </header>
 
 
-    <main className="product-layout">
+    <main className="product-layout" ref={productRef}>
       <section className="product-visual">
         <span className="product-badge">{product.sku === 'GERALD-XL' ? 'Bestselling bird' : product.category}</span>
-        <FlamingoArt tint={tint} view={view} />
-        <div className="thumb-row">{views.map((item) => <button key={item.id} className={view === item.id ? 'active' : ''} aria-label={item.label} onClick={() => setView(item.id)}>{item.label}</button>)}</div>
+        <PoolFloatArt product={product} tint={tint} />
       </section>
       <section className="product-details">
         <div className="crumb">{product.category} <i>/</i> Inflatable</div>
@@ -553,7 +531,7 @@ function ShopDemo() {
         <div className="rating"><span className="stars">{[0, 1, 2, 3, 4].map((index) => <Star key={index} size={13} fill="currentColor" strokeWidth={0} />)}</span><span>4.8 · {product.reviews.toLocaleString()} reviews</span></div>
         <div className="price-row"><strong className="price">${product.price}</strong>{product.was && <><span className="price-was">${product.was}</span><span className="price-tag">Save ${product.was - product.price}</span></>}</div>
         <p className="description">{product.blurb}</p>
-        <div className="color-row"><b>Shade</b>{tints.map((item) => <button key={item.id} className={`swatch ${tint.id === item.id ? 'active' : ''}`} style={{ background: item.base }} aria-label={item.name} onClick={() => setTint(item)} />)}<em>{tint.name}</em></div>
+        <div className="color-row"><b>Color</b>{tints.map((item) => <button key={item.id} className={`swatch ${tint.id === item.id ? 'active' : ''}`} style={{ background: item.base }} aria-label={item.name} onClick={() => setTint(item)} />)}<em>{tint.name}</em></div>
 
         <div className="buy-row">
           {checkout !== 'placed' && <button className="checkout-button" onClick={tryCheckout} disabled={!cart.items.length}><ShoppingBag size={18} /> {checkout === 'failed' && service.healthy ? 'Try checkout again' : cart.items.length ? 'Checkout' : 'Your bag is empty'}</button>}
@@ -576,11 +554,11 @@ function ShopDemo() {
 
     <section className="flock-strip" id="flock" ref={flockRef}>
       <div className="flock-head">
-        <h2>{category ? category : needle ? `Results for “${query}”` : 'More of the flock'}</h2>
+        <h2>{category ? category : needle ? `Results for “${query}”` : 'More pool floats'}</h2>
         {(category || needle) && <button className="flock-clear" onClick={() => { setCategory(null); setQuery(''); }}><X size={13} /> Clear</button>}
       </div>
       {flock.length ? <div className="flock-grid">{flock.map((item) => <article key={item.sku} className={item.sku === sku ? 'on' : ''}>
-        <button className="flock-open" onClick={() => showProduct(item.sku)}><span className="flock-art"><FlamingoArt tint={tints[catalog.indexOf(item) % tints.length]} view={item.category === 'Upkeep' ? 'packed' : item.category === 'Poolside' ? 'poolside' : 'afloat'} /></span><strong>{item.name}</strong><span>{item.tagline}</span><em>${item.price}</em></button>
+        <button className="flock-open" onClick={() => showProduct(item.sku)} aria-label={`View ${item.name}`}><span className="flock-art"><PoolFloatArt product={item} tint={tints[item.color]} decorative /></span><strong>{item.name}</strong><span>{item.tagline}</span><em>${item.price}</em></button>
         <button className="flock-add" onClick={() => addToBag(item)}>{added === item.sku ? <><Check size={13} /> Added</> : <><Plus size={13} /> Add</>}</button>
       </article>)}</div> : <p className="flock-empty">No birds match that. Try “Gerald”.</p>}
     </section>
@@ -593,7 +571,7 @@ function ShopDemo() {
           ? <button className="reset-demo" onClick={restartJourney}><RefreshCw size={13} /> Show it without the plugin</button>
           : <button className="reset-demo" onClick={enablePlugin}><RefreshCw size={13} /> Turn the plugin back on</button>}
       </div>
-      <div className="shop-footer-note"><span>Big Pink demonstration store · No real purchases</span><span>{signedIn ? 'Alex Morgan' : 'Guest'} · {installed ? 'AI support enabled' : 'Secure checkout'}</span></div>
+      <div className="shop-footer-note"><span>Big Pink demonstration store · No real purchases</span><span>{signedIn ? 'Signed in' : 'Guest'} · {installed ? 'Store support enabled' : 'Secure checkout'}</span></div>
     </footer>
   </div>;
 }
@@ -619,7 +597,7 @@ function StoreAdmin() {
     ['warn', '09:42', 'Checkout returning 503', 'checkout-service · deploy dep-8f2c1a crash-looping'],
     ['ok', '09:31', 'Inventory sync completed', '412 SKUs reconciled · no changes'],
     ['ok', '08:55', 'Payment gateway heartbeat', 'All regions responding under 180 ms'],
-    ['ok', '08:10', 'Storefront theme published', 'Version 2.4.0 by Alex Morgan'],
+    ['ok', '08:10', 'Storefront theme published', 'Version 2.4.0 by Store team'],
   ];
   return <div className="admin-shell">
     <aside className="admin-sidebar">
@@ -632,7 +610,7 @@ function StoreAdmin() {
         <span><Plug size={16} /> Integrations</span>
         <span><Settings size={16} /> Settings</span>
       </nav>
-      <div className="admin-user"><i>AM</i><div><strong>Alex Morgan</strong><small>Store developer</small></div></div>
+      <div className="admin-user"><i>BP</i><div><strong>Store team</strong><small>Store developer</small></div></div>
     </aside>
     <div className="admin-body">
       <header className="admin-topbar">

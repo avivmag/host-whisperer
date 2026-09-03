@@ -33,7 +33,7 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - Connect-your-host page: host dropdown, token field, simulated handshake, masked fingerprint, one-file plugin download, install tag
 - Plugin installed by default, so the demo needs no setup; before/after still available in demo controls
 - One runtime WebMCP delegation tool, registered only by the installed customer runtime
-- Same-call visible approval: `ask_host_whisperer_to_fix_issue` stays pending while Host Whisperer waits for the customer, then applies and verifies internally without another chat message
+- Same-call visible approval: `resolve_store_issue` starts inspection immediately, stays pending while the page waits for the customer, then applies and verifies internally without another chat message
 - Registration-aware UI: the panel says connected only after `registerTool()` succeeds and gives current model/settings guidance if registration fails
 - Safe-context filtering and output limits
 - Incident-bound approval, replay prevention, and post-recovery verification

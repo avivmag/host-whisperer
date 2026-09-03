@@ -143,9 +143,9 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
   flex: none;
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start;
   padding: 7px 12px; border-radius: 9px;
-  animation: console-line-in .38s cubic-bezier(.2, .8, .3, 1) backwards;
+  animation: console-line-in .72s cubic-bezier(.22, .7, .25, 1) backwards;
 }
-@keyframes console-line-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@keyframes console-line-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .console-log li { animation-duration: .01s; } }
 .console-log i { width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 3px var(--mint-soft); }
 .console-log li.you i { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -157,21 +157,6 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .console-foot { display: flex; align-items: center; gap: 9px; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--bg-2); font-size: 13px; color: var(--dim); }
 .console-foot svg { color: var(--mint); }
 @keyframes hw-blink { 50% { opacity: .3; } }
-
-/* --- circular repair progress --------------------------------------- */
-.progress-ring { position: relative; flex: none; margin-left: auto; width: 30px; height: 30px; }
-.progress-ring svg { width: 30px; height: 30px; transform: rotate(-90deg); }
-.progress-ring circle { fill: none; stroke-width: 3.2; stroke-linecap: round; }
-.progress-ring .ring-track { stroke: var(--line); }
-.progress-ring .ring-fill { stroke: var(--mint); transition: stroke-dashoffset .42s ease, stroke .3s ease; }
-.progress-ring.waiting .ring-fill { stroke: var(--amber); }
-.progress-ring.done .ring-fill { stroke: var(--accent); }
-.progress-ring span {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font: 500 9px 'JetBrains Mono', monospace; letter-spacing: -.03em; color: var(--faint);
-}
-.progress-ring.waiting span { color: var(--amber); }
-.progress-ring.done span { color: var(--accent); }
 
 .walkthrough { margin-top: clamp(58px, 8vw, 94px); }
 .section-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
@@ -197,8 +182,8 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .explainer-mark { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 1px solid #bcdc70; background: var(--accent-fill); color: var(--on-accent); }
 .explainer-body h2 { font-size: 22px; margin-bottom: 8px; }
 .explainer-body p { margin: 0; max-width: 80ch; font-size: 15px; line-height: 1.65; color: var(--dim); }
-.explainer-link { display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.explainer-link:hover { background: var(--accent-soft); border-color: #bcdc70; }
+.explainer-link { display: inline-flex; align-items: center; gap: 7px; padding: 12px 16px; border: 1px solid #a9d431; border-radius: 9px; background: var(--accent-fill); color: var(--on-accent); font-size: 15px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.explainer-link:hover { background: #d8fb6b; transform: translateY(-1px); }
 
 .surface-switcher { margin-top: clamp(46px, 6vw, 70px); }
 .surface-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
@@ -457,8 +442,8 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 
 /* =====================================================================
    SURFACE 3 — BIG PINK
-   The customer's storefront: one shop, one bird, sold six ways.
-   Warm paper, serif display, terracotta — and a lot of flamingo.
+   The customer's storefront: a playful inflatable pool-float shop.
+   Warm paper, serif display, terracotta — and a lot of pink.
    ===================================================================== */
 
 .shop-shell {
@@ -657,16 +642,16 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .hw-diagram .dlabel { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; fill: var(--dim); text-anchor: middle; }
 .hw-diagram .node-title-left, .hw-diagram .node-label-left { text-anchor: start; }
 .hw-diagram .face-bg { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; }
-.hw-diagram .avatar-halo { fill: #dff28d; opacity: .8; }
 .hw-diagram .hair { fill: #343c2c; }
 .hw-diagram .ink { fill: var(--text); }
 .hw-diagram .line { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; }
-.hw-diagram .customer-screen, .hw-diagram .browser-window > rect:first-child, .hw-diagram .host-rack > rect:first-child { fill: #fff; stroke: var(--line); stroke-width: 1.3; }
-.hw-diagram .customer-screen { fill: #f1f3eb; }
-.hw-diagram .chat-card rect { fill: #fff; stroke: #bec8ae; stroke-width: 1.2; }
-.hw-diagram .chat-card path:not(.chat-line) { fill: #fff; stroke: #bec8ae; stroke-width: 1.2; }
-.hw-diagram .chat-card circle { fill: var(--accent); }
-.hw-diagram .chat-card .chat-line { fill: none; stroke: #cbd2c0; stroke-width: 3; stroke-linecap: round; }
+.hw-diagram .browser-window > rect:first-child, .hw-diagram .host-rack > rect:first-child { fill: #fff; stroke: var(--line); stroke-width: 1.3; }
+.hw-diagram .customer-role > rect { fill: #fff; stroke: var(--line); stroke-width: 1.3; transition: fill .55s ease, stroke .55s ease; }
+.hw-diagram .dnode.on .customer-role.active > rect { fill: var(--accent-soft); stroke: #9fc629; }
+.hw-diagram.bad .dnode.on .customer-role.active > rect { fill: var(--rose-soft); stroke: #df8174; }
+.hw-diagram.good .dnode.on .customer-role.active > rect { fill: var(--mint-soft); stroke: #74bfae; }
+.hw-diagram .role-divider { fill: none; stroke: var(--line-2); stroke-width: 1.5; stroke-dasharray: 6 6; }
+.hw-diagram .person-shoulders { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; }
 .hw-diagram .bot rect { fill: var(--text); stroke: var(--text); stroke-width: 2; }
 .hw-diagram .bot circle { fill: var(--text); }
 .hw-diagram .bot rect ~ circle { fill: var(--accent-fill); }
@@ -694,9 +679,6 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .hw-diagram .action-pills rect { fill: #fff; stroke: var(--line); }
 .hw-diagram .action-pills text { font: 500 11px 'JetBrains Mono', monospace; fill: var(--dim); text-anchor: middle; }
 .hw-diagram .dnode.on .action-pills rect { fill: var(--accent-fill); stroke: #a9d431; }
-.hw-diagram .approval-rule { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
-.hw-diagram .approval-rule + circle { fill: var(--accent); }
-
 .hw-diagram .dedge { fill: none; stroke: var(--line-2); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 7 8; transition: stroke .35s ease, stroke-width .35s ease; }
 .hw-diagram .dedge.on { stroke: var(--accent); stroke-width: 3.4; stroke-dasharray: none; filter: drop-shadow(0 1px 3px rgba(151, 190, 35, .3)); }
 .hw-diagram .dedge.on.bad { stroke: var(--rose); }
@@ -711,12 +693,10 @@ a, button { transition: background-color .16s ease, border-color .16s ease, colo
 .diagram-controls .play { padding: 8px 16px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .hw-diagram .dnode.on .avatar-halo, .hw-diagram .dnode.on .status-light, .hw-diagram .dnode.on .hw-orb { animation: diagram-pulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-  .hw-diagram.mood-angry .dnode.on .customer-screen { animation: diagram-shake .45s ease-in-out 1; }
+  .hw-diagram .dnode.on .status-light, .hw-diagram .dnode.on .hw-orb { animation: diagram-pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 }
 
 @keyframes diagram-pulse { 50% { transform: scale(1.06); opacity: .78; } }
-@keyframes diagram-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 
 .diagram-steps { list-style: none; display: grid; gap: 3px; margin: 0; padding: 10px; border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); box-shadow: 0 14px 34px rgba(28, 38, 18, .07); }
 .diagram-steps button { display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; background: transparent; color: var(--faint); text-align: left; cursor: pointer; }

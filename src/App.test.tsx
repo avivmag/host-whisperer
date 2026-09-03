@@ -17,11 +17,15 @@ describe('Host Whisperer surfaces', () => {
   it('explains the flow with the animated diagram on the homepage', () => {
     render(<App />);
     expect(screen.getAllByText('Host Whisperer')).not.toHaveLength(0);
+    expect(screen.getByRole('heading', { name: /What if 5xx errors came with a recovery path/ })).toBeInTheDocument();
     expect(screen.getByText(/One failure, seen from every side/)).toBeInTheDocument();
     expect(screen.getByText('The request travels over the API')).toBeInTheDocument();
+    expect(screen.getByText('A failure travels back')).toBeInTheDocument();
     expect(screen.getByText('Host Whisperer works the host')).toBeInTheDocument();
     expect(screen.getByText('The customer is unblocked')).toBeInTheDocument();
-    expect(screen.getByText(/WebMCP lives in the installed plugin/)).toBeInTheDocument();
+    expect(screen.getByText(/Give your website an end-to-end recovery path/)).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Connect your host/ })).not.toHaveLength(0);
+    expect(screen.queryByLabelText(/Repair progress/)).not.toBeInTheDocument();
   });
 
   it('replays the real support activity in the hero console', () => {
@@ -29,13 +33,13 @@ describe('Host Whisperer surfaces', () => {
     render(<App />);
     expect(screen.queryByText('Issue reported')).not.toBeInTheDocument();
 
-    act(() => { vi.advanceTimersByTime(600); });
+    act(() => { vi.advanceTimersByTime(900); });
     expect(screen.getByText('Issue reported')).toBeInTheDocument();
 
     // The labels and details are the ones the installed plugin writes on
     // the shop page, so the promise here cannot drift from the demo.
     // One act per beat: each flush lets the effect schedule the next line.
-    for (let beat = 0; beat < 5; beat += 1) act(() => { vi.advanceTimersByTime(2400); });
+    for (let beat = 0; beat < 5; beat += 1) act(() => { vi.advanceTimersByTime(3400); });
     expect(screen.getByText('Resolution ready')).toBeInTheDocument();
     expect(screen.getByText('A bounded resolution is ready for your approval.')).toBeInTheDocument();
     expect(screen.getByText('Resolution approved')).toBeInTheDocument();
@@ -110,6 +114,23 @@ describe('Host Whisperer surfaces', () => {
     expect(shadowText()).not.toContain('Ask Codex');
     act(() => { vi.advanceTimersByTime(5000); });
     expect(shadowText()).toContain('Ask Codex');
+    expect(shadowText()).toContain('Something went wrong. Want help getting back on track?');
+    expect(shadowText()).not.toContain('Host Whisperer');
+    expect(shadowText()).not.toContain('checkout just fell over');
+  });
+
+  it('selects a pool float from the lower catalog and keeps its color in sync', () => {
+    history.replaceState({}, '', '/?view=shop');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'View Melon Drama' }));
+
+    expect(screen.getByRole('heading', { name: 'Melon Drama' })).toBeInTheDocument();
+    expect(screen.getByText('Sunset Coral')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Sunset Coral Melon Drama inflatable pool float' })).toBeInTheDocument();
+    expect(screen.queryByText('Shade')).not.toBeInTheDocument();
+    expect(screen.queryByText('Poolside')).not.toBeInTheDocument();
+    expect(screen.queryByText('In the box')).not.toBeInTheDocument();
   });
 
   it('shows the same failure as a dead end without the plugin', () => {

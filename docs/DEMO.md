@@ -29,8 +29,8 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 ### 3. The repair
 
-8. Keep the store open in the integrated browser. In the Codex conversation, say only: **"Ask Host Whisperer to fix checkout."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
-9. Codex calls `ask_host_whisperer_to_fix_issue` once and waits. It does not inspect the repository, source code, DOM, network logs, other integrations, or the web.
+8. Keep the store open in the integrated browser. In the Codex conversation, say only: **"Fix checkout on this page."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
+9. Codex calls `resolve_store_issue` immediately and waits at the visible in-page approval. It must not ask for a separate chat confirmation, inspect the repository, source code, DOM, network logs, other integrations, or the web.
 10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
 11. The page shows the customer-relevant effects of the only allowlisted resolution while the WebMCP call remains open.
 12. Click **Yes, go ahead**. Do not send another chat message: Host Whisperer continues inside the same pending call.

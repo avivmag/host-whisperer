@@ -47,9 +47,9 @@ It registers no WebMCP tools.
 
 ### Big Pink
 
-`/?view=shop` simulates the customer website: an inflatable-flamingo store. Search, category navigation, the bag drawer, the account menu, shade swatches and the product views are all live client state; nothing leaves the browser. The plugin is installed by default so the demo needs no setup. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the bag is untouched and no payment is attempted. The runtime mounts immediately but its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card. The demo controls live in the page footer, away from the customer story.
+`/?view=shop` simulates the customer website: an inflatable pool-float store. Search, category navigation, the bag drawer, the account menu, color swatches and product selection are all live client state; nothing leaves the browser. Selecting a card in the lower catalog updates the hero product, its default color, and its accessible image label together. The plugin is installed by default so the demo needs no setup. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the bag is untouched and no payment is attempted. The runtime mounts immediately but its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card. The demo controls live in the page footer, away from the customer story.
 
-The opened panel says one thing: the sentence to give the browser agent, with a **Copy** button for it. When no Website Tool is available it also offers **Let Host Whisperer try it here**, which runs the same workflow without an agent. The panel is patched in place — cached HTML per region, appended activity rows — so a repair in progress never re-runs its entrance animations.
+The customer-facing launcher and panel use only Big Pink support language; they do not reveal the installed provider. The opened panel says one thing: the sentence to give the browser agent, with a **Copy** button for it. When no Website Tool is available it also offers **Use store support here**, which runs the same workflow without an agent. The panel is patched in place — cached HTML per region, appended activity rows — so a repair in progress never re-runs its entrance animations.
 
 ### Escalation view
 
@@ -94,7 +94,7 @@ The `report(label, detail)` callback passed to a recovery action appends events 
 
 | Tool | Purpose | Mutation |
 | --- | --- | --- |
-| `ask_host_whisperer_to_fix_issue` | Delegate the complete support case to Host Whisperer; wait for visible approval; return only a resolved-or-escalated customer message | One developer-allowlisted mutation after approval |
+| `resolve_store_issue` | Start private inspection immediately when the customer asks for a fix; wait for visible in-page approval; return only a resolved-or-escalated customer message | One developer-allowlisted mutation after approval |
 
 The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description states the bounded support operation and its approval and verification behavior without attempting to direct the browser agent's broader behavior. Destroying the runtime aborts registration, cancels a pending approval wait, and removes the Shadow DOM host.
 

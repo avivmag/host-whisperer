@@ -13,7 +13,8 @@ describe('generated support runtime', () => {
       diagnostics: [{ id: 'cart', label: 'Cart session', run: () => ({ status: 'fail', summary: 'Cart format is outdated.' }) }],
       actions: [{ id: 'rebuild', label: 'Rebuild cart', description: 'Preserve items in a fresh cart.', effects: ['No purchase'], run: () => { recovered = true; }, verify: () => ({ recovered, summary: 'Checkout is ready.' }) }],
     });
-    expect(runtime.tools.map((tool) => tool.name)).toEqual(['ask_host_whisperer_to_fix_issue']);
+    expect(runtime.tools.map((tool) => tool.name)).toEqual(['resolve_store_issue']);
+    expect(runtime.tools[0].description).toContain('Do not ask for separate chat confirmation');
 
     let requestSettled = false;
     const request = Promise.resolve(runtime.tools[0].execute({ issue: 'Checkout fails for my cart.' })).then((result) => { requestSettled = true; return result; });
@@ -77,6 +78,7 @@ describe('generated support runtime', () => {
     expect(shadow().querySelector('.hw-launch')).toBeNull();
     vi.advanceTimersByTime(5000);
     expect(shadow().querySelector('.hw-launch')?.textContent).toContain('Ask Codex');
+    expect(shadow().textContent).not.toContain('Host Whisperer');
 
     const request = runtime.tools[0].execute({ issue: 'Checkout returns a server error.' });
     await Promise.resolve();

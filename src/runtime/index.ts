@@ -35,7 +35,7 @@ type ToolDefinition = {
   title: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  annotations?: { readOnlyHint?: boolean; untrustedContentHint?: boolean };
+  annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean; untrustedContentHint?: boolean };
   execute: (input: any) => Promise<unknown> | unknown;
 };
 
@@ -140,7 +140,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     current.diagnostics = results;
     current.stage = 'diagnosed';
     finishActivity(filingEvent, 'The support report is ready.');
-    activity('runtime', 'Sending for inspection', 'Host Whisperer received the report and is choosing a safe response.');
+    activity('runtime', 'Sending for inspection', 'Store support received the report and is choosing a safe response.');
     return { results };
   };
 
@@ -180,12 +180,12 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     if (current.approvedActionId !== actionId) throw new Error('The customer has not approved this recovery in the page.');
     if (current.stage !== 'awaiting_approval') throw new Error('This recovery is no longer ready to execute.');
     current.stage = 'repairing';
-    const applyingEvent = activity('agent', 'Applying approved resolution', 'Host Whisperer is working with the hosting service.', 'running');
+    const applyingEvent = activity('agent', 'Applying approved resolution', 'Store support is working with the hosting service.', 'running');
     try {
       await action.run((label, detail) => activity('runtime', label, detail));
     } catch {
       current.stage = 'escalated';
-      finishActivity(applyingEvent, 'Host Whisperer could not apply the bounded resolution.', 'failed');
+      finishActivity(applyingEvent, 'Store support could not apply the bounded resolution.', 'failed');
       throw new Error('The approved recovery failed and must be escalated.');
     }
     finishActivity(applyingEvent, 'The hosting service completed the bounded resolution.');
@@ -202,7 +202,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     try { result = await action.verify(); }
     catch { result = { recovered: false, summary: 'The verification check could not complete.' }; }
     current.stage = result.recovered ? 'recovered' : 'escalated';
-    activity('agent', result.recovered ? 'Issue resolved' : 'Developer attention needed', result.recovered ? 'The service is responding normally again.' : 'Host Whisperer could not verify a safe resolution.', result.recovered ? 'succeeded' : 'failed');
+    activity('agent', result.recovered ? 'Issue resolved' : 'Developer attention needed', result.recovered ? 'The service is responding normally again.' : 'Store support could not verify a safe resolution.', result.recovered ? 'succeeded' : 'failed');
     return { ...result, stage: current.stage, originalSymptom: current.description };
   };
 
@@ -223,18 +223,19 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
       const verification = await verifyRecovery();
       return verification.recovered
         ? { status: 'resolved', customerMessage: 'Checkout is available again. Ask the customer to try again.' }
-        : { status: 'needs_developer', customerMessage: 'Host Whisperer could not verify a safe resolution. Tell the customer that the issue has been escalated.' };
+        : { status: 'needs_developer', customerMessage: 'Store support could not verify a safe resolution. Tell the customer that the issue has been escalated.' };
     } catch {
-      return { status: 'needs_developer', customerMessage: 'Host Whisperer could not complete a safe resolution. Tell the customer that the issue has been escalated.' };
+      return { status: 'needs_developer', customerMessage: 'Store support could not complete a safe resolution. Tell the customer that the issue has been escalated.' };
     }
   };
 
   const definitions: ToolDefinition[] = [{
-    name: 'ask_host_whisperer_to_fix_issue',
-    title: 'Ask Host Whisperer to resolve this issue',
-    description: 'Delegate a checkout or website failure to Host Whisperer. The website gathers its approved support signals, requests visible customer approval before changing service state, applies the allowlisted resolution, verifies the result, and returns a short customer-facing status.',
+    name: 'resolve_store_issue',
+    title: 'Resolve this store issue',
+    description: 'Call this tool immediately when the customer asks to fix a checkout or store failure. Do not ask for separate chat confirmation before calling: invocation only starts private inspection, then the tool itself pauses for the customer to approve any store change in a visible page dialog. After approval it applies the developer-allowlisted resolution, verifies it, and returns a short customer-facing status.',
     inputSchema: objectSchema({ issue: string('A short customer description of what failed.', { maxLength: 500 }) }, ['issue']),
     execute: async ({ issue }) => askHostWhisperer(issue),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   }];
 
   const register = async () => {
@@ -369,7 +370,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   };
   const htmlCache = new Map<string, string>();
   const eventNodes = new Map<string, HTMLElement>();
-  const handoffPrompt = 'Ask Host Whisperer to fix checkout on this page.';
+  const handoffPrompt = 'Fix checkout on this page.';
   let copied = false;
   let copyTimer: number | null = null;
 
@@ -416,7 +417,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     const awaitingApproval = !!action && current?.stage === 'awaiting_approval' && current.approvedActionId !== action.id;
 
     setHtml('.hw-launch-slot', revealed && !open
-      ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">The store’s checkout just fell over. Want me to go and get it fixed?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>`
+      ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} for help"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">Something went wrong. Want help getting back on track?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>`
       : '');
 
     const panelSlot = shadow.querySelector('.hw-panel-slot');
@@ -436,7 +437,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
       for (const key of ['.hw-brand', '.hw-title', '.hw-body']) htmlCache.delete(key);
     }
 
-    setText('.hw-brand', `Host Whisperer · ${agentReady ? 'support agent connected' : registrationState === 'registering' ? 'connecting website tool' : registrationState === 'failed' ? 'website tool unavailable' : 'self-service mode'}`);
+    setText('.hw-brand', `Big Pink support · ${agentReady ? 'agent connected' : registrationState === 'registering' ? 'connecting website tool' : registrationState === 'failed' ? 'website tool unavailable' : 'self-service mode'}`);
     setText('.hw-title', !current ? 'Get help without a ticket'
       : current.stage === 'recovered' ? 'All sorted'
         : current.stage === 'escalated' ? 'Handed to a developer'
@@ -447,9 +448,8 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
          do, hand them the words, and stop talking. */
       setHtml('.hw-body', `<p class="hw-copy">Say this to ${escapeHtml(agentLabel)} and it takes over from here.</p>
         <div class="hw-prompt"><code>${escapeHtml(handoffPrompt)}</code><button class="hw-copy-btn">${copied ? 'Copied' : 'Copy'}</button></div>
-        <p class="hw-note">You will get one thing to approve. Nothing on the store changes before you say yes.</p>
-        ${registrationState === 'failed' ? '<p class="hw-warn">Website Tool unavailable — turn on Website Tools in your browser, or let Host Whisperer try it here.</p>' : ''}
-        ${!agentReady ? '<button class="hw-primary hw-self">Let Host Whisperer try it here</button>' : ''}`);
+        ${registrationState === 'failed' ? '<p class="hw-warn">Website Tool unavailable — turn on Website Tools in your browser, or use store support here.</p>' : ''}
+        ${!agentReady ? '<button class="hw-primary hw-self">Use store support here</button>' : ''}`);
     } else {
       const stageLabel = { reported: 'Request received', investigating: 'Gathering data', diagnosed: 'Under inspection', awaiting_approval: 'Waiting for you', repairing: 'Fixing it', verifying: 'Checking the fix', recovered: 'Resolved', escalated: 'Escalated', idle: 'Ready' }[current.stage];
       const settled = current.stage === 'recovered' || current.stage === 'escalated';
@@ -457,7 +457,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
         ${awaitingApproval ? `<div class="hw-card"><h3>${escapeHtml(action!.label)}</h3><p>${escapeHtml(action!.description)}</p><ul>${action!.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul><button class="hw-approve">Yes, go ahead</button></div>` : ''}
         ${current.stage === 'diagnosed' && !action && !agentReady ? '<button class="hw-primary hw-suggest">Show the safe fix</button>' : ''}
         ${current.stage === 'recovered' ? '<div class="hw-card hw-good"><h3>Checkout works again</h3><p>Your bag was left exactly as it was. Give it another go.</p></div>' : ''}
-        ${current.stage === 'escalated' ? '<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not fix this safely, so a human has the details now.</p></div>' : ''}`);
+        ${current.stage === 'escalated' ? '<div class="hw-card"><h3>Sent to the developer</h3><p>Store support could not fix this safely, so a human has the details now.</p></div>' : ''}`);
     }
     renderEvents();
     renderRing();

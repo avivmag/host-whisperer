@@ -3,7 +3,7 @@
 ## System overview
 
 ```text
-Connect your host                     Northstar Market (customer website)
+Connect your host                     Big Pink (customer website)
   developer picks a host,               serves normally; POST /api/checkout
   connects it, downloads      ---->     returns 503 because the host's
   one plugin file                       checkout-service is crash-looping
@@ -45,9 +45,11 @@ The token lives in React component state only. It is never written to IndexedDB 
 
 It registers no WebMCP tools.
 
-### Northstar Market
+### Big Pink
 
-`/?view=shop` simulates the customer website. The plugin is installed by default so the demo needs no setup. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the cart is untouched and no payment is attempted. The runtime mounts immediately but its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card.
+`/?view=shop` simulates the customer website: an inflatable-flamingo store. Search, category navigation, the bag drawer, the account menu, shade swatches and the product views are all live client state; nothing leaves the browser. The plugin is installed by default so the demo needs no setup. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the bag is untouched and no payment is attempted. The runtime mounts immediately but its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card. The demo controls live in the page footer, away from the customer story.
+
+The opened panel says one thing: the sentence to give the browser agent, with a **Copy** button for it. When no Website Tool is available it also offers **Let Host Whisperer try it here**, which runs the same workflow without an agent. The panel is patched in place — cached HTML per region, appended activity rows — so a repair in progress never re-runs its entrance animations.
 
 ### Escalation view
 
@@ -112,7 +114,7 @@ reported
 Any failed repair or failed verification -> escalated
 ```
 
-The runtime owns the incident ID and every transition; the browser agent never receives or manages them. The single WebMCP call remains pending while the approval card is visible. Clicking **Approve resolution** resumes the internal workflow in that same call. Resetting or destroying the runtime cancels any pending approval wait.
+The runtime owns the incident ID and every transition; the browser agent never receives or manages them. The single WebMCP call remains pending while the approval card is visible. Clicking **Yes, go ahead** resumes the internal workflow in that same call. Resetting or destroying the runtime cancels any pending approval wait.
 
 ## Demo persistence
 
@@ -121,10 +123,10 @@ The demo uses same-origin browser storage so navigation between its simulated su
 | Storage | Key | Meaning |
 | --- | --- | --- |
 | IndexedDB | `host-whisperer-studio` | Latest integration profile — origin, app name, host, playbook. No token. |
-| localStorage | `northstar-demo-service` | `{ healthy, deploy, lastGood }` for the simulated checkout service |
-| localStorage | `northstar-demo-cart` | Cart contents, kept intact as evidence |
-| localStorage | `host-whisperer-northstar-installed` | `'false'` uninstalls; anything else, including absent, means installed |
-| localStorage | `host-whisperer-northstar-bundle-ready` | Legacy handoff flag for the install console |
+| localStorage | `bigpink-demo-service` | `{ healthy, deploy, lastGood }` for the simulated checkout service |
+| localStorage | `bigpink-demo-cart` | Cart contents, kept intact as evidence |
+| localStorage | `host-whisperer-bigpink-installed` | `'false'` uninstalls; anything else, including absent, means installed |
+| localStorage | `host-whisperer-bigpink-bundle-ready` | Legacy handoff flag for the install console |
 
 This is not a production package-delivery or deployment mechanism.
 

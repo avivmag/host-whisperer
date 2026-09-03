@@ -275,22 +275,40 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     .hw-close{border:0;background:transparent;color:#8b937f;font-size:23.5px;line-height:1;cursor:pointer;padding:0 2px}
     .hw-close:hover{color:#14170f}
     .hw-copy{color:#5b6353;font-size:14.5px;line-height:1.55;margin:8px 0 0}
-    .hw-input{box-sizing:border-box;width:100%;border:1px solid #c7cebb;border-radius:9px;padding:11px;margin:12px 0 9px;background:#f6f7f2;color:#14170f;font-size:15px}
-    .hw-input:focus{outline:0;border-color:#7ba90f;box-shadow:0 0 0 3px rgba(123,169,15,.18)}
     .hw-primary,.hw-approve{width:100%;border:1px solid #a9d431;border-radius:10px;padding:12px;background:#cbf24d;color:#1a2405;font-size:15.5px;font-weight:700;cursor:pointer}
     .hw-primary:hover,.hw-approve:hover{background:#d8fb6b}
-    .hw-copychat,.hw-escalate{background:#fff;border-color:#c7cebb;color:#14170f;font-weight:600}
-    .hw-copychat:hover,.hw-escalate:hover{background:#f1f3ec;border-color:#14170f}
+    .hw-primary{margin-top:12px;background:#fff;border-color:#c7cebb;color:#14170f;font-weight:600}
+    .hw-primary:hover{background:#f1f3ec;border-color:#14170f}
+    .hw-prompt{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:12px;border:1px solid #bcdc70;border-radius:12px;background:#eff8d6}
+    .hw-prompt code{flex:1;font:500 14px 'JetBrains Mono',ui-monospace,monospace;line-height:1.5;color:#2f3627}
+    .hw-copy-btn{flex:none;align-self:stretch;border:1px solid #a9d431;border-radius:9px;padding:0 14px;background:#cbf24d;color:#1a2405;font-size:13.5px;font-weight:700;cursor:pointer}
+    .hw-copy-btn:hover{background:#d8fb6b}
+    .hw-note{margin:11px 0 0;font-size:13px;line-height:1.5;color:#7d8674}
+    .hw-warn{margin:11px 0 0;font-size:13px;line-height:1.5;color:#a55a00}
     .hw-status{margin:14px 0;padding:11px 12px;border:1px solid #dde1d4;border-radius:10px;background:#f6f7f2;font-size:14px;color:#5b6353}
     .hw-status strong{color:#4d7c0f;font:500 11.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.12em}
     .hw-card{border:1px solid #dde1d4;border-radius:12px;padding:14px;margin:12px 0;background:#fbfcf8;animation:hw-arrive .28s ease-out}
     .hw-card h3{margin:0 0 7px;font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;font-size:16px;font-weight:600}
     .hw-card p,.hw-card li{font-size:14px;line-height:1.5;color:#5b6353}
     .hw-card ul{padding-left:17px;margin:8px 0}
-    .hw-approve{margin-top:10px}
-    .hw-ready{color:#4d7c0f;font-size:14px;font-weight:600;margin:10px 0 0}
+    .hw-approve{margin-top:12px}
+    .hw-card.hw-good{border-color:#bcdc70;background:#eff8d6}
     .hw-activity{border-top:1px solid #dde1d4;margin-top:16px;padding-top:13px}
+    .hw-activity.off{display:none}
     .hw-activity h3{margin:0;font:500 11.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:#8b937f}
+    .hw-activity-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .hw-ring{position:relative;width:32px;height:32px;flex:none}
+    .hw-ring svg{width:32px;height:32px;transform:rotate(-90deg);display:block}
+    .hw-ring circle{fill:none;stroke-width:3.2;stroke-linecap:round}
+    .hw-ring-track{stroke:#dde1d4}
+    .hw-ring-fill{stroke:#0d7d6b;transition:stroke-dashoffset .45s ease,stroke .3s ease}
+    .hw-ring.waiting .hw-ring-fill{stroke:#a55a00}
+    .hw-ring.done .hw-ring-fill{stroke:#4d7c0f}
+    .hw-ring.failed .hw-ring-fill{stroke:#b42318}
+    .hw-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 9.5px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:-.03em;color:#8b937f}
+    .hw-ring.waiting .hw-ring-num{color:#a55a00}
+    .hw-ring.done .hw-ring-num{color:#4d7c0f}
+    .hw-ring.failed .hw-ring-num{color:#b42318}
     .hw-event{display:grid;grid-template-columns:8px 1fr;gap:10px;margin:11px 0;animation:hw-event-in .36s ease-out}
     .hw-event i{width:7px;height:7px;border-radius:50%;background:#0d7d6b;margin-top:4px;box-shadow:0 0 0 3px #e2f4f0}
     .hw-event.running i{background:#a55a00;box-shadow:0 0 0 3px #fbefdb;animation:hw-pulse 1s infinite}
@@ -298,10 +316,6 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     .hw-event.approval i{background:#7ba90f;box-shadow:0 0 0 3px #eff8d6}
     .hw-event strong{display:block;font:500 13px 'JetBrains Mono',ui-monospace,monospace;color:#14170f}
     .hw-event span{display:block;margin-top:2px;font-size:12.5px;color:#7d8674;line-height:1.45}
-    .hw-agent-request{border:1px solid #bcdc70;background:#eff8d6;border-radius:12px;padding:14px;margin:12px 0}
-    .hw-agent-request span{display:block;font:500 10.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:#4d7c0f;margin-bottom:6px}
-    .hw-agent-request strong{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;font-size:18.5px;font-weight:600}
-    .hw-agent-request p{color:#5b6353;font-size:13px;line-height:1.5;margin:8px 0 0}
     @keyframes hw-arrive{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
     @keyframes hw-enter{from{opacity:0;transform:translateX(30px) scale(.93)}to{opacity:1;transform:none}}
     @keyframes hw-nudge{0%,84%,100%{transform:none}87%{transform:translateX(-6px) rotate(-1.7deg)}90%{transform:translateX(5px) rotate(1.4deg)}93%{transform:translateX(-3px) rotate(-.8deg)}96%{transform:translateX(1px)}}
@@ -332,44 +346,161 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     anchorFrame = requestAnimationFrame(() => { anchorFrame = null; positionLauncher(); });
   };
 
+  /* The panel is built once and then patched in place. Re-writing the
+     whole shadow root on every activity event made the dialog visibly
+     flash and replay its entry animation while a repair was running. */
+  const ringLength = 2 * Math.PI * 15.5;
+  const panelSkeleton = `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand"></div><h2 class="hw-title"></h2></div><button class="hw-close" aria-label="Close">×</button></div><div class="hw-body"></div><div class="hw-activity off"><div class="hw-activity-head"><h3>Progress</h3><div class="hw-ring"><svg viewBox="0 0 36 36"><circle class="hw-ring-track" cx="18" cy="18" r="15.5"></circle><circle class="hw-ring-fill" cx="18" cy="18" r="15.5" stroke-dasharray="${ringLength}" stroke-dashoffset="${ringLength}"></circle></svg><span class="hw-ring-num">0</span></div></div><div class="hw-events"></div></div></section>`;
+
+  /* How far along the one bounded repair is. The bar stalls at the
+     approval stage on purpose: that is where the customer decides. */
+  const stageProgress: Record<SupportIncident['stage'], number> = { idle: 0, reported: .08, investigating: .28, diagnosed: .44, awaiting_approval: .44, repairing: .72, verifying: .88, recovered: 1, escalated: 1 };
+
+  const renderRing = () => {
+    const ring = shadow.querySelector('.hw-ring');
+    const fill = shadow.querySelector('.hw-ring-fill');
+    if (!ring || !fill) return;
+    const stage = incident?.stage ?? 'idle';
+    const value = stageProgress[stage] ?? 0;
+    const state = stage === 'awaiting_approval' ? 'waiting' : stage === 'escalated' ? 'failed' : stage === 'recovered' ? 'done' : '';
+    if (ring.className !== `hw-ring ${state}`) ring.className = `hw-ring ${state}`;
+    fill.setAttribute('stroke-dashoffset', String(ringLength * (1 - value)));
+    setText('.hw-ring-num', String(Math.round(value * 100)));
+  };
+  const htmlCache = new Map<string, string>();
+  const eventNodes = new Map<string, HTMLElement>();
+  const handoffPrompt = 'Ask Host Whisperer to fix checkout on this page.';
+  let copied = false;
+  let copyTimer: number | null = null;
+
+  const setHtml = (selector: string, html: string) => {
+    if (htmlCache.get(selector) === html) return;
+    const node = shadow.querySelector(selector);
+    if (!node) return;
+    htmlCache.set(selector, html);
+    node.innerHTML = html;
+  };
+
+  const setText = (selector: string, value: string) => {
+    const node = shadow.querySelector(selector);
+    if (node && node.textContent !== value) node.textContent = value;
+  };
+
+  const renderEvents = () => {
+    const list = shadow.querySelector('.hw-events');
+    const section = shadow.querySelector('.hw-activity');
+    const items = incident?.activity.slice(-10) ?? [];
+    section?.classList.toggle('off', !items.length);
+    if (!list) return;
+    for (const item of items) {
+      const existing = eventNodes.get(item.id);
+      if (existing) {
+        if (existing.className !== `hw-event ${item.status}`) existing.className = `hw-event ${item.status}`;
+        const detail = existing.querySelector('span');
+        if (detail && detail.textContent !== item.detail) detail.textContent = item.detail;
+        continue;
+      }
+      const node = document.createElement('div');
+      node.className = `hw-event ${item.status}`;
+      node.innerHTML = `<i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div>`;
+      eventNodes.set(item.id, node);
+      list.append(node);
+    }
+    while (list.childElementCount > 10) list.firstElementChild?.remove();
+  };
+
   const render = () => {
     const current = incident;
     const agentReady = registrationState === 'ready';
     const action = config.actions.find((item) => item.id === current?.pendingActionId);
-    const stageLabel = current ? ({ reported: 'Request received', investigating: 'Gathering data', diagnosed: 'Under inspection', awaiting_approval: 'Waiting for approval', repairing: 'Applying resolution', verifying: 'Verifying', recovered: 'Resolved', escalated: 'Escalated', idle: 'Ready' }[current.stage]) : '';
-    const events = current?.activity.slice(-10).map((item) => `<div class="hw-event ${escapeHtml(item.status)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div></div>`).join('') ?? '';
-    const launcher = revealed && !open ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">That\u2019s a server error on their side \u2014 not something you did. Want me to look into it?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>` : '';
-    const emptyState = agentReady
-      ? `<div class="hw-agent-request"><span>Website Tool ready</span><strong>“Ask Host Whisperer to fix checkout.”</strong><p>Registered as <code>ask_host_whisperer_to_fix_issue</code>. Keep this page open while ${escapeHtml(agentLabel)} handles the request.</p></div>`
-      : registrationState === 'registering'
-        ? '<div class="hw-agent-request"><span>Connecting</span><strong>Preparing the Website Tool…</strong><p>Keep this page open for a moment.</p></div>'
-        : registrationState === 'failed'
-          ? '<div class="hw-agent-request"><span>Website Tool unavailable</span><strong>Check your browser settings.</strong><p>Enable Website Tools, use GPT-5.6 Sol or Terra, and reload this page.</p></div>'
-          : `<input class="hw-input" maxlength="500" value="I can’t complete checkout with the items in my cart." aria-label="Describe the issue"><button class="hw-primary">Start safe diagnosis</button>`;
-    const connectionLabel = agentReady ? 'support agent connected' : registrationState === 'registering' ? 'connecting website tool' : registrationState === 'failed' ? 'website tool unavailable' : 'self-service mode';
-    shadow.innerHTML = `${styles}${launcher}${open ? `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand">Host Whisperer · ${connectionLabel}</div><h2>${current ? 'Working on your issue' : 'Get help without a ticket'}</h2></div><button class="hw-close" aria-label="Close">×</button></div><p class="hw-copy">Host Whisperer handles the technical investigation. You only see the decisions that need you.</p>${!current ? emptyState : `<div class="hw-status"><strong>${escapeHtml(stageLabel)}</strong><br>${escapeHtml(current.description)}</div>${!agentReady && current.diagnostics.length ? `<div class="hw-card"><h3>Evidence</h3><ul>${current.diagnostics.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.summary)}</li>`).join('')}</ul></div>` : ''}${action ? `<div class="hw-card"><h3>${escapeHtml(action.label)}</h3><p>${escapeHtml(action.description)}</p><ul>${action.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul>${current.approvedActionId !== action.id ? `${agentReady ? `<p class="hw-copy">Host Whisperer is waiting for this decision and will finish the support request automatically after approval.</p>` : ''}<button class="hw-approve">${agentReady ? 'Approve resolution' : 'Approve & apply resolution'}</button>` : `<p class="hw-ready">Approved${agentReady ? ' — Host Whisperer is continuing now.' : ''}</p>`}</div>` : ''}${current.stage === 'diagnosed' && !action && !agentReady ? `<button class="hw-primary hw-suggest">Show safe solution</button>` : ''}${current.stage === 'recovered' ? `<div class="hw-card"><h3>Issue resolved</h3><p>Checkout is available again. You can try it now.</p></div>` : ''}${current.stage === 'escalated' ? `<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not verify a safe resolution, so the issue was escalated.</p></div>` : ''}${!agentReady ? `<button class="hw-primary hw-copychat" style="margin-top:8px">Copy prompt for ChatGPT</button>` : ''}`}<div class="hw-activity"><h3>Support progress</h3>${events || '<p class="hw-copy">Host Whisperer’s progress will appear here.</p>'}</div></section>` : ''}`;
+    const awaitingApproval = !!action && current?.stage === 'awaiting_approval' && current.approvedActionId !== action.id;
+
+    setHtml('.hw-launch-slot', revealed && !open
+      ? `<button class="hw-launch" aria-label="Ask ${escapeHtml(agentLabel)} about this error"><span class="hw-launch-head"><i></i>${escapeHtml(agentLabel)}</span><span class="hw-launch-copy">The store’s checkout just fell over. Want me to go and get it fixed?</span><span class="hw-launch-cta">Ask ${escapeHtml(agentLabel)}</span></button>`
+      : '');
+
+    const panelSlot = shadow.querySelector('.hw-panel-slot');
+    if (!panelSlot) return;
+    if (!open) {
+      if (panelSlot.firstChild) {
+        panelSlot.replaceChildren();
+        eventNodes.clear();
+        for (const key of ['.hw-brand', '.hw-title', '.hw-body']) htmlCache.delete(key);
+      }
+      positionLauncher();
+      return;
+    }
+    if (!panelSlot.firstChild) {
+      panelSlot.innerHTML = panelSkeleton;
+      eventNodes.clear();
+      for (const key of ['.hw-brand', '.hw-title', '.hw-body']) htmlCache.delete(key);
+    }
+
+    setText('.hw-brand', `Host Whisperer · ${agentReady ? 'support agent connected' : registrationState === 'registering' ? 'connecting website tool' : registrationState === 'failed' ? 'website tool unavailable' : 'self-service mode'}`);
+    setText('.hw-title', !current ? 'Get help without a ticket'
+      : current.stage === 'recovered' ? 'All sorted'
+        : current.stage === 'escalated' ? 'Handed to a developer'
+          : 'Working on it');
+
+    if (!current) {
+      /* Nothing has happened yet: say the one thing the customer has to
+         do, hand them the words, and stop talking. */
+      setHtml('.hw-body', `<p class="hw-copy">Say this to ${escapeHtml(agentLabel)} and it takes over from here.</p>
+        <div class="hw-prompt"><code>${escapeHtml(handoffPrompt)}</code><button class="hw-copy-btn">${copied ? 'Copied' : 'Copy'}</button></div>
+        <p class="hw-note">You will get one thing to approve. Nothing on the store changes before you say yes.</p>
+        ${registrationState === 'failed' ? '<p class="hw-warn">Website Tool unavailable — turn on Website Tools in your browser, or let Host Whisperer try it here.</p>' : ''}
+        ${!agentReady ? '<button class="hw-primary hw-self">Let Host Whisperer try it here</button>' : ''}`);
+    } else {
+      const stageLabel = { reported: 'Request received', investigating: 'Gathering data', diagnosed: 'Under inspection', awaiting_approval: 'Waiting for you', repairing: 'Fixing it', verifying: 'Checking the fix', recovered: 'Resolved', escalated: 'Escalated', idle: 'Ready' }[current.stage];
+      const settled = current.stage === 'recovered' || current.stage === 'escalated';
+      setHtml('.hw-body', `${settled ? '' : `<div class="hw-status"><strong>${escapeHtml(stageLabel)}</strong><br>${escapeHtml(current.description)}</div>`}
+        ${awaitingApproval ? `<div class="hw-card"><h3>${escapeHtml(action!.label)}</h3><p>${escapeHtml(action!.description)}</p><ul>${action!.effects.map((effect) => `<li>${escapeHtml(effect)}</li>`).join('')}</ul><button class="hw-approve">Yes, go ahead</button></div>` : ''}
+        ${current.stage === 'diagnosed' && !action && !agentReady ? '<button class="hw-primary hw-suggest">Show the safe fix</button>' : ''}
+        ${current.stage === 'recovered' ? '<div class="hw-card hw-good"><h3>Checkout works again</h3><p>Your bag was left exactly as it was. Give it another go.</p></div>' : ''}
+        ${current.stage === 'escalated' ? '<div class="hw-card"><h3>Sent to the developer</h3><p>Host Whisperer could not fix this safely, so a human has the details now.</p></div>' : ''}`);
+    }
+    renderEvents();
+    renderRing();
     positionLauncher();
-    shadow.querySelector('.hw-launch')?.addEventListener('click', () => { open = !open; render(); });
-    shadow.querySelector('.hw-close')?.addEventListener('click', () => { open = false; render(); });
-    shadow.querySelector('.hw-primary:not(.hw-suggest):not(.hw-escalate):not(.hw-copychat)')?.addEventListener('click', async () => {
-      const input = shadow.querySelector<HTMLInputElement>('.hw-input');
-      ensureIncident(input?.value); activity('customer', 'Issue reported', incident!.description); await getContext(); await runDiagnostics();
-    });
-    shadow.querySelector('.hw-suggest')?.addEventListener('click', () => void prepareRecovery(config.actions[0].id));
-    shadow.querySelector('.hw-approve')?.addEventListener('click', async () => {
-      if (!incident || !action || incident.stage !== 'awaiting_approval') return;
-      incident.approvedActionId = action.id; activity('customer', 'Resolution approved', 'You approved the visible resolution.', 'approval');
-      if (agentReady) finishApprovalWait(true);
-      else { await applyRecovery(action.id); await verifyRecovery(); }
-    });
-    shadow.querySelector('.hw-copychat')?.addEventListener('click', async () => {
-      if (!incident) return;
-      const prompt = `Ask Host Whisperer to fix this issue on ${location.origin}${location.pathname}: ${incident.description}`;
-      await navigator.clipboard?.writeText(prompt);
-      activity('customer', 'ChatGPT handoff copied', 'The prompt includes this page URL and the customer’s issue, not private application state.');
-    });
   };
 
+  const startSelfService = async () => {
+    ensureIncident('Checkout is not working.');
+    activity('customer', 'Issue reported', incident!.description);
+    await getContext();
+    await runDiagnostics();
+  };
+
+  const approve = async () => {
+    const action = config.actions.find((item) => item.id === incident?.pendingActionId);
+    if (!incident || !action || incident.stage !== 'awaiting_approval') return;
+    incident.approvedActionId = action.id;
+    activity('customer', 'Resolution approved', 'You approved the visible resolution.', 'approval');
+    if (registrationState === 'ready') finishApprovalWait(true);
+    else { await applyRecovery(action.id); await verifyRecovery(); }
+  };
+
+  const copyPrompt = async () => {
+    try { await navigator.clipboard?.writeText(handoffPrompt); } catch { /* the browser refused the clipboard; the text is still on screen */ }
+    copied = true;
+    render();
+    if (copyTimer !== null) clearTimeout(copyTimer);
+    copyTimer = window.setTimeout(() => { copied = false; render(); }, 1600);
+  };
+
+  /* One delegated listener, so patching the panel never orphans a handler. */
+  shadow.addEventListener('click', (event) => {
+    const button = (event.target as Element | null)?.closest?.('button');
+    if (!button) return;
+    if (button.classList.contains('hw-launch')) { open = true; render(); return; }
+    if (button.classList.contains('hw-close')) { open = false; render(); return; }
+    if (button.classList.contains('hw-copy-btn')) { void copyPrompt(); return; }
+    if (button.classList.contains('hw-self')) { void startSelfService(); return; }
+    if (button.classList.contains('hw-suggest')) { void prepareRecovery(config.actions[0].id); return; }
+    if (button.classList.contains('hw-approve')) { void approve(); return; }
+  });
+
+  shadow.innerHTML = `${styles}<div class="hw-launch-slot"></div><div class="hw-panel-slot"></div>`;
   render();
   window.addEventListener('scroll', schedulePosition, { passive: true });
   window.addEventListener('resize', schedulePosition);
@@ -385,6 +516,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
       controller?.abort();
       if (activeRuntimeRegistration === controller) activeRuntimeRegistration = null;
       if (revealTimer !== null) clearTimeout(revealTimer);
+      if (copyTimer !== null) clearTimeout(copyTimer);
       if (anchorFrame !== null) cancelAnimationFrame(anchorFrame);
       window.removeEventListener('scroll', schedulePosition);
       window.removeEventListener('resize', schedulePosition);

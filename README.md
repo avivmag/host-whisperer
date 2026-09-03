@@ -12,9 +12,9 @@ The configuration product does not embed ChatGPT and does not itself need WebMCP
 
 - [How it works](https://host-whisperer.onrender.com/) — the animated nine-step flow
 - [Connect your host](https://host-whisperer.onrender.com/?view=integrate) — the developer's whole setup
-- [Northstar Market](https://host-whisperer.onrender.com/?view=shop) — **the demo**: the storefront with the plugin installed
+- [Big Pink](https://host-whisperer.onrender.com/?view=shop) — **the demo**: the storefront with the plugin installed
 - [Standalone runtime](https://host-whisperer.onrender.com/runtime/host-whisperer.js)
-- [Northstar Admin](https://host-whisperer.onrender.com/?view=admin) — legacy install console, off the demo path
+- [Big Pink Admin](https://host-whisperer.onrender.com/?view=admin) — legacy install console, off the demo path
 
 The live deployment may lag behind the current worktree. See [implementation status](docs/STATUS.md) before relying on it.
 
@@ -41,7 +41,7 @@ Host Whisperer applies and verifies the developer-approved resolution
 ChatGPT receives “resolved,” and the customer retries successfully
 ```
 
-In the Northstar demo, `POST /api/checkout` returns 503 because deploy `dep-8f2c1a` of the store's checkout service is crash-looping. The only recovery rolls that service back to `dep-8e0b47`, the last deploy that passed health checks. It leaves the cart untouched, places no order, and reads no payment data. The rollback is simulated in browser state; real provider access would require narrow authenticated server-side endpoints.
+In the Big Pink demo, `POST /api/checkout` returns 503 because deploy `dep-8f2c1a` of the store's checkout service is crash-looping. The only recovery rolls that service back to `dep-8e0b47`, the last deploy that passed health checks. It leaves the cart untouched, places no order, and reads no payment data. The rollback is simulated in browser state; real provider access would require narrow authenticated server-side endpoints.
 
 ## Runtime tool
 

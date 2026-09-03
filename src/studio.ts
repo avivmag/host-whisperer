@@ -9,7 +9,7 @@ const now = () => new Date().toISOString();
 
 let profile: SupportIntegration = {
   id: crypto.randomUUID(),
-  appName: 'Northstar Shop',
+  appName: 'Big Pink',
   allowedOrigin: window.location.origin,
   provider: 'render',
   resourceRef: '',

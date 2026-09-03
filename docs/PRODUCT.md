@@ -33,7 +33,7 @@ ChatGPT or another WebMCP-capable browser agent. It discovers the single support
 3. With the store still open in the integrated browser, the customer tells their agent: **"Ask Host Whisperer to fix checkout."** The page's single Website Tool gives that request an unambiguous delegation target.
 4. ChatGPT calls the single `ask_host_whisperer_to_fix_issue` WebMCP tool. It does not inspect source code, the DOM, network logs, other integrations, or the web.
 5. Inside that call, Host Whisperer gathers the allowlisted context, files a support report, and inspects it. Technical evidence stays inside the runtime; the customer sees only generic support-case progress.
-6. The website shows the customer-relevant effects of the bounded resolution. The WebMCP call remains pending until the customer clicks **Approve resolution**.
+6. The website shows the customer-relevant effects of the bounded resolution. The WebMCP call remains pending until the customer clicks **Yes, go ahead**.
 7. Host Whisperer applies the developer-approved resolution, streams generic progress, and verifies the original symptom internally.
 8. The tool returns only `resolved` or `needs_developer` plus a short customer message. ChatGPT tells the customer to retry only after a verified resolution.
 9. The customer retries checkout and the order goes through.
@@ -43,7 +43,7 @@ The developer's side of this is one page and one file: connect the host, downloa
 
 ## Demo scenario
 
-Northstar Market has one Aster H1 headphone in the cart. Checkout fails with **HTTP 503 Service Unavailable** because deploy `dep-8f2c1a` of the store's `checkout-service` is crash-looping (OOMKilled) on its host. This is deliberately a *server* failure: the customer did nothing wrong, and no amount of retrying or cache-clearing will help.
+Big Pink — an inflatable-flamingo store — has one Gerald XL flamingo in the cart. Checkout fails with **HTTP 503 Service Unavailable** because deploy `dep-8f2c1a` of the store's `checkout-service` is crash-looping (OOMKilled) on its host. This is deliberately a *server* failure: the customer did nothing wrong, and no amount of retrying or cache-clearing will help.
 
 The plugin exposes three diagnostics:
 

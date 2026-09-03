@@ -9,8 +9,8 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 - Use ChatGPT's in-app browser, or a Chrome build with WebMCP enabled, so the agent is real.
 - Desktop width, at least 1280px. The agent dialog anchors beside the error at desktop width and falls back to the bottom-right corner on narrow windows.
 - Use the latest ChatGPT desktop app, select GPT-5.6 Sol or Terra, and enable **Website Tools** under Settings → Browser → Permissions.
-- Open `/?view=shop` and click **Recreate outage**. The plugin is installed by default; there is no setup to perform.
-- Confirm the cart shows one Aster H1 and the page shows no error yet.
+- Open `/?view=shop` and click **Recreate outage** in the footer. The plugin is installed by default; there is no setup to perform.
+- Confirm the bag shows one Gerald XL and the page shows no error yet.
 
 ## Part one — the offer (0:00 – 1:40)
 
@@ -33,7 +33,7 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 9. Codex calls `ask_host_whisperer_to_fix_issue` once and waits. It does not inspect the repository, source code, DOM, network logs, other integrations, or the web.
 10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
 11. The page shows the customer-relevant effects of the only allowlisted resolution while the WebMCP call remains open.
-12. Click **Approve resolution**. Do not send another chat message: Host Whisperer continues inside the same pending call.
+12. Click **Yes, go ahead**. Do not send another chat message: Host Whisperer continues inside the same pending call.
 13. Read the remaining generic progress: **Applying approved resolution → Verifying service → Issue resolved**.
 14. Codex receives only the verified result and tells the customer that checkout is available again.
 
@@ -48,7 +48,7 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 
 1. Open `/`. Let the diagram play. Narrate over it rather than reading it.
 2. Name the four parties: the customer and their agent; the website, split into its ordinary **REST API** and the **WebMCP** surface the plugin adds; the **host**; and **Host Whisperer**, which sits between the website and the host and completes the triangle.
-3. Follow the nine steps: request, the website asks the host, the host fails, the failure reaches the customer, the customer is stuck — then the agent steps in over WebMCP, Host Whisperer works the problem with the host, the answer comes back, and the customer is unblocked.
+3. Follow the seven steps: the request travels over the API to the website and on to its host, the failure travels back down the same API, the customer is stuck — then the agent calls through WebMCP to Host Whisperer, Host Whisperer works the host back and forth, the answer comes back, and traffic flows both ways again with the customer unblocked.
 4. Make the honest point at step eight: if it cannot be fixed, the customer gets a truthful handoff and a sanitized report for the developer, not a false success.
 
 ### 6. The developer's side
@@ -69,7 +69,7 @@ If recovery is unavailable or verification fails, the same tool returns `needs_d
 
 ## Demo controls
 
-On `/?view=shop`:
+In the footer of `/?view=shop`, on the left:
 
 - **Recreate outage** restores the broken deploy and clears the error, leaving the plugin installed.
 - **Show it without the plugin** removes the plugin so the 503 is a genuine dead end. Use it for a before/after cut. **Turn the plugin back on** restores it.

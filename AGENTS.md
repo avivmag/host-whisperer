@@ -22,17 +22,17 @@ All surfaces currently share one Vite deployment for demonstration purposes, but
 | --- | --- | --- | --- |
 | `/` | Host Whisperer walkthrough | Evaluator or developer | Explain the product with the animated nine-step flow diagram |
 | `/?view=integrate` | Connect your host | Plugin operator/developer | Choose a host, connect it, and download the one-file plugin |
-| `/?view=shop` | Northstar Market | Customer | Hit the 503, then use the installed WebMCP support tools |
+| `/?view=shop` | Big Pink | Customer | Hit the 503, then use the installed WebMCP support tools |
 | `/?view=incident#packet=...` | Developer escalation | Store developer/operator | Inspect a customer-approved sanitized incident packet |
-| `/?view=admin` | Northstar Admin | Store developer | Legacy install console; kept working but off the demo path and out of navigation |
+| `/?view=admin` | Big Pink Admin | Store developer | Legacy install console; kept working but off the demo path and out of navigation |
 
-Keep the surfaces visually and conceptually distinct. Northstar Market must never link customers to developer configuration. Host Whisperer must not pretend it can silently modify an unrelated website.
+Keep the surfaces visually and conceptually distinct. Big Pink must never link customers to developer configuration. Host Whisperer must not pretend it can silently modify an unrelated website.
 
 The connect page asks for a host API token. That token lives in React component state only: it is never written to IndexedDB or `localStorage`, never passed to `updateStudioProfile`, and never interpolated into the downloaded plugin. `src/App.test.tsx` enforces all three. Keep it that way — the on-screen copy promises it.
 
 ## Non-negotiable boundaries
 
-- Do not register WebMCP tools on the walkthrough, the connect page, or Northstar Admin.
+- Do not register WebMCP tools on the walkthrough, the connect page, or Big Pink Admin.
 - Register WebMCP tools only through the installed customer runtime in `src/runtime/index.ts`.
 - Do not embed or request cloud-provider credentials in browser code.
 - Do not expose arbitrary shell commands, scripts, provider APIs, logs, or infrastructure mutations to a customer agent.
@@ -46,10 +46,10 @@ The connect page asks for a host API token. That token lives in React component 
 
 The demo uses local browser state to model generation and installation:
 
-- `host-whisperer-northstar-bundle-ready` means the connect page prepared a package.
-- `host-whisperer-northstar-installed` means the plugin is installed. It is **installed by default**: the storefront reads `!== 'false'`, so the demo needs no setup. The "Show it without the plugin" control writes `'false'`.
-- `northstar-demo-cart` stores the cart item, which stays intact through the whole incident.
-- `northstar-demo-service` stores `{ healthy, deploy, lastGood }` for the checkout service, defaulting to the broken `dep-8f2c1a` with `dep-8e0b47` as the last healthy deploy.
+- `host-whisperer-bigpink-bundle-ready` means the connect page prepared a package.
+- `host-whisperer-bigpink-installed` means the plugin is installed. It is **installed by default**: the storefront reads `!== 'false'`, so the demo needs no setup. The "Show it without the plugin" control writes `'false'`.
+- `bigpink-demo-cart` stores the cart item, which stays intact through the whole incident.
+- `bigpink-demo-service` stores `{ healthy, deploy, lastGood }` for the checkout service, defaulting to the broken `dep-8f2c1a` with `dep-8e0b47` as the last healthy deploy.
 
 The incident is a **host outage**, not an application bug. `POST /api/checkout` returns HTTP 503 because deploy `dep-8f2c1a` of `checkout-service` is crash-looping (OOMKilled). Internally, three diagnostics run: storefront health (pass), cart contents (pass), checkout service (fail). Those technical details are not returned to the customer's browser agent. The single allowlisted recovery, `roll_back_checkout_service`, rolls the service back to `dep-8e0b47`, reports only generic support-case progress to the customer, and leaves the cart untouched. After verification the error card becomes **Try checkout again**, which reaches order confirmation.
 

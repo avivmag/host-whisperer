@@ -1,46 +1,72 @@
 # Demo Runbook
 
-## The complete before-and-after story
+This is the target judged flow. Before recording, confirm that the implementation gaps in `docs/STATUS.md` are closed and that the deployed build matches the worktree.
 
-### 1. Reproduce the problem before Host Whisperer
+## Preparation
+
+- Use ChatGPT's in-app browser for the customer WebMCP portion.
+- Open the Host Whisperer Studio and Northstar Admin in separate tabs if that makes the three roles easier to follow.
+- On Northstar Market, click **Restart full story** before rehearsing.
+- Confirm the error, package-ready flag, plugin installation, and cart recovery are all reset.
+
+## 1. Customer reaches a dead end
 
 1. Open `https://host-whisperer.onrender.com/?view=shop`.
-2. Click **Restart full story** if this browser has run the demo before.
-3. Click **Checkout** and show the `CART_SESSION_OUTDATED` error.
-4. Point out that there is no AI support button or developer configuration link. The customer only receives a generic error.
-5. Leave Northstar open and separately open the developer Studio at `https://host-whisperer.onrender.com/?view=integrate`.
+2. Show that this is Northstar Market, not Host Whisperer or an admin dashboard.
+3. Confirm there is no error and no Host Whisperer support control initially.
+4. Click **Checkout**.
+5. Show the generic checkout error and `CART_SESSION_OUTDATED`.
+6. Emphasize that the uninstrumented website can report the problem but cannot help the customer's agent investigate it.
 
-### 2. Configure and generate the plugin in Host Whisperer
+## 2. Operator generates the integration
 
-1. Confirm **Northstar Shop**, the exact website origin, Render, and the verified broken-cart playbook.
-2. Explain that this is a separate developer-only surface and that the form can also be configured by ChatGPT through the Studio's WebMCP tools.
-3. Click **Generate support plugin**.
-4. Show the generated adapter. Point out the allowlisted context, diagnostic, recovery, and verification functions.
-5. Click **Send package to Northstar Admin**. This transfers the generated demo package without pretending that an external service can silently modify the store.
-6. Wait for **Integration package is ready**, then click **Open Northstar Admin**.
+1. Separately open `https://host-whisperer.onrender.com/?view=integrate`.
+2. Show the Host Whisperer identity and normal developer configuration form.
+3. Confirm the application name, exact allowed origin, provider hint, and commerce cart playbook.
+4. Point out the customer-safe boundary and generated adapter.
+5. Click **Generate support plugin**.
+6. Briefly show the adapter, runtime, and install-tag controls.
+7. Click **Send package to Northstar Admin**.
 
-### 3. Install it in the store's admin page
+Do not mention configuring Studio with ChatGPT. Studio generates the plugin; it is not a WebMCP surface.
 
-1. Point out the completely different Northstar Admin interface and the **Store developer** role.
-2. Review the two received files and the four requested capabilities.
-3. Click **Install plugin on storefront**.
-4. Wait for **Host Whisperer is active**, then click **Test on storefront**.
+## 3. Store developer installs it
 
-### 4. Let the customer's AI operate the website
+1. Open `https://host-whisperer.onrender.com/?view=admin`.
+2. Establish the Northstar Admin identity and **Store developer** role.
+3. Review the received files and requested website capabilities.
+4. Explain that the store owner—not Host Whisperer and not the customer agent—controls installation.
+5. Click **Install plugin on storefront**.
+6. Wait for **Host Whisperer is active**.
+7. Click **Test on storefront**.
 
-1. Click **Checkout** again. The same error occurs, but **Ask AI to fix this** now appears.
-2. Click the new support control and keep the panel open.
-3. In ChatGPT, say only: **“Fix checkout safely.”**
-4. The panel animates each WebMCP step as ChatGPT reads safe context and runs the developer-approved diagnostics.
-5. Show store health passing, inventory passing, and cart compatibility failing.
-6. When ChatGPT prepares **Rebuild cart session**, show the precise effects and click **Approve recovery**.
-7. Let ChatGPT apply the recovery and call verification.
-8. Finish on **Everything is running smoothly**, with the same Aster H1 still in the cart and the completed activity timeline visible.
+## 4. Customer asks ChatGPT for help
 
-The page cannot inject a message into ChatGPT. The single short request in step 3 is therefore the minimum honest customer interaction; everything after it is driven by the page's WebMCP tools.
+1. Back on Northstar Market, click **Checkout** again.
+2. The same error appears, followed by the installed **Ask AI to fix this** control.
+3. Open the control and keep its activity timeline visible.
+4. In the ChatGPT conversation, say: **“Fix checkout safely.”**
+5. ChatGPT should call `get_support_context` and `run_support_diagnostics`.
+6. Show the individual activity events: storefront reachable, inventory available, and cart-session compatibility failed.
+7. Explain that the page shared a small allowlist of structured values, not payment data, credentials, query strings, or arbitrary DOM content.
 
-Use **Reset error only** to repeat just the repair, or **Restart full story** to remove the simulated installation and return to the opening state.
+The webpage cannot silently submit a message to ChatGPT. The short customer request is the minimum honest handoff; subsequent work happens through WebMCP.
+
+## 5. Customer approves and ChatGPT verifies
+
+1. ChatGPT calls `prepare_recovery` with `rebuild_cart_session`.
+2. Show the recovery card and its exact effects.
+3. Click **Approve recovery** in Northstar Market.
+4. ChatGPT calls `apply_recovery` and then `verify_recovery`.
+5. Show **Everything is running smoothly**.
+6. Confirm the same Aster H1 and quantity remain in the cart and no order was placed.
+7. End with the completed activity timeline visible.
 
 ## Optional escalation
 
-If recovery cannot be verified, call `prepare_developer_escalation`. The first call previews the sanitized packet. After the customer approves sharing in the widget, a second call returns a Host Whisperer URL whose fragment contains the report. The packet is labeled untrusted evidence and is not uploaded to a Host Whisperer backend.
+If recovery is unavailable or verification fails, ChatGPT calls `prepare_developer_escalation`. The first call previews the sanitized packet. After separate customer approval, a second call returns an escalation URL whose fragment contains the report. The report is labeled untrusted evidence.
+
+## Reset controls
+
+- **Reset error only** restores cart schema version 1 but leaves the plugin installed.
+- **Restart full story** restores the broken cart and clears both package and installation demo flags.

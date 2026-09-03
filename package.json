@@ -13,7 +13,6 @@
     "research:sync": "node scripts/sync-research.mjs"
   },
   "dependencies": {
-    "@mcp-b/webmcp-types": "latest",
     "idb": "latest",
     "lucide-react": "latest",
     "react": "latest",

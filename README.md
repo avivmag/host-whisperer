@@ -1,27 +1,40 @@
 # Host Whisperer
 
-Generate an AI support operator for an existing website.
+Host Whisperer generates a safe WebMCP support layer for an existing website.
 
-Host Whisperer gives developers a framework-neutral JavaScript adapter that adds a customer Help widget and structured WebMCP tools to their site. A customer describes a problem normally; ChatGPT reads only developer-approved context, runs bounded diagnostics, explains the evidence, proposes an allowlisted recovery, waits for visible approval, and verifies the outcome.
+A developer configures and installs a framework-neutral plugin. When a customer later experiences a supported problem, ChatGPT can use the tools registered by that customer page to inspect minimal context, run diagnostics, propose an allowlisted recovery, wait for visible approval, apply it, and verify the result.
 
-**Product walkthrough:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
+The configuration product does not embed ChatGPT and does not itself need WebMCP. WebMCP belongs in the generated plugin running on the customer website.
 
-**Developer Studio:** [host-whisperer.onrender.com/?view=integrate](https://host-whisperer.onrender.com/?view=integrate)
+## Live surfaces
 
-**Working customer demo:** [host-whisperer.onrender.com/?view=shop](https://host-whisperer.onrender.com/?view=shop)
+- [Product walkthrough](https://host-whisperer.onrender.com/)
+- [Host Whisperer Integration Studio](https://host-whisperer.onrender.com/?view=integrate)
+- [Northstar Admin](https://host-whisperer.onrender.com/?view=admin)
+- [Northstar Market](https://host-whisperer.onrender.com/?view=shop)
+- [Standalone runtime](https://host-whisperer.onrender.com/runtime/host-whisperer.js)
 
-**Northstar Admin:** [host-whisperer.onrender.com/?view=admin](https://host-whisperer.onrender.com/?view=admin)
+The live deployment may lag behind the current worktree. See [implementation status](docs/STATUS.md) before relying on it.
 
-## Why WebMCP
+## Product flow
 
-A conventional support widget can display canned answers or send a transcript. Host Whisperer makes the website itself agent-operable. The agent works with the same live application state and approval controls the customer can see, without guessing through the UI or receiving unrestricted access.
+```text
+Customer encounters an ordinary website error
+                    ↓
+Developer configures Host Whisperer
+                    ↓
+Host Whisperer generates adapter + runtime
+                    ↓
+Store developer installs them through Northstar Admin
+                    ↓
+Customer page registers WebMCP support tools
+                    ↓
+ChatGPT diagnoses, requests approval, repairs, and verifies
+```
 
-The project uses WebMCP twice:
+The Northstar demo uses an outdated cart session. The recovery migrates only the cart schema, preserves the original product and quantity, and cannot place an order or access payment information.
 
-1. **Studio tools** let a developer and ChatGPT configure an integration together and prepare its install bundle.
-2. **Generated runtime tools** let a customer and ChatGPT investigate and recover inside the instrumented website.
-
-The runtime registers:
+## Runtime tools
 
 - `get_support_context`
 - `run_support_diagnostics`
@@ -30,56 +43,41 @@ The runtime registers:
 - `verify_recovery`
 - `prepare_developer_escalation`
 
-## Demonstrated incident
+These tools are registered by the installed runtime in `src/runtime/index.ts`. They are bounded by exact origin, developer-supplied handlers, incident identity, visible customer consent, single-use transitions, and post-recovery verification.
 
-The Northstar sample store contains an intentionally outdated cart session. Checkout fails with `CART_SESSION_OUTDATED`, while the product remains in stock and the store stays healthy.
+## Documentation
 
-Host Whisperer identifies the incompatible session, proposes **Rebuild cart session**, and displays its exact effects. The repair cannot execute until the customer clicks the visible approval button. It then migrates only the cart state, preserves the item and quantity, and verifies checkout readiness. It never places an order or reads payment information.
+- [Product specification](docs/PRODUCT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security model](docs/SECURITY.md)
+- [Implementation status and next work](docs/STATUS.md)
+- [Demo runbook](docs/DEMO.md)
+- [Devpost submission draft](docs/SUBMISSION.md)
+- [Research archive](docs/research/README.md)
+- [Instructions for coding agents](AGENTS.md)
 
-Every agent action is shown in the widget's **Operator activity** timeline, making the WebMCP execution visible in the demo.
-
-## Safety boundary
-
-- The adapter is bound to one configured origin.
-- Only developer-supplied diagnostics and recovery handlers are callable.
-- Context is allowlisted and recursively sanitized.
-- Credential-like fields, token-shaped content, URL queries, and DOM content are excluded.
-- Recovery requires visible customer approval and cannot be replayed as a different incident.
-- Success is not reported until the configured verification check passes.
-- Developer escalation requires separate sharing consent and produces a sanitized URL-fragment packet; no incident backend receives it.
-- Cloud credentials and provider administration remain in the developer's authenticated environment, never the customer page.
-
-The sample shop is deterministic demonstration software. It does not impersonate Amazon, process payments, or claim installation on websites that do not include the adapter.
-
-## Generated installation
-
-Studio prepares two self-hostable files:
-
-- `host-whisperer.js` — the universal ESM runtime.
-- `host-whisperer-adapter.js` — origin-bound application diagnostics and recovery handlers.
-
-The developer reviews and connects the generated handler stubs to their application, copies both files into their own public assets, and installs the adapter:
-
-```html
-<script type="module" src="/support/host-whisperer-adapter.js"></script>
-```
-
-## Run and verify
+## Run locally
 
 ```bash
 npm install
-npm test
-npm run build
 npm run dev
 ```
 
-Open the deployed app in ChatGPT's in-app browser, or in Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled. Without WebMCP, the installed widget remains usable in local self-service mode.
+## Verify
 
-See [docs/DEMO.md](docs/DEMO.md) for the exact judged flow and [docs/SUBMISSION.md](docs/SUBMISSION.md) for the Devpost copy and video script.
+```bash
+npm test -- --run
+npm run build
+git diff --check
+```
+
+The production command builds both the React application and the self-hostable runtime at `dist/runtime/host-whisperer.js`.
+
+Use ChatGPT's in-app browser or a WebMCP-enabled Chrome build for the real agent flow. In an ordinary browser, the installed widget provides a limited self-service fallback, but that fallback is not the primary WebMCP demonstration.
 
 ## Technology
 
-React, TypeScript, Vite, IndexedDB, the imperative `document.modelContext.registerTool` API, and a standalone framework-neutral ESM runtime. The application and runtime are both produced by the production build.
+React, TypeScript, Vite, IndexedDB, Shadow DOM, localStorage for deterministic demo state, and the imperative `document.modelContext.registerTool()` API.
 
 ## License
 

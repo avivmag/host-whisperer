@@ -1,5 +1,7 @@
 # Devpost Submission Draft
 
+This draft describes the implemented architecture. Do not submit it until `docs/STATUS.md` confirms that the redesigned live deployment has been tested in ChatGPT's in-app browser.
+
 ## Project
 
 **Name:** Host Whisperer
@@ -26,7 +28,7 @@ Host Whisperer lets a developer give an existing website an AI support operator.
 
 ### What it does
 
-The Host Whisperer Studio generates a framework-neutral JavaScript adapter containing developer-approved diagnostics and recovery actions. Once installed, it adds a Help widget and WebMCP tools directly to the website.
+The Host Whisperer Studio uses a normal developer configuration form to generate a framework-neutral JavaScript adapter containing developer-approved diagnostics and recovery actions. The store developer reviews and installs that package. Only then does it add an AI-help control and WebMCP tools to the customer website.
 
 A customer describes the symptom normally. ChatGPT reads only safe application context, runs the approved diagnostics, explains the evidence, prepares a bounded recovery, waits for the customer to approve its exact effects, applies it, and verifies the original problem is gone. Every step appears in a visible Operator activity timeline.
 
@@ -38,11 +40,11 @@ If a problem cannot be safely repaired in the customer page, Host Whisperer prep
 
 This experience depends on the page, person, and agent sharing live state. Without WebMCP, a chatbot receives prose and guesses what happened. With WebMCP, the website exposes precise diagnostic and recovery capabilities with JSON Schemas and enforced boundaries.
 
-Host Whisperer uses WebMCP at two levels. Studio tools let a developer configure the integration together with ChatGPT. The generated runtime then registers support tools inside the customer's website. This makes the installed site meaningfully better when its customer and agent use it together.
+Host Whisperer uses WebMCP at the point where it creates unique value: inside the installed customer website. The generated runtime registers six support tools tied to live page state, visible customer approval, and developer-defined handlers. This makes the existing site meaningfully better when its customer and browser agent use it together.
 
 ### How it was built
 
-The Studio is a React and TypeScript application. It stores integration profiles in IndexedDB and generates an origin-bound adapter plus a standalone ESM runtime. Both Studio and runtime use the imperative `document.modelContext.registerTool` API with abortable registration lifecycles and compact MCP content responses.
+The Studio is a React and TypeScript application. It stores integration profiles in IndexedDB and generates an origin-bound adapter plus a standalone ESM runtime. The installed runtime uses the imperative `document.modelContext.registerTool` API with abortable registration lifecycles and compact MCP content responses.
 
 The runtime owns an incident state machine, a Shadow DOM widget, recursive context sanitization, a visible approval gate, recovery verification, and URL-fragment escalation packets. The production Vite build emits both the Studio application and the self-hostable runtime.
 

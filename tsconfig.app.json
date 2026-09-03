@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["@mcp-b/webmcp-types", "vitest/globals"]
+    "types": ["vitest/globals"]
   },
   "include": ["src"]
 }

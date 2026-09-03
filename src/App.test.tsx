@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
 afterEach(() => {
@@ -14,7 +14,7 @@ describe('Host Whisperer surfaces', () => {
     expect(screen.getAllByText('Host Whisperer')).not.toHaveLength(0);
     expect(screen.getByText(/Turn website errors/)).toBeInTheDocument();
     expect(screen.getByText(/The complete walkthrough/)).toBeInTheDocument();
-    expect(screen.getByText(/What does “configure with ChatGPT” mean/)).toBeInTheDocument();
+    expect(screen.getByText(/WebMCP lives in the installed plugin/)).toBeInTheDocument();
     expect(screen.getByText('Northstar Market')).toBeInTheDocument();
     expect(screen.getByText('Northstar Admin')).toBeInTheDocument();
   });
@@ -30,12 +30,16 @@ describe('Host Whisperer surfaces', () => {
   });
 
   it('keeps developer configuration on a separate integration page', () => {
+    const registerTool = vi.fn();
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool } });
     history.replaceState({}, '', '/?view=integrate');
     render(<App />);
     expect(screen.getByText(/Configure the support boundary/)).toBeInTheDocument();
     expect(screen.getByText(/Generated universal adapter/)).toBeInTheDocument();
     expect(screen.getByText(/Customer-safe boundary/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Service reference/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Configure this page with ChatGPT/)).not.toBeInTheDocument();
+    expect(registerTool).not.toHaveBeenCalled();
   });
 
   it('renders a deterministic customer checkout failure', () => {

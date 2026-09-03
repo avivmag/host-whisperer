@@ -29,8 +29,7 @@ describe('generated support runtime', () => {
     expect(approve).toBeTruthy();
     expect(document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent).not.toContain('Cart format');
     approve!.click();
-    const result = await request as { content: Array<{ text: string }> };
-    const customerResult = JSON.parse(result.content[0].text);
+    const customerResult = await request as { status: string; customerMessage: string };
     expect(customerResult).toEqual({ status: 'resolved', customerMessage: 'Checkout is available again. Ask the customer to try again.' });
     expect(JSON.stringify(customerResult)).not.toContain('Cart format');
     expect(runtime.getIncident()?.stage).toBe('recovered');
@@ -40,8 +39,8 @@ describe('generated support runtime', () => {
   it('returns a simple ready message when inspection finds no active failure', async () => {
     Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => undefined } });
     const runtime = createHostWhispererRuntime({ integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render', getContext: () => ({ route: '/cart' }), diagnostics: [{ id: 'health', label: 'Health', run: () => ({ status: 'pass', summary: 'Online' }) }], actions: [{ id: 'retry', label: 'Retry', description: 'Retry', effects: ['Retry'], run: () => undefined, verify: () => ({ recovered: true, summary: 'Ready' }) }] });
-    const result = await runtime.tools[0].execute({ issue: 'Is checkout ready?' }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(result.content[0].text)).toEqual({ status: 'resolved', customerMessage: 'Checkout is available. Ask the customer to try again.' });
+    const result = await runtime.tools[0].execute({ issue: 'Is checkout ready?' });
+    expect(result).toEqual({ status: 'resolved', customerMessage: 'Checkout is available. Ask the customer to try again.' });
     expect(runtime.getIncident()?.stage).toBe('recovered');
     runtime.destroy();
   });

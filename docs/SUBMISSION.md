@@ -44,7 +44,7 @@ Host Whisperer uses WebMCP at the point where it creates unique value: inside th
 
 The configuration site is a React and TypeScript application. It stores integration profiles in IndexedDB and assembles a single-file plugin from a standalone ESM runtime plus an origin-bound configuration bootstrap. The host API token never leaves React component state: it is not persisted, and it does not appear in the downloaded file. A unit test enforces that.
 
-The installed runtime uses the imperative `document.modelContext.registerTool` API with abortable registration lifecycles and compact MCP content responses. It owns an incident state machine, a Shadow DOM widget that anchors itself beside the error it is offering to fix, recursive context sanitization, a visible approval gate with replay prevention, recovery verification, live progress reporting from a running recovery, and URL-fragment escalation packets. The production Vite build emits both the application and the self-hostable runtime.
+The installed runtime uses the imperative `document.modelContext.registerTool` API with abortable registration lifecycles and plain structured JSON responses. It owns an incident state machine, a Shadow DOM widget that anchors itself beside the error it is offering to fix, recursive context sanitization, a visible approval gate with replay prevention, recovery verification, live progress reporting from a running recovery, and URL-fragment escalation packets. The production Vite build emits both the application and the self-hostable runtime.
 
 ### What we learned
 

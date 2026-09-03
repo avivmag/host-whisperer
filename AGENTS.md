@@ -20,7 +20,7 @@ All surfaces currently share one Vite deployment for demonstration purposes, but
 
 | Route | Surface | Audience | Responsibility |
 | --- | --- | --- | --- |
-| `/` | Host Whisperer walkthrough | Evaluator or developer | Explain the product with the animated nine-step flow diagram |
+| `/` | Host Whisperer walkthrough | Evaluator or developer | Explain the product with the animated seven-step flow diagram |
 | `/?view=integrate` | Connect your host | Plugin operator/developer | Choose a host, connect it, and download the one-file plugin |
 | `/?view=shop` | Big Pink | Customer | Hit the 503, then use the installed WebMCP support tools |
 | `/?view=incident#packet=...` | Developer escalation | Store developer/operator | Inspect a customer-approved sanitized incident packet |

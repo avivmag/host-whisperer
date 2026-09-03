@@ -33,7 +33,7 @@ The repository is one React application using query-string routing to present se
 
 ### Walkthrough
 
-`/` explains the product with an animated nine-step inline-SVG diagram: the customer and their agent on the left, the website split into REST API and WebMCP lanes in the centre, the host on the right, and Host Whisperer below, wired to both. It auto-plays, has prev/next/pause, and respects `prefers-reduced-motion`.
+`/` explains the product with an animated seven-step inline-SVG diagram: the customer and their agent on the left, the website split into REST API and WebMCP lanes in the centre, the host on the right, and Host Whisperer below, wired to both. It auto-plays, has prev/next/pause, and respects `prefers-reduced-motion`.
 
 It registers no WebMCP tools.
 

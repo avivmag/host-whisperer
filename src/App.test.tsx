@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
@@ -23,6 +23,8 @@ describe('Host Whisperer surfaces', () => {
     history.replaceState({}, '', '/?view=shop');
     render(<App />);
     expect(screen.getByText('Aster H1')).toBeInTheDocument();
+    expect(screen.queryByText(/couldn’t open checkout/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Checkout' }));
     expect(screen.getByText(/couldn’t open checkout/)).toBeInTheDocument();
     expect(document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent).toContain('Ask AI to fix this');
   });
@@ -32,8 +34,10 @@ describe('Host Whisperer surfaces', () => {
     localStorage.removeItem('host-whisperer-northstar-installed');
     history.replaceState({}, '', '/?view=shop');
     render(<App />);
-    expect(screen.getByText(/No support integration installed/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Configure Host Whisperer/ })).toHaveAttribute('href', '/?demo=install');
+    expect(screen.queryByText(/couldn’t open checkout/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Checkout' }));
+    expect(screen.getByText(/couldn’t open checkout/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Configure Host Whisperer/ })).not.toBeInTheDocument();
     expect(document.querySelector('#host-whisperer-root')).toBeNull();
   });
 });

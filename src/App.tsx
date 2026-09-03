@@ -25,7 +25,6 @@ function Studio() {
   const [copied, setCopied] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [demoInstalled, setDemoInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
-  const isDemoJourney = new URLSearchParams(location.search).get('demo') === 'install';
 
   useEffect(() => { void hydrateStudio(); }, []);
   useEffect(() => {
@@ -50,7 +49,6 @@ function Studio() {
   };
 
   return <div className="app-shell"><AppHeader section="Developer Studio" />
-    {isDemoJourney && <div className="journey-bar"><span className="done"><Check size={13} /> 1 · Error reproduced</span><span className={!demoInstalled ? 'active' : 'done'}>{demoInstalled ? <Check size={13} /> : <i>2</i>} Configure & install</span><span className={demoInstalled ? 'active' : ''}><i>3</i> Let AI repair it</span></div>}
     <div className="studio-hero"><div><div className="eyebrow"><Sparkles size={15} /> Generate an AI support operator</div><h1>Give your website<br />a way to <em>help itself.</em></h1><p>Configure safe diagnostics and recovery actions once. Your customers can then explain a problem normally while ChatGPT investigates and repairs it inside the website.</p><div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={17} /> Try the broken checkout <ArrowRight size={17} /></a><span className={webMcp ? 'status ready' : 'status'}><i />{webMcp ? 'Studio WebMCP ready' : 'Form mode'}</span></div></div>
       <div className="architecture-card"><span>How it works</span>{[['1', 'Developer configures', 'Choose the signals and recoveries the website may expose.'], ['2', 'Adapter is installed', 'A universal module adds the widget and WebMCP tools.'], ['3', 'Customer gets help', 'The operator diagnoses, asks approval, fixes, and verifies.']].map(([n, title, body]) => <div className="arch-step" key={n}><b>{n}</b><div><strong>{title}</strong><p>{body}</p></div></div>)}</div></div>
     <main className="studio-grid">
@@ -63,7 +61,7 @@ function Studio() {
         <button className="primary-button" onClick={() => void prepareStudioBundle()}><PackageCheck size={18} /> Generate support plugin</button>
         <p className="agent-prompt"><Bot size={16} /> Or tell ChatGPT: “Configure Host Whisperer for my commerce site.”</p>
       </section>
-      <section className="studio-panel code-panel"><div className="panel-heading"><div><Code2 size={18} /><span>Generated universal adapter</span></div><span className="language">JavaScript · ESM</span></div><pre>{code}</pre><div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={16} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={16} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={16} /> {copied ? 'Copied' : 'Install tag'}</button></div>{!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before installing it.</p>}{isDemoJourney && profile.bundlePrepared && !demoInstalled && <button className={`demo-install-button ${installing ? 'installing' : ''}`} onClick={installDemo} disabled={installing}><Plug size={17} /> {installing ? 'Adding adapter to Northstar…' : 'Install on Northstar demo'}</button>}{isDemoJourney && demoInstalled && <div className="install-complete"><Check size={18} /><div><strong>Host Whisperer is installed</strong><span>The support control and six WebMCP tools are now live.</span></div><a href="/?view=shop">Return to Northstar <ArrowRight size={15} /></a></div>}</section>
+      <section className="studio-panel code-panel"><div className="panel-heading"><div><Code2 size={18} /><span>Generated universal adapter</span></div><span className="language">JavaScript · ESM</span></div><pre>{code}</pre><div className="download-row"><button onClick={() => downloadText('host-whisperer-adapter.js', code)} disabled={!profile.bundlePrepared}><Download size={16} /> Adapter</button><a className={profile.bundlePrepared ? '' : 'disabled'} href="/runtime/host-whisperer.js" download><Download size={16} /> Runtime</a><button onClick={() => void copyInstall()} disabled={!profile.bundlePrepared}><Copy size={16} /> {copied ? 'Copied' : 'Install tag'}</button></div>{!profile.bundlePrepared && <p className="prepare-hint">Review the profile and generate the plugin before installing it.</p>}{profile.bundlePrepared && !demoInstalled && <button className={`demo-install-button ${installing ? 'installing' : ''}`} onClick={installDemo} disabled={installing}><Plug size={17} /> {installing ? 'Adding adapter to Northstar…' : 'Install on Northstar demo'}</button>}{demoInstalled && <div className="install-complete"><Check size={18} /><div><strong>Host Whisperer is installed</strong><span>The support control and six WebMCP tools are now live on the demo website.</span></div><a href="/?view=shop">Open Northstar <ArrowRight size={15} /></a></div>}</section>
       <section className="capability-strip"><div><Activity size={19} /><strong>Generated customer tools</strong></div>{['Read safe context', 'Run diagnostics', 'Prepare recovery', 'Apply after approval', 'Verify', 'Escalate safely'].map((value) => <span key={value}><Check size={13} />{value}</span>)}</section>
     </main><footer><span>Host Whisperer Studio</span><span>Developers define the boundaries. Customers stay in control.</span></footer></div>;
 }
@@ -75,13 +73,13 @@ const readCart = () => { try { return JSON.parse(localStorage.getItem(cartKey) |
 
 function ShopDemo() {
   const [cart, setCart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) localStorage.setItem(cartKey, JSON.stringify(brokenCart())); return readCart(); });
-  const [checkoutTried, setCheckoutTried] = useState(true);
+  const [checkoutTried, setCheckoutTried] = useState(false);
   const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) === 'true');
 
   useEffect(() => {
     const refresh = () => setCart(readCart());
     window.addEventListener('hostwhisperer:cart-rebuilt', refresh);
-    if (!installed) return () => window.removeEventListener('hostwhisperer:cart-rebuilt', refresh);
+    if (!installed || !checkoutTried) return () => window.removeEventListener('hostwhisperer:cart-rebuilt', refresh);
     const runtime = createHostWhispererRuntime({
       integrationId: 'northstar-commerce-demo', appName: 'Northstar Shop', allowedOrigin: location.origin, providerHint: 'render', studioUrl: `${location.origin}/?view=incident`,
       getContext: () => ({ route: location.pathname, appVersion: '2.4.0', cartItemCount: readCart().items.length, cartSchemaVersion: readCart().schemaVersion, expectedCartSchemaVersion: 2, lastErrorCode: readCart().schemaVersion === 2 ? 'NONE' : 'CART_SESSION_OUTDATED' }),
@@ -93,15 +91,14 @@ function ShopDemo() {
       actions: [{ id: 'rebuild_cart_session', label: 'Rebuild cart session', description: 'Create a current cart session and restore the same product IDs and quantities.', effects: ['Preserves the Aster H1 Headphones in this cart', 'Does not place an order', 'Does not read or change payment details'], run: () => { const current = readCart(); localStorage.setItem(cartKey, JSON.stringify({ ...current, schemaVersion: 2 })); window.dispatchEvent(new Event('hostwhisperer:cart-rebuilt')); }, verify: () => ({ recovered: readCart().schemaVersion === 2, summary: readCart().schemaVersion === 2 ? 'Checkout is ready with the original item preserved.' : 'Checkout still cannot read the cart.' }) }],
     });
     return () => { window.removeEventListener('hostwhisperer:cart-rebuilt', refresh); runtime.destroy(); };
-  }, [installed]);
+  }, [installed, checkoutTried]);
 
-  const reset = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); setCart(readCart()); setCheckoutTried(true); };
-  const restartJourney = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); localStorage.removeItem(demoInstallKey); setCart(readCart()); setInstalled(false); setCheckoutTried(true); };
+  const reset = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); setCart(readCart()); setCheckoutTried(false); };
+  const restartJourney = () => { localStorage.setItem(cartKey, JSON.stringify(brokenCart())); localStorage.removeItem(demoInstallKey); setCart(readCart()); setInstalled(false); setCheckoutTried(false); };
   const healthy = cart.schemaVersion === 2;
   return <div className="shop-shell"><AppHeader section="Instrumented demo" /><div className="shop-promo">Free delivery on orders over $50 · 30-day returns</div><header className="shop-nav"><a href="/?view=shop" className="shop-logo">NORTHSTAR</a><nav><span>Audio</span><span>Workspace</span><span>Travel</span></nav><div><ShoppingBag size={20} /><b>{cart.items.length}</b></div></header>
     <main className="product-layout"><section className="product-visual"><span className="product-badge">Editor’s choice</span><div className="headphone-art"><i /><i /><b>H1</b></div><div className="thumb-row"><span /><span /><span /></div></section><section className="product-details"><div className="crumb">Audio / Wireless headphones</div><h1>Aster H1</h1><p className="product-sub">Studio sound. All-day calm.</p><div className="rating">★★★★★ <span>4.8 · 2,104 reviews</span></div><strong className="price">$149</strong><p className="description">Adaptive noise cancellation, spatial audio, and a 38-hour battery in a lightweight aluminum frame.</p><div className="color-row"><b>Color</b><span className="swatch active" /><span className="swatch dark" /><span className="swatch sand" /></div><button className="checkout-button" onClick={() => setCheckoutTried(true)}>{healthy ? <><Check size={19} /> Continue to secure checkout</> : <><ShoppingBag size={19} /> Checkout</>}</button>
       {checkoutTried && !healthy && <div className="checkout-error"><CircleAlert size={19} /><div><strong>We couldn’t open checkout</strong><p>{installed ? 'Your cart is still here. Ask AI for help—no payment was attempted.' : 'Something went wrong. Please try again later.'}</p><code>CART_SESSION_OUTDATED</code></div></div>}{healthy && <div className="checkout-success"><Check size={19} /><div><strong>Everything is running smoothly</strong><p>Checkout is ready and your Aster H1 is still in the cart. No order has been placed.</p></div></div>}
-      {!installed && <div className="missing-operator"><div><Plug size={19} /><div><strong>No support integration installed</strong><p>The customer is stuck with a generic error. Switch to the developer journey to add Host Whisperer.</p></div></div><a href="/?demo=install">Configure Host Whisperer <ArrowRight size={15} /></a></div>}
       {installed && !healthy && <div className="demo-callout installed"><Bot size={19} /><div><strong>AI support is now available</strong><p>Click “Ask AI to fix this,” then tell ChatGPT: <b>“Fix checkout safely.”</b></p></div></div>}
       <div className="demo-reset-row"><button className="reset-demo" onClick={reset}><RefreshCw size={14} /> Reset error only</button><button className="reset-demo" onClick={restartJourney}><RefreshCw size={14} /> Restart full story</button></div>
       </section></main><footer className="shop-footer"><span>Northstar demonstration store · No real purchases</span><span>{installed ? 'Host Whisperer operator installed' : 'Before Host Whisperer'}</span></footer></div>;

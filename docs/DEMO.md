@@ -7,23 +7,22 @@
 1. Open `https://host-whisperer.onrender.com/?view=shop`.
 2. Click **Restart full story** if this browser has run the demo before.
 3. Click **Checkout** and show the `CART_SESSION_OUTDATED` error.
-4. Point out that there is no AI support button. The customer only receives a generic error.
-5. Click **Configure Host Whisperer** to switch from the customer site to the developer journey.
+4. Point out that there is no AI support button or developer configuration link. The customer only receives a generic error.
+5. Leave Northstar open and separately open the developer Studio at `https://host-whisperer.onrender.com/`.
 
 ### 2. Configure and generate the plugin
 
-1. Show the journey bar: the error was reproduced and configuration is the active step.
-2. Confirm **Northstar Shop**, the exact website origin, Render, and the verified broken-cart playbook.
-3. Explain that the form can also be configured by ChatGPT through the Studio's WebMCP tools.
-4. Click **Generate support plugin**.
-5. Show the generated adapter. Point out the allowlisted context, diagnostic, recovery, and verification functions.
-6. Click **Install on Northstar demo**. This button simulates adding the generated adapter and runtime files to the demo website; real developers use the adjacent downloads and install tag.
-7. Wait for **Host Whisperer is installed**, then click **Return to Northstar**.
+1. Confirm **Northstar Shop**, the exact website origin, Render, and the verified broken-cart playbook.
+2. Explain that this is a separate developer-only surface and that the form can also be configured by ChatGPT through the Studio's WebMCP tools.
+3. Click **Generate support plugin**.
+4. Show the generated adapter. Point out the allowlisted context, diagnostic, recovery, and verification functions.
+5. Click **Install on Northstar demo**. This button simulates adding the generated adapter and runtime files to the demo website; real developers use the adjacent downloads and install tag.
+6. Wait for **Host Whisperer is installed**, then click **Open Northstar**.
 
 ### 3. Let the customer's AI operate the website
 
-1. Show that the same checkout is still broken, but **Ask AI to fix this** now exists.
-2. Click it and keep the panel open.
+1. Click **Checkout** again. The same error occurs, but **Ask AI to fix this** now appears.
+2. Click the new support control and keep the panel open.
 3. In ChatGPT, say only: **“Fix checkout safely.”**
 4. The panel animates each WebMCP step as ChatGPT reads safe context and runs the developer-approved diagnostics.
 5. Show store health passing, inventory passing, and cart compatibility failing.

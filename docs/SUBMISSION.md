@@ -56,7 +56,7 @@ Next steps include additional verified playbooks for authentication and data syn
 - Country: Israel
 - App Status: New
 - Live URL: https://host-whisperer.onrender.com/?view=shop
-- Testing instructions: Open the live URL and click **Restart full story** if needed. Reproduce the checkout error and use **Configure Host Whisperer**. In Studio, generate the support plugin and install it on the Northstar demo. Return to the store in ChatGPT's in-app browser, click **Ask AI to fix this**, and say “Fix checkout safely.” Watch the live activity timeline as ChatGPT inspects context and runs diagnostics. Approve the proposed recovery in the page, then let ChatGPT apply and verify it. Use **Reset error only** to repeat the repair or **Restart full story** to repeat the entire installation journey.
+- Testing instructions: Open the live Northstar URL and click **Restart full story** if needed. Click Checkout to reproduce the generic error; no developer configuration is exposed on the customer site. Separately open the Host Whisperer Studio at the root URL, generate the support plugin, and install it on the Northstar demo. Return to Northstar and click Checkout again. The new **Ask AI to fix this** control appears. Open it and say “Fix checkout safely” in ChatGPT. Watch the live activity timeline, approve the proposed recovery in the page, then let ChatGPT apply and verify it.
 - Public repository: https://github.com/avivmag/host-whisperer
 - Tested clients: Google Chrome 152 with `WebMCPTesting` enabled and automated Vitest tool-contract tests. Add ChatGPT's in-app browser after the recorded interactive test.
 - AI tools used: OpenAI Codex for product design, implementation, testing, deployment, and debugging; Devpost's MCP server for challenge requirements and submission preparation.
@@ -67,9 +67,9 @@ Next steps include additional verified playbooks for authentication and data syn
 
 **0:00–0:20 — Start before installation.** Open Northstar, reproduce the broken checkout, and show that the customer has only a generic error. Say: “This customer is stuck, and this website has no safe way for an AI to help yet.”
 
-**0:20–0:55 — Configure and install.** Move to Host Whisperer Studio, show the app boundary and verified playbook, generate the adapter, then click **Install on Northstar demo**. Briefly show the real download and install-tag controls beside the demo shortcut.
+**0:20–0:55 — Configure and install.** Separately open the developer-only Host Whisperer Studio, show the app boundary and verified playbook, generate the adapter, then click **Install on Northstar demo**. Briefly show the real download and install-tag controls beside the demo shortcut.
 
-**0:55–1:10 — Show the transformation.** Return to Northstar. The same error remains, but **Ask AI to fix this** is now present. Open it and tell ChatGPT only: “Fix checkout safely.”
+**0:55–1:10 — Show the transformation.** Return to Northstar and click Checkout again. The same error occurs, but **Ask AI to fix this** now appears. Open it and tell ChatGPT only: “Fix checkout safely.”
 
 **1:10–1:45 — Investigate visibly.** Keep the widget open while the animated timeline shows safe context, healthy storefront, available inventory, and the outdated cart-session evidence. Explain that no payment data, credentials, URL queries, or arbitrary DOM content were shared.
 

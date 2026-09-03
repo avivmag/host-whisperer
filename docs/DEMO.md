@@ -11,6 +11,8 @@
 
 Never show OAuth tokens, API keys, account identifiers, or other secrets in the recording.
 
+Production app: [`https://host-whisperer.onrender.com`](https://host-whisperer.onrender.com)
+
 ## Verified proof
 
 The full sequence was verified on Render on 2026-09-03 using commit `33cb0d6`:

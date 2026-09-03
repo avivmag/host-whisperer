@@ -4,6 +4,8 @@ Create, debug, and operate cloud projects through conversation.
 
 Host Whisperer is a WebMCP-native project room for indie developers. A human chooses a provider and describes a goal; an agent turns it into a visible provider plan, waits for approval, hands the action to the provider's official MCP, and records the result for later debugging and maintenance.
 
+**Live app:** [host-whisperer.onrender.com](https://host-whisperer.onrender.com)
+
 ## Why WebMCP
 
 Provider MCP servers can operate infrastructure, but they do not own the web page where a person reviews a plan. Host Whisperer uses WebMCP to keep the human, agent, and visible interface synchronized. The page exposes structured tools for creating rooms, preparing operations, recording provider results, and diagnosing failures. Write operations cannot pass the approval gate through an agent call—the user must click the visible approval control.

@@ -51,11 +51,12 @@ describe('Host Whisperer surfaces', () => {
     history.replaceState({}, '', '/?view=about');
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: /A recovery path for the moments/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Website failures should come with a recovery path.' })).toBeInTheDocument();
     expect(screen.getByText('OpenAI WebMCP Challenge')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'A working demonstration, not a production service' })).toBeInTheDocument();
-    expect(screen.getByText(/Provider authentication, diagnostics, the failing checkout service/)).toBeInTheDocument();
-    expect(screen.getByTitle('Temporary Big Buck Bunny placeholder for the Host Whisperer demo')).toHaveAttribute('src', expect.stringContaining('youtube-nocookie.com/embed/'));
+    expect(screen.getByText('Real handoff, simulated host')).toBeInTheDocument();
+    expect(screen.getByText(/Provider operations are simulated/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Try the live demo/ })).toHaveAttribute('href', '/?view=shop');
+    expect(screen.queryByRole('iframe')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Aviv Magnezy' })).toBeInTheDocument();
     expect(screen.getByText('Software Engineer')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /aviv.magnezy@gmail.com/ })).toHaveAttribute('href', 'mailto:aviv.magnezy@gmail.com');

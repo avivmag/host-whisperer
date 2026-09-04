@@ -39,7 +39,7 @@ It registers no WebMCP tools.
 
 ### About
 
-`/?view=about` explains why Host Whisperer exists, identifies the project as an OpenAI WebMCP Challenge demonstration, and distinguishes the working browser handoff from mocked provider operations. It also contains the temporary project-video embed and creator contact details. It registers no WebMCP tools.
+`/?view=about` is a concise project introduction. It identifies the OpenAI WebMCP Challenge, distinguishes the working browser handoff from simulated provider operations, links to the walkthrough and live demo, and includes creator contact details. It registers no WebMCP tools.
 
 ### Website integration
 

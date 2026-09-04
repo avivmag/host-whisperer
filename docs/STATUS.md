@@ -21,7 +21,7 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - `/?view=shop` — Checkout produces the 503 card; the agent dialog appears five seconds later, anchored beside the error, and nudges. It falls back to the bottom-right corner at 760px.
 - The runtime now registers one high-level tool. The intended sequence is: Codex delegates once → Host Whisperer gathers and inspects privately → **the call waits for visible approval** → approve on the page → Host Whisperer applies and verifies internally → Codex receives only the retry message.
 - `/` — the diagram auto-plays all seven steps; the tone changes to red on failure steps and mint on recovery; the customer's face changes with it.
-- `/?view=about` — explains the project purpose, clearly labels the simulated host operations and production work still required, provides a temporary YouTube video embed, and identifies the creator.
+- `/?view=about` — gives a concise project introduction, clearly labels simulated host operations, links to the walkthrough and live demo, and identifies the creator.
 - `/?view=integrate` — the Big Pink URL and a disposable demo token are prefilled. Connecting removes the token field, repeats the selected provider's reviewed permissions in the success card, and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the downloaded plugin.
 - The production download is one self-contained 23 kB file containing `registerTool` and no credentials.
 

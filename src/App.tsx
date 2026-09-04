@@ -158,7 +158,7 @@ function FlowDiagram() {
           {(Object.keys(edgeGeometry) as EdgeId[]).map((id) => <use key={id} href={`#edge-${id}`} className={`dedge ${activeEdges.has(id) ? `on ${tone}` : ''}`} />)}
           {!reduceMotion && step.edges.flatMap((edge) => (edge.both ? [false, true] : [Boolean(edge.back)]).map((back, pass) =>
             <circle key={`${index}-${edge.id}-${pass}`} className={`ddot ${tone}`} r="7">
-              <animateMotion dur="2.6s" begin={`${pass * 1.3}s`} repeatCount="indefinite" calcMode="linear" keyPoints={back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#edge-${edge.id}`} /></animateMotion>
+              <animateMotion dur="1.55s" begin={`${pass * .775}s`} repeatCount="indefinite" calcMode="linear" keyPoints={back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#edge-${edge.id}`} /></animateMotion>
             </circle>))}
           <CustomerNode mood={step.mood} on={on('customer')} focus={step.focus} />
           <WebsiteNode on={on('website')} lane={lane} />
@@ -228,10 +228,13 @@ function SupportConsole() {
 function Overview() {
   return <div className="app-shell hw-home"><AppHeader section="How it works" />
     <main className="overview">
+      <section className="hero-brand" aria-labelledby="host-whisperer-title">
+        <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
+        <h1 id="host-whisperer-title" aria-label="Host Whisperer"><span>Host</span><span>Whisperer</span></h1>
+        <h2>What if 5xx errors came with a recovery path?</h2>
+      </section>
       <section className="overview-hero">
         <div className="hero-copy">
-          <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
-          <h1>Host Whisperer. <em>What if 5xx errors came with a recovery path?</em></h1>
           <p>Host Whisperer turns supported hosting failures into end-to-end recovery: the customer’s agent hands off the incident, Host Whisperer diagnoses and fixes the host, and SREs sleep better at night.</p>
           <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Integrate your website</a></div>
           <ul className="hero-proof">
@@ -271,49 +274,21 @@ function About() {
       <section className="about-hero">
         <div className="about-hero-copy">
           <div className="eyebrow"><Sparkles size={14} /> About the project</div>
-          <h1>A recovery path for the moments when a website just stops.</h1>
-          <p>Host Whisperer explores a simple idea: when a customer hits a website failure, their browser agent should be able to hand the problem to a tightly constrained support agent instead of leaving them with a generic error.</p>
+          <h1>Website failures should come with a recovery path.</h1>
+          <p>Host Whisperer lets a customer’s browser agent hand a supported failure to a tightly constrained support agent for diagnosis, approval, recovery, and verification.</p>
+          <div className="about-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> Try the live demo <ArrowRight size={16} /></a><a className="secondary-link" href="/"><Play size={15} /> See how it works</a></div>
         </div>
-        <aside className="about-origin">
-          <span>Built for</span>
-          <strong>OpenAI WebMCP Challenge</strong>
-          <p>A time-bounded hackathon demonstration of how people, browser agents, websites, and support systems could work together.</p>
-        </aside>
-      </section>
-
-      <section className="about-story" aria-labelledby="about-why">
-        <div className="section-kicker">Why it exists</div>
-        <div className="about-story-grid">
-          <h2 id="about-why">A 5xx error knows more than it tells you.</h2>
-          <div className="about-prose">
-            <p>Today, a customer sees “something went wrong,” support reconstructs the incident from scratch, and the website already holds useful context that never reaches the right system safely.</p>
-            <p>Host Whisperer demonstrates a more useful handoff. The website exposes one purpose-built WebMCP tool. A browser agent carries the customer’s intent, while Host Whisperer privately diagnoses a supported problem, proposes a bounded recovery, waits for visible approval, applies it, and verifies the result.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="about-reality" aria-labelledby="about-reality-title">
-        <div className="about-reality-heading">
-          <div className="section-kicker">Prototype status</div>
-          <h2 id="about-reality-title">A working demonstration, not a production service</h2>
-          <p>You can explore the complete experience on this website, but it cannot be used to repair real hosted applications yet.</p>
-        </div>
-        <div className="reality-grid">
-          <article><span>Working in the demo</span><strong>The WebMCP handoff and customer approval flow</strong><p>The generated runtime registers a real browser-facing tool and demonstrates the full incident journey with deterministic local state.</p></article>
-          <article className="mock"><span>Mocked for the hackathon</span><strong>The host connection and infrastructure recovery</strong><p>Provider authentication, diagnostics, the failing checkout service, rollback, and verification are simulated. No real cloud account is connected or changed.</p></article>
-          <article><span>Needed for real use</span><strong>Secure server-side provider integrations</strong><p>A production version would need authenticated backend services, provider adapters, durable audit trails, configurable allowlists, monitoring, and extensive security testing.</p></article>
-        </div>
-      </section>
-
-      <section className="about-video" aria-labelledby="about-video-title">
-        <div className="about-video-copy">
-          <div className="section-kicker">Project video</div>
-          <h2 id="about-video-title">Demo walkthrough coming soon</h2>
-          <p>This temporary video will be replaced with the official Host Whisperer walkthrough after it is published on YouTube.</p>
-          <span className="placeholder-badge">Temporary placeholder · Big Buck Bunny</span>
-        </div>
-        <div className="video-frame">
-          <iframe src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ" title="Temporary Big Buck Bunny placeholder for the Host Whisperer demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+        <div className="about-details">
+          <aside className="about-origin">
+            <span>Built for</span>
+            <strong>OpenAI WebMCP Challenge</strong>
+            <p>A focused demonstration of people, browser agents, websites, and support systems working together.</p>
+          </aside>
+          <aside className="about-origin about-status">
+            <span>Prototype status</span>
+            <strong>Real handoff, simulated host</strong>
+            <p>The WebMCP and approval flow works in-browser. Provider operations are simulated; no cloud account is connected or changed.</p>
+          </aside>
         </div>
       </section>
 

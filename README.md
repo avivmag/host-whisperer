@@ -11,7 +11,7 @@ The configuration product does not embed ChatGPT and does not itself need WebMCP
 ## Live surfaces
 
 - [How it works](https://host-whisperer.onrender.com/) — the animated seven-step flow
-- [About](https://host-whisperer.onrender.com/?view=about) — project context, prototype limitations, video, and creator
+- [About](https://host-whisperer.onrender.com/?view=about) — concise project context, prototype status, and creator
 - [Connect your host](https://host-whisperer.onrender.com/?view=integrate) — the developer's whole setup
 - [Big Pink](https://host-whisperer.onrender.com/?view=shop) — **the demo**: the storefront with the plugin installed
 - [Standalone runtime](https://host-whisperer.onrender.com/runtime/host-whisperer.js)

@@ -23,7 +23,7 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - `/` — the diagram auto-plays all seven steps; the tone changes to red on failure steps and mint on recovery; the customer's face changes with it.
 - `/?view=about` — gives a concise project introduction, clearly labels simulated host operations, links to the walkthrough and live demo, and identifies the creator.
 - `/?view=integrate` — the Big Pink URL and a disposable demo token are prefilled. Connecting removes the token field, repeats the selected provider's reviewed permissions in the success card, and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the downloaded plugin.
-- The production download is one self-contained 23 kB file containing `registerTool` and no credentials.
+- The production download is one self-contained JavaScript file containing `registerTool` and no credentials.
 
 ## Implemented
 
@@ -37,6 +37,7 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - One runtime WebMCP delegation tool, registered only by the installed customer runtime
 - Same-call visible approval: `resolve_store_issue` starts inspection immediately, stays pending while the page waits for the customer, then applies and verifies internally without another chat message
 - Registration-aware UI: the panel says connected only after `registerTool()` succeeds and gives current model/settings guidance if registration fails
+- Stable same-document registration: runtime remounts transfer the existing tool handler instead of unregistering and re-registering it
 - Safe-context filtering and output limits
 - Incident-bound approval, replay prevention, and post-recovery verification
 - Customer-approved escalation preview and URL-fragment packet

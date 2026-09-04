@@ -129,4 +129,39 @@ describe('generated support runtime', () => {
     expect(shadow.querySelector('.hw-launch')).not.toBeNull();
     runtime.destroy();
   });
+
+  it('keeps the discovered tool registered across a same-document remount', async () => {
+    vi.useFakeTimers();
+    const registered = new Map<string, { tool: { execute: (input: unknown) => unknown }; signal?: AbortSignal }>();
+    const registerTool = vi.fn(async (tool, options) => {
+      if (registered.has(tool.name)) throw new Error('already registered');
+      registered.set(tool.name, { tool, signal: options?.signal });
+      options?.signal?.addEventListener('abort', () => registered.delete(tool.name), { once: true });
+    });
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool } });
+    const config = (summary: string) => ({
+      integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render' as const,
+      getContext: () => ({ route: '/checkout' }),
+      diagnostics: [{ id: 'health', label: 'Health', run: () => ({ status: 'pass' as const, summary }) }],
+      actions: [{ id: 'retry', label: 'Retry', description: 'Retry', effects: ['Retry'], run: () => undefined, verify: () => ({ recovered: true, summary: 'Ready' }) }],
+    });
+
+    const first = createHostWhispererRuntime(config('first'));
+    await Promise.resolve();
+    expect([...registered]).toHaveLength(1);
+    first.destroy();
+    expect([...registered]).toHaveLength(1);
+
+    const second = createHostWhispererRuntime(config('second'));
+    await Promise.resolve();
+    vi.runOnlyPendingTimers();
+    expect(registerTool).toHaveBeenCalledOnce();
+    expect([...registered]).toHaveLength(1);
+    await registered.get('resolve_store_issue')!.tool.execute({ issue: 'Is checkout ready?' });
+    expect(second.getIncident()?.diagnostics[0].summary).toBe('second');
+
+    second.destroy();
+    vi.runOnlyPendingTimers();
+    expect([...registered]).toHaveLength(0);
+  });
 });

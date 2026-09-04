@@ -158,7 +158,7 @@ describe('Host Whisperer surfaces', () => {
     first.unmount();
     render(<App />);
     expect(screen.getByText('Service Unavailable')).toBeInTheDocument();
-    expect(registerTool).toHaveBeenCalledTimes(2);
+    expect(registerTool).toHaveBeenCalledOnce();
   });
 
   it('selects a pool float from the lower catalog and keeps its color in sync', () => {

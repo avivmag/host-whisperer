@@ -46,7 +46,7 @@ In the Big Pink demo, `POST /api/checkout` returns 503 because deploy `dep-8f2c1
 
 ## Runtime tool
 
-- `ask_host_whisperer_to_fix_issue`
+- `resolve_store_issue`
 
 The installed runtime registers this tool in `src/runtime/index.ts`. The tool delegates to a deterministic support agent inside the runtime and returns only a resolved-or-escalated customer message. The internal workflow remains bounded by exact origin, developer-supplied handlers, visible customer consent, a single-use recovery transition, and post-recovery verification.
 

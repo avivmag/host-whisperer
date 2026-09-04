@@ -101,7 +101,7 @@ The `report(label, detail)` callback passed to a recovery action appends events 
 | --- | --- | --- |
 | `resolve_store_issue` | Start private inspection immediately when the customer asks for a fix; wait for visible in-page approval; return only a resolved-or-escalated customer message | One developer-allowlisted mutation after approval |
 
-The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description states the bounded support operation and its approval and verification behavior without attempting to direct the browser agent's broader behavior. Destroying the runtime aborts registration, cancels a pending approval wait, and removes the Shadow DOM host.
+The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description states the bounded support operation and its approval and verification behavior without attempting to direct the browser agent's broader behavior. A same-document remount transfers the existing registration to the replacement runtime so an agent can never discover the tool between an unregister/re-register pair. Destroying the final runtime aborts registration after that transfer window, cancels a pending approval wait, and removes the Shadow DOM host.
 
 The detailed context, diagnostic results, action ID, provider exchange, and verification summary remain inside the deterministic Host Whisperer runtime. They are not returned through WebMCP. The tool returns plain structured JSON deliberately limited to `status` and `customerMessage` so the browser agent communicates only whether the customer should retry or wait for a developer.
 

@@ -41,7 +41,18 @@ type ToolDefinition = {
 };
 
 type ModelContext = { registerTool(tool: ToolDefinition, options?: { signal?: AbortSignal }): Promise<void> };
-let activeRuntimeRegistration: AbortController | null = null;
+type RegistrationState = 'registering' | 'ready' | 'failed';
+type RuntimeRegistration = {
+  controller: AbortController;
+  execute: ToolDefinition['execute'];
+  modelContext: ModelContext;
+  name: string;
+  owner: symbol;
+  state: RegistrationState;
+  subscribers: Set<(state: RegistrationState) => void>;
+  teardownTimer: number | null;
+};
+let activeRuntimeRegistration: RuntimeRegistration | null = null;
 const objectSchema = (properties: Record<string, unknown>, required: string[] = []) => ({ type: 'object', properties, required, additionalProperties: false });
 const string = (description: string, extra: Record<string, unknown> = {}) => ({ type: 'string', description, ...extra });
 const now = () => new Date().toISOString();
@@ -87,10 +98,12 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   let revealed = activated && !config.revealDelayMs;
   let revealTimer: number | null = null;
   let anchorFrame: number | null = null;
-  let controller: AbortController | null = null;
+  let registration: RuntimeRegistration | null = null;
+  const registrationOwner = Symbol(config.integrationId);
+  let destroyed = false;
   let approvalWaiter: { actionId: string; promise: Promise<boolean>; resolve: (approved: boolean) => void } | null = null;
   const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
-  let registrationState: 'unsupported' | 'registering' | 'ready' | 'failed' = modelContext ? 'registering' : 'unsupported';
+  let registrationState: RegistrationState | 'unsupported' = modelContext ? 'registering' : 'unsupported';
   const host = document.createElement('div');
   host.id = 'host-whisperer-root';
   const shadow = host.attachShadow({ mode: 'open' });
@@ -246,20 +259,50 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
 
   const register = async () => {
     if (!modelContext) return;
-    activeRuntimeRegistration?.abort();
-    controller = new AbortController();
-    activeRuntimeRegistration = controller;
-    try {
-      await Promise.all(definitions.map((tool) => modelContext.registerTool(tool, { signal: controller!.signal })));
-      registrationState = 'ready';
+    const definition = definitions[0];
+    const existing = activeRuntimeRegistration;
+    if (existing && existing.modelContext === modelContext && existing.name === definition.name && existing.state !== 'failed') {
+      if (existing.teardownTimer !== null) clearTimeout(existing.teardownTimer);
+      existing.teardownTimer = null;
+      existing.owner = registrationOwner;
+      existing.execute = definition.execute;
+      registration = existing;
+      registrationState = existing.state;
+      existing.subscribers.add(updateRegistrationState);
       render();
+      return;
+    }
+
+    existing?.controller.abort();
+    const next: RuntimeRegistration = {
+      controller: new AbortController(),
+      execute: definition.execute,
+      modelContext,
+      name: definition.name,
+      owner: registrationOwner,
+      state: 'registering',
+      subscribers: new Set(),
+      teardownTimer: null,
+    };
+    registration = next;
+    activeRuntimeRegistration = next;
+    next.subscribers.add(updateRegistrationState);
+    const registeredDefinition = { ...definition, execute: (input: any) => next.execute(input) };
+    try {
+      await modelContext.registerTool(registeredDefinition, { signal: next.controller.signal });
+      if (!next.controller.signal.aborted) publishRegistrationState(next, 'ready');
     } catch (error) {
-      if (!controller.signal.aborted) {
-        registrationState = 'failed';
-        render();
+      if (!next.controller.signal.aborted) {
+        publishRegistrationState(next, 'failed');
         console.error('Host Whisperer Website Tool registration failed', error);
       }
     }
+  };
+
+  const updateRegistrationState = (state: RegistrationState) => {
+    if (destroyed) return;
+    registrationState = state;
+    render();
   };
 
   const styles = `<style>
@@ -537,9 +580,16 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     getIncident: () => incident,
     tools: definitions,
     destroy: () => {
+      destroyed = true;
       finishApprovalWait(false);
-      controller?.abort();
-      if (activeRuntimeRegistration === controller) activeRuntimeRegistration = null;
+      registration?.subscribers.delete(updateRegistrationState);
+      if (registration?.owner === registrationOwner) {
+        registration.teardownTimer = window.setTimeout(() => {
+          if (activeRuntimeRegistration !== registration || registration?.owner !== registrationOwner) return;
+          registration.controller.abort();
+          activeRuntimeRegistration = null;
+        }, 0);
+      }
       if (revealTimer !== null) clearTimeout(revealTimer);
       if (copyTimer !== null) clearTimeout(copyTimer);
       if (anchorFrame !== null) cancelAnimationFrame(anchorFrame);
@@ -548,4 +598,9 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
       host.remove();
     },
   };
+}
+
+function publishRegistrationState(registration: RuntimeRegistration, state: RegistrationState) {
+  registration.state = state;
+  registration.subscribers.forEach((subscriber) => subscriber(state));
 }

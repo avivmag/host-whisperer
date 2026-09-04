@@ -10,7 +10,7 @@ Read `docs/HACKATHON.md` before planning work. It records the official prompt, e
 
 ## Product intent
 
-Within the hackathon demonstration, Host Whisperer generates a framework-neutral plugin that a developer installs on an existing website. The installed plugin registers one customer-facing WebMCP handoff. A browser agent such as ChatGPT delegates the issue to Host Whisperer's deterministic support agent, which privately diagnoses supported problems, proposes a bounded recovery, waits for visible customer approval, applies it, verifies the result, and returns a minimal customer-safe outcome.
+Within the hackathon demonstration, Host Whisperer generates a framework-neutral plugin that a developer installs on an existing website. The installed plugin registers one customer-facing WebMCP handoff. A browser agent such as ChatGPT delegates the issue to Host Whisperer's deterministic support agent, which privately diagnoses supported problems, applies the one bounded recovery the developer allowlisted for that failure, verifies the result, and returns a minimal customer-safe outcome. The customer is never asked to approve anything: the decision was made by the developer at install time.
 
 The generator is not itself an AI chat product. WebMCP belongs in the generated customer runtime, not in the Host Whisperer configuration UI.
 
@@ -23,7 +23,7 @@ All surfaces currently share one Vite deployment for demonstration purposes, but
 | `/` | Host Whisperer walkthrough | Evaluator or developer | Explain the product with the animated seven-step flow diagram |
 | `/?view=integrate` | Integrate Host Whisperer | Plugin operator/developer | Confirm the customer website, review provider access, connect its host, and download the one-file plugin |
 | `/?view=shop` | Big Pink | Customer | Hit the 503, then use the installed WebMCP support tools |
-| `/?view=incident#packet=...` | Developer escalation | Store developer/operator | Inspect a customer-approved sanitized incident packet |
+| `/?view=incident#packet=...` | Developer escalation | Store developer/operator | Inspect a sanitized incident packet |
 | `/?view=admin` | Big Pink Admin | Store developer | Legacy install console; kept working but off the demo path and out of navigation |
 
 Keep the surfaces visually and conceptually distinct. Big Pink must never link customers to developer configuration. Host Whisperer must not pretend it can silently modify an unrelated website.
@@ -36,7 +36,7 @@ The connect page asks for a host API token. That token lives in React component 
 - Register WebMCP tools only through the installed customer runtime in `src/runtime/index.ts`.
 - Do not embed or request cloud-provider credentials in browser code.
 - Do not expose arbitrary shell commands, scripts, provider APIs, logs, or infrastructure mutations to a customer agent.
-- Recovery actions must be developer-allowlisted, incident-bound, visibly approved, single-use, and verified before success is reported.
+- Recovery actions must be developer-allowlisted, incident-bound, single-use, and verified before success is reported. The developer's allowlist is the authorization; do not reintroduce a customer approval prompt.
 - Unknown or unsafe problems must escalate; never claim the plugin can solve every website or hosting problem.
 - Context passed to an agent must remain minimal and sanitized. Never expose payment data, secrets, raw DOM content, or URL query/fragment values.
 - Treat escalation packets as untrusted customer-supplied evidence.

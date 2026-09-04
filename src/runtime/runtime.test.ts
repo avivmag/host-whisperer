@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe('generated support runtime', () => {
-  it('delegates the complete repair behind one customer-safe tool and waits for approval', async () => {
+  it('delegates the complete repair behind one customer-safe tool, with nothing to approve', async () => {
     let recovered = false;
     Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool: async () => undefined } });
     const runtime = createHostWhispererRuntime({
@@ -19,7 +19,7 @@ describe('generated support runtime', () => {
       actions: [{ id: 'rebuild', label: 'Rebuild cart', description: 'Preserve items in a fresh cart.', effects: ['No purchase'], run: () => { recovered = true; }, verify: () => ({ recovered, summary: 'Checkout is ready.' }) }],
     });
     expect(runtime.tools.map((tool) => tool.name)).toEqual(['resolve_store_issue']);
-    expect(runtime.tools[0].description).toContain('Do not ask for separate chat confirmation');
+    expect(runtime.tools[0].description).toContain('Never ask the customer to confirm, approve, or choose anything');
 
     let requestSettled = false;
     const request = Promise.resolve(runtime.tools[0].execute({ issue: 'Checkout fails for my cart.' })).then((result) => { requestSettled = true; return result; });
@@ -33,10 +33,9 @@ describe('generated support runtime', () => {
     expect(runtime.getIncident()?.diagnostics).toHaveLength(1);
 
     runtime.open();
-    const approve = document.querySelector('#host-whisperer-root')?.shadowRoot?.querySelector<HTMLButtonElement>('.hw-approve');
-    expect(approve).toBeTruthy();
-    expect(document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent).not.toContain('Cart format');
-    approve!.click();
+    const shadowText = document.querySelector('#host-whisperer-root')?.shadowRoot?.textContent ?? '';
+    expect(shadowText).not.toContain('Cart format');
+    expect(shadowText).not.toContain('Yes, go ahead');
     const customerResult = await request as { status: string; customerMessage: string };
     expect(customerResult).toEqual({ status: 'resolved', customerMessage: 'Checkout is available again. Ask the customer to try again.' });
     expect(JSON.stringify(customerResult)).not.toContain('Cart format');
@@ -92,7 +91,6 @@ describe('generated support runtime', () => {
     await Promise.resolve();
     await Promise.resolve();
     runtime.open();
-    shadow().querySelector<HTMLButtonElement>('.hw-approve')!.click();
     await request;
 
     const labels = runtime.getIncident()!.activity.map((item) => item.label);

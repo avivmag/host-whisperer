@@ -2,7 +2,7 @@ export const providers = ['gcp', 'cloudflare', 'vercel', 'netlify', 'render', 's
 export type ProviderId = (typeof providers)[number];
 
 export type SupportPlaybook = 'commerce-cart';
-export type SupportStage = 'idle' | 'reported' | 'investigating' | 'diagnosed' | 'awaiting_approval' | 'repairing' | 'verifying' | 'recovered' | 'escalated';
+export type SupportStage = 'idle' | 'reported' | 'investigating' | 'diagnosed' | 'repairing' | 'verifying' | 'recovered' | 'escalated';
 
 export interface SupportIntegration {
   id: string;
@@ -28,7 +28,7 @@ export interface OperatorActivity {
   actor: 'customer' | 'agent' | 'runtime';
   label: string;
   detail: string;
-  status: 'running' | 'succeeded' | 'failed' | 'approval';
+  status: 'running' | 'succeeded' | 'failed';
   createdAt: string;
 }
 
@@ -39,7 +39,6 @@ export interface SupportIncident {
   safeContext?: Record<string, unknown>;
   diagnostics: DiagnosticResult[];
   pendingActionId?: string;
-  approvedActionId?: string;
   escalationApproved: boolean;
   activity: OperatorActivity[];
   createdAt: string;

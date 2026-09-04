@@ -4,7 +4,7 @@
 
 ## One-sentence proposition
 
-Host Whisperer lets developers install a safe WebMCP support layer in one file, so that when their host fails, a stranded customer can ask their browser agent to delegate the issue, approve a bounded resolution, and retry after Host Whisperer verifies it — on the page where the failure happened.
+Host Whisperer lets developers install a safe WebMCP support layer in one file, so that when their host fails, a stranded customer can ask their browser agent to delegate the issue and retry after Host Whisperer applies a bounded resolution and verifies it — on the page where the failure happened.
 
 ## Problem
 
@@ -16,11 +16,11 @@ The website already knows the route, application version, error code, session st
 
 ### Plugin operator
 
-The developer who runs the website. On the integration page they confirm the customer website, pick their host, review the provider-specific access, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the private diagnostics and the developer-approved recovery actions Host Whisperer is allowed to propose.
+The developer who runs the website. On the integration page they confirm the customer website, pick their host, review the provider-specific access, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the private diagnostics and the developer-approved recovery actions Host Whisperer is allowed to apply.
 
 ### Customer
 
-The person experiencing a problem on the installed website. They describe the symptom in normal language, supervise the agent's work, approve consequential actions, and see the verified result.
+The person experiencing a problem on the installed website. They describe the symptom in normal language, watch the agent's work, and see the verified result. They are never asked to approve a step: the developer already bounded what may happen.
 
 ### Browser agent
 
@@ -31,13 +31,13 @@ ChatGPT or another WebMCP-capable browser agent. It discovers the single support
 1. A customer clicks Checkout and the website's host fails the request with HTTP 503. The page can report the failure but cannot help.
 2. Five seconds later, the installed plugin offers help beside the error: a small agent dialog that nudges for attention.
 3. With the store still open in the integrated browser, the customer tells their agent: **"Fix checkout on this page."** The page's single Website Tool gives that request an unambiguous target without exposing the support provider's identity on the customer storefront.
-4. ChatGPT immediately calls the single `resolve_store_issue` WebMCP tool. The tool description explicitly says not to ask for separate chat confirmation: the call starts private inspection and pauses for the incident-bound approval in the page. It does not inspect source code, the DOM, network logs, other integrations, or the web.
+4. ChatGPT immediately calls the single `resolve_store_issue` WebMCP tool. The tool description explicitly says never to ask the customer to confirm or approve anything: the call inspects, repairs, and verifies in one pass. It does not inspect source code, the DOM, network logs, other integrations, or the web.
 5. Inside that call, Host Whisperer gathers the allowlisted context, files a support report, and inspects it. Technical evidence stays inside the runtime; the customer sees only generic support-case progress.
-6. The website shows the customer-relevant effects of the bounded resolution. The WebMCP call remains pending until the customer clicks **Yes, go ahead**.
-7. Host Whisperer applies the developer-approved resolution, streams generic progress, and verifies the original symptom internally.
+6. The website shows plain-language progress while the bounded resolution runs. The WebMCP call stays inside one turn from inspection to verified outcome.
+7. Host Whisperer applies the developer-approved resolution immediately, streams generic progress, and verifies the original symptom internally.
 8. The tool returns only `resolved` or `needs_developer` plus a short customer message. ChatGPT tells the customer to retry only after a verified resolution.
 9. The customer retries checkout and the order goes through.
-10. If recovery is unavailable or verification fails, the customer may approve a sanitized developer escalation instead of being told the problem is solved.
+10. If recovery is unavailable or verification fails, the incident is escalated to the developer as a sanitized packet instead of the customer being told the problem is solved.
 
 The developer's side of this is one integration page and one file: review access, connect the host, download the plugin, and add one `<script>` tag.
 
@@ -65,7 +65,7 @@ The product supports problems for which the developer has explicitly supplied di
 - Safe client-side diagnostics
 - Narrow calls to authenticated application endpoints
 - Explicitly allowlisted recovery actions
-- Visible approval for consequential actions
+- Consequential actions bounded by the developer's allowlist
 - Post-action verification
 - Sanitized escalation
 

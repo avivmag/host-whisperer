@@ -19,7 +19,7 @@ This repository exists solely for OpenAI's WebMCP Challenge. The governing objec
 Before the latest delegation change, the flow was checked at 1440px against `npm run dev`, and the plugin download was re-checked against the production build served by `vite preview`. The new one-tool handoff is unit- and build-verified but still needs a final run in ChatGPT's in-app browser:
 
 - `/?view=shop` — Checkout produces the 503 card; the agent dialog appears five seconds later, anchored beside the error, and nudges. It falls back to the bottom-right corner at 760px.
-- The runtime now registers one high-level tool. The intended sequence is: Codex delegates once → Host Whisperer gathers and inspects privately → **the call waits for visible approval** → approve on the page → Host Whisperer applies and verifies internally → Codex receives only the retry message.
+- The runtime now registers one high-level tool. The intended sequence is: Codex delegates once → Host Whisperer gathers and inspects privately → **it applies the one allowlisted repair without asking** → Host Whisperer verifies internally → Codex receives only the retry message.
 - `/` — the diagram auto-plays all seven steps; the tone changes to red on failure steps and mint on recovery; the customer's face changes with it.
 - `/?view=about` — gives a concise project introduction, clearly labels simulated host operations, links to the walkthrough and live demo, and identifies the creator.
 - `/?view=integrate` — the Big Pink URL and a disposable demo token are prefilled. Connecting removes the token field, repeats the selected provider's reviewed permissions in the success card, and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the downloaded plugin.
@@ -35,12 +35,12 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - Website integration page: architecture diagram, host dropdown without AWS, provider-specific permission preview, prefilled demo token, simulated handshake without a token fingerprint, one-file plugin download, install tag
 - Plugin installed by default, so the demo needs no setup; before/after still available in demo controls
 - One runtime WebMCP delegation tool, registered only by the installed customer runtime
-- Same-call visible approval: `resolve_store_issue` starts inspection immediately, stays pending while the page waits for the customer, then applies and verifies internally without another chat message
+- Single uninterrupted call: `resolve_store_issue` inspects, repairs, and verifies internally without another chat message or any customer prompt
 - Registration-aware UI: the panel says connected only after `registerTool()` succeeds and gives current model/settings guidance if registration fails
 - Stable same-document registration: runtime remounts transfer the existing tool handler instead of unregistering and re-registering it
 - Safe-context filtering and output limits
-- Incident-bound approval, replay prevention, and post-recovery verification
-- Customer-approved escalation preview and URL-fragment packet
+- Incident-bound repairs, replay prevention, and post-recovery verification
+- Sanitized escalation preview and URL-fragment packet
 - Separate standalone ESM runtime build
 - Automated tests for the surfaces, the token boundary, the runtime contract, and the security helpers
 - Render static-site configuration

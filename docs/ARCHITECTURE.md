@@ -18,8 +18,8 @@ Website integration                  Big Pink (customer website)
                                                 |
                                                 v
                                         allowlisted diagnostics and one
-                                        bounded recovery, applied only
-                                        after visible customer approval
+                                        bounded recovery, applied within
+                                        the developer's allowlist
                                                 |
                                                 v
                                         the host (simulated in this demo;
@@ -99,9 +99,9 @@ The `report(label, detail)` callback passed to a recovery action appends events 
 
 | Tool | Purpose | Mutation |
 | --- | --- | --- |
-| `resolve_store_issue` | Start private inspection immediately when the customer asks for a fix; wait for visible in-page approval; return only a resolved-or-escalated customer message | One developer-allowlisted mutation after approval |
+| `resolve_store_issue` | Start private inspection immediately when the customer asks for a fix; apply and verify the bounded repair; return only a resolved-or-escalated customer message | One developer-allowlisted mutation per incident |
 
-The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description states the bounded support operation and its approval and verification behavior without attempting to direct the browser agent's broader behavior. A same-document remount transfers the existing registration to the replacement runtime so an agent can never discover the tool between an unregister/re-register pair. Destroying the final runtime aborts registration after that transfer window, cancels a pending approval wait, and removes the Shadow DOM host.
+The tool is registered with `document.modelContext.registerTool()` and an abort signal. Its description states the bounded support operation and its verification behavior, and tells the agent not to ask the customer to confirm anything, without attempting to direct the browser agent's broader behavior. A same-document remount transfers the existing registration to the replacement runtime so an agent can never discover the tool between an unregister/re-register pair. Destroying the final runtime aborts registration after that transfer window and removes the Shadow DOM host.
 
 The detailed context, diagnostic results, action ID, provider exchange, and verification summary remain inside the deterministic Host Whisperer runtime. They are not returned through WebMCP. The tool returns plain structured JSON deliberately limited to `status` and `customerMessage` so the browser agent communicates only whether the customer should retry or wait for a developer.
 
@@ -111,7 +111,6 @@ The detailed context, diagnostic results, action ID, provider exchange, and veri
 reported
    -> investigating
    -> diagnosed
-   -> awaiting_approval
    -> repairing
    -> verifying
    -> recovered
@@ -119,7 +118,7 @@ reported
 Any failed repair or failed verification -> escalated
 ```
 
-The runtime owns the incident ID and every transition; the browser agent never receives or manages them. The single WebMCP call remains pending while the approval card is visible. Clicking **Yes, go ahead** resumes the internal workflow in that same call. Resetting or destroying the runtime cancels any pending approval wait.
+The runtime owns the incident ID and every transition; the browser agent never receives or manages them. The single WebMCP call runs the whole sequence and resolves once the outcome is known, so the customer is never asked a question mid-repair. The developer's allowlist, not a runtime prompt, is what bounds the mutation.
 
 ## Demo persistence
 

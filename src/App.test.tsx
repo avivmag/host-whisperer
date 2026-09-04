@@ -20,11 +20,11 @@ describe('Host Whisperer surfaces', () => {
     render(<App />);
     expect(screen.getAllByText('Host Whisperer')).not.toHaveLength(0);
     expect(screen.getByRole('heading', { name: /What if 5xx errors came with a recovery path/ })).toBeInTheDocument();
-    expect(screen.getByText(/One failure, seen from every side/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How it works' })).toBeInTheDocument();
     expect(screen.getByText('The request travels over the API')).toBeInTheDocument();
     expect(screen.getByText('A failure travels back')).toBeInTheDocument();
     expect(screen.getByText('Host Whisperer works the host')).toBeInTheDocument();
-    expect(screen.getByText('The customer is unblocked')).toBeInTheDocument();
+    expect(screen.getByText('The end-user is unblocked')).toBeInTheDocument();
     expect(screen.getByText(/Give your website an end-to-end recovery path/)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /Integrate|Start integration/ })).not.toHaveLength(0);
     expect(screen.queryByLabelText(/Repair progress/)).not.toBeInTheDocument();
@@ -42,9 +42,9 @@ describe('Host Whisperer surfaces', () => {
     // the shop page, so the promise here cannot drift from the demo.
     // One act per beat: each flush lets the effect schedule the next line.
     for (let beat = 0; beat < 5; beat += 1) act(() => { vi.advanceTimersByTime(3400); });
-    expect(screen.getByText('Resolution ready')).toBeInTheDocument();
-    expect(screen.getByText('A bounded resolution is ready for your approval.')).toBeInTheDocument();
-    expect(screen.getByText('Resolution approved')).toBeInTheDocument();
+    expect(screen.getByText('Resolution selected')).toBeInTheDocument();
+    expect(screen.getByText('The one resolution this website allows for this failure.')).toBeInTheDocument();
+    expect(screen.getByText('Applying resolution')).toBeInTheDocument();
   });
 
   it('explains the project and its prototype limits on the about page', () => {
@@ -67,7 +67,7 @@ describe('Host Whisperer surfaces', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Integrate Host Whisperer' })).toBeInTheDocument();
     expect(screen.getByLabelText('Host')).toBeInTheDocument();
-    expect(screen.getByLabelText('Customer website URL')).toHaveValue(`${location.origin}/?view=shop`);
+    expect(screen.getByLabelText('Customer website URL')).toHaveValue('https://longdogechallenge.com/');
     expect(screen.getByLabelText('API token')).not.toHaveValue('');
     expect(screen.queryByRole('option', { name: 'AWS' })).not.toBeInTheDocument();
     expect(screen.getByText('Render workspace permissions')).toBeInTheDocument();

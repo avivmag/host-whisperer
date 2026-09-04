@@ -19,6 +19,27 @@ const demoBundleKey = 'host-whisperer-bigpink-bundle-ready';
 const checkoutAttemptKey = 'host-whisperer-bigpink-checkout-attempted';
 const agentLabel = 'Codex';
 
+/* Two products share one deployment, so every surface names itself: the
+   title says which page you are on, the icon says whose page it is.
+   Both marks are inlined, so the tab icon costs no extra request. */
+const svgIcon = (markup: string) => `data:image/svg+xml,${encodeURIComponent(markup)}`;
+const favicons = {
+  hostWhisperer: svgIcon('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="11" fill="#20291a"/><g fill="none" stroke="#cbf24d" stroke-width="2.8" stroke-linecap="round"><path d="M9 21c4-8 7-8 11 0s7 8 11 0"/><path d="M9 14c4 8 7 8 11 0s7-8 11 0"/></g><circle cx="20" cy="20" r="3" fill="#cbf24d"/></svg>'),
+  bigPink: svgIcon('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="23" fill="#f8bfd0"/><g fill="#df4f83" stroke="#7b2747" stroke-width="1.6" stroke-linejoin="round"><path d="M10 29c5-7 13-9 21-5 4 2 6 6 5 10-9 5-20 5-26-5Z"/><path d="M29 26c-1-9 0-16 6-17 5-1 8 2 8 6 0 4-4 6-8 5"/></g><path d="M42 16l5 2-6 2" fill="#f4b746" stroke="#7b2747" stroke-width="1.4" stroke-linejoin="round"/><circle cx="38" cy="13" r="1.6" fill="#1c1815"/><path d="M20 36v7m9-8 3 8" fill="none" stroke="#7b2747" stroke-width="1.7" stroke-linecap="round"/></svg>'),
+};
+
+function usePageIdentity(title: string, icon: keyof typeof favicons, description: string) {
+  useEffect(() => {
+    document.title = title;
+    let link = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.append(link); }
+    link.type = 'image/svg+xml';
+    link.href = favicons[icon];
+    const meta = document.head.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (meta) meta.content = description;
+  }, [title, icon, description]);
+}
+
 function downloadText(filename: string, value: string, type = 'text/javascript') {
   const url = URL.createObjectURL(new Blob([value], { type }));
   const anchor = document.createElement('a');
@@ -67,19 +88,19 @@ const edgeGeometry: Record<EdgeId, string> = {
 type DiagramStep = { title: string; body: string; edges: Array<{ id: EdgeId; back?: boolean; both?: boolean }>; nodes: NodeId[]; focus: 'customer' | 'agent'; tone?: 'bad' | 'good'; mood: Mood };
 
 const diagramSteps: DiagramStep[] = [
-  { title: 'The request travels over the API', body: 'A customer action — add to cart, check out, sign in — reaches the website over its REST API, and the website calls the service on its host.', edges: [{ id: 'req' }, { id: 'host' }], nodes: ['customer', 'website', 'host'], focus: 'customer', mood: 'neutral' },
+  { title: 'The request travels over the API', body: 'An end-user action — add to cart, check out, sign in — reaches the website over its REST API, and the website calls the service on its host.', edges: [{ id: 'req' }, { id: 'host' }], nodes: ['customer', 'website', 'host'], focus: 'customer', mood: 'neutral' },
   { title: 'A failure travels back', body: 'The service is unhealthy — a bad deploy, an exhausted instance — so a 5xx returns down the same path and the website can show only a generic error.', edges: [{ id: 'host', back: true }, { id: 'req', back: true }], nodes: ['customer', 'website', 'host'], focus: 'customer', tone: 'bad', mood: 'neutral' },
-  { title: 'The customer is stuck', body: 'No context, no recovery, nobody to ask. This is where most journeys quietly end.', edges: [], nodes: ['customer'], focus: 'customer', tone: 'bad', mood: 'angry' },
+  { title: 'The end-user is stuck', body: 'No context, no recovery, nobody to ask. This is where most journeys quietly end.', edges: [], nodes: ['customer'], focus: 'customer', tone: 'bad', mood: 'angry' },
   { title: 'The agent calls through WebMCP', body: 'The browser agent invokes the WebMCP handoff registered by the open website and delegates the incident to Host Whisperer.', edges: [{ id: 'mcp' }, { id: 'hw' }], nodes: ['customer', 'website', 'hw'], focus: 'agent', mood: 'thinking' },
-  { title: 'Host Whisperer works the host', body: 'Host Whisperer privately diagnoses the host, applies the bounded fix after visible approval, and verifies the original request itself.', edges: [{ id: 'host2', both: true }], nodes: ['hw', 'host'], focus: 'agent', mood: 'thinking' },
+  { title: 'Host Whisperer works the host', body: 'Host Whisperer privately diagnoses the host, applies the one bounded fix this website allows, and verifies the original request itself.', edges: [{ id: 'host2', both: true }], nodes: ['hw', 'host'], focus: 'agent', mood: 'thinking' },
   { title: 'The outcome comes back', body: 'The agent receives a clear outcome: the issue is resolved and safe to retry, or a sanitized incident is ready for a developer.', edges: [{ id: 'hw', back: true }, { id: 'mcp', back: true }], nodes: ['website', 'customer'], focus: 'agent', tone: 'good', mood: 'thinking' },
-  { title: 'The customer is unblocked', body: 'With the service healthy again, the customer retries and continues without opening a support ticket.', edges: [{ id: 'req', both: true }, { id: 'host', both: true }], nodes: ['customer', 'website', 'host'], focus: 'customer', tone: 'good', mood: 'happy' },
+  { title: 'The end-user is unblocked', body: 'With the service healthy again, the end-user retries and continues without opening a support ticket.', edges: [{ id: 'req', both: true }, { id: 'host', both: true }], nodes: ['customer', 'website', 'host'], focus: 'customer', tone: 'good', mood: 'happy' },
 ];
 
 /* Each node is its own component so an illustrated <image href="…"> can
    replace any one of them later without touching the wiring. */
 function CustomerNode({ mood, on, focus }: { mood: Mood; on: boolean; focus: 'customer' | 'agent' }) {
-  return <g className={`dnode ${on ? 'on' : ''}`}>
+  return <g className={`dnode customer ${on ? 'on' : ''}`}>
     <rect className="node-shell" x="38" y="184" width="220" height="198" rx="22" />
     <g className={`customer-role customer-person ${focus === 'customer' ? 'active' : ''}`}>
       <rect x="50" y="196" width="196" height="76" rx="12" />
@@ -87,7 +108,7 @@ function CustomerNode({ mood, on, focus }: { mood: Mood; on: boolean; focus: 'cu
       <circle className="ink" cx="72" cy="226" r="1.8" /><circle className="ink" cx="84" cy="226" r="1.8" />
       {mood === 'happy' ? <path className="line" d="M71 233q7 8 14 0" /> : mood === 'angry' ? <path className="line" d="M71 237q7-7 14 0" /> : <path className="line" d="M72 236h12" />}
       <path className="person-shoulders" d="M58 257c4-12 11-18 20-18s17 6 21 18" />
-      <text className="dtitle node-title-left" x="108" y="224">Customer</text>
+      <text className="dtitle node-title-left" x="108" y="224">End-user</text>
       <text className="dlabel node-label-left" x="108" y="244">uses the website</text>
     </g>
     <path className="role-divider" d="M56 282h184" />
@@ -147,7 +168,7 @@ function FlowDiagram() {
   const tone = step.tone ?? '';
 
   return <section className="diagram-section">
-    <div className="section-head"><div className="section-kicker">How it works</div><h2>One failure, seen from every side</h2></div>
+    <div className="section-head diagram-head"><h2>How it works</h2><p>One checkout failure, followed from the end-user’s click to the verified fix.</p></div>
     <div className="diagram-layout">
       <div className="diagram-stage">
         <svg viewBox="0 0 1100 640" className={`hw-diagram mood-${step.mood} ${tone}`} role="img" aria-label={`Step ${index + 1} of ${diagramSteps.length}. ${step.title}. ${step.body}`}>
@@ -190,15 +211,14 @@ const consoleBeats: ConsoleBeat[] = [
   { tone: 'agent', label: 'Gathering incident data', detail: 'Collecting only the website signals approved for support.' },
   { tone: 'agent', label: 'Filing support report', detail: 'The support report is ready.' },
   { tone: 'agent', label: 'Sending for inspection', detail: 'Host Whisperer received the report and is choosing a safe response.' },
-  { tone: 'hold', label: 'Resolution ready', detail: 'A bounded resolution is ready for your approval.' },
-  { tone: 'you', label: 'Resolution approved', detail: 'You approved the visible resolution.' },
-  { tone: 'agent', label: 'Applying approved resolution', detail: 'The hosting service completed the bounded resolution.' },
+  { tone: 'hold', label: 'Resolution selected', detail: 'The one resolution this website allows for this failure.' },
+  { tone: 'agent', label: 'Applying resolution', detail: 'The hosting service completed the bounded resolution.' },
   { tone: 'agent', label: 'Verifying service', detail: 'Checking that the original request succeeds now.' },
   { tone: 'agent', label: 'Issue resolved', detail: 'The service is responding normally again.' },
 ];
 
-/* A line lands roughly every beat; the approval line holds, because in
-   the real run that is where the agent stops and waits for a person. */
+/* A line lands roughly every beat; the selection line holds, because in
+   the real run that is where the agent commits to one bounded repair. */
 const beatDelay = (index: number) => (consoleBeats[index]?.tone === 'hold' ? 3200 : 1650);
 
 function SupportConsole() {
@@ -226,6 +246,7 @@ function SupportConsole() {
 }
 
 function Overview() {
+  usePageIdentity('How it works · Host Whisperer', 'hostWhisperer', 'Follow one checkout failure from the end-user’s click to the verified fix, and see where the WebMCP handoff fits.');
   return <div className="app-shell hw-home"><AppHeader section="How it works" />
     <main className="overview">
       <section className="hero-brand" aria-labelledby="host-whisperer-title">
@@ -269,13 +290,14 @@ function Overview() {
 /* ------------------------------------------------------------------ */
 
 function About() {
+  usePageIdentity('About · Host Whisperer', 'hostWhisperer', 'Who built Host Whisperer, what it demonstrates, and exactly how much of it is real.');
   return <div className="app-shell hw-about"><AppHeader section="About" />
     <main className="about-page">
       <section className="about-hero">
         <div className="about-hero-copy">
           <div className="eyebrow"><Sparkles size={14} /> About the project</div>
           <h1>Website failures should come with a recovery path.</h1>
-          <p>Host Whisperer lets a customer’s browser agent hand a supported failure to a tightly constrained support agent for diagnosis, approval, recovery, and verification.</p>
+          <p>Host Whisperer lets a customer’s browser agent hand a supported failure to a tightly constrained support agent for diagnosis, recovery, and verification.</p>
           <div className="about-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> Try the live demo <ArrowRight size={16} /></a><a className="secondary-link" href="/"><Play size={15} /> See how it works</a></div>
         </div>
         <div className="about-details">
@@ -287,7 +309,7 @@ function About() {
           <aside className="about-origin about-status">
             <span>Prototype status</span>
             <strong>Real handoff, simulated host</strong>
-            <p>The WebMCP and approval flow works in-browser. Provider operations are simulated; no cloud account is connected or changed.</p>
+            <p>The WebMCP handoff and recovery flow work in-browser. Provider operations are simulated; no cloud account is connected or changed.</p>
           </aside>
         </div>
       </section>
@@ -306,13 +328,34 @@ function About() {
 
 const makeDemoToken = (provider: ProviderId) => `${tokenPrefixes[provider]}_demo_${Math.random().toString(36).slice(2, 14)}`;
 
+/* Both hops live here once, so the drawn line and the packet travelling
+   along it can never drift apart. */
+const integrationEdges = { handoff: 'M310 154H424', token: 'M672 154H786' } as const;
+type IntegrationEdgeId = keyof typeof integrationEdges;
+
+/* Requests go out, answers come back: each hop carries one packet each
+   way, offset so the pair reads as a conversation rather than a queue. */
+const integrationPackets: Array<{ edge: IntegrationEdgeId; back?: boolean; begin: string }> = [
+  { edge: 'handoff', begin: '0s' },
+  { edge: 'handoff', back: true, begin: '.7s' },
+  { edge: 'token', begin: '.35s' },
+  { edge: 'token', back: true, begin: '1.05s' },
+];
+
 function IntegrationDiagram({ provider }: { provider: ProviderId }) {
+  const reduceMotion = useMemo(() => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches, []);
   return <section className="integration-diagram" aria-labelledby="integration-diagram-title">
     <div className="integration-diagram-copy"><div className="section-kicker">Integration architecture</div><h2 id="integration-diagram-title">One safe bridge between your website and its host</h2><p>The plugin adds the WebMCP handoff to the customer website. The host credential stays with Host Whisperer and is used only for the approved permissions.</p></div>
     <svg viewBox="0 0 1060 310" role="img" aria-label={`Big Pink exposes WebMCP to Host Whisperer. Host Whisperer uses a private API token to communicate with ${providerNames[provider]}.`}>
-      <defs><marker id="integration-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0l10 5-10 5Z" /></marker></defs>
-      <path className="integration-edge" d="M310 154H424" markerEnd="url(#integration-arrow)" />
-      <path className="integration-edge token-edge" d="M672 154H786" markerEnd="url(#integration-arrow)" />
+      <defs>
+        <marker id="integration-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0l10 5-10 5Z" /></marker>
+        {(Object.entries(integrationEdges) as Array<[IntegrationEdgeId, string]>).map(([id, d]) => <path key={id} id={`iedge-${id}`} d={d} markerEnd="url(#integration-arrow)" />)}
+      </defs>
+      <use href="#iedge-handoff" className="integration-edge" />
+      <use href="#iedge-token" className="integration-edge token-edge" />
+      {!reduceMotion && integrationPackets.map((packet, index) => <circle key={index} className={`ipacket ${packet.edge}`} r="6">
+        <animateMotion dur="1.4s" begin={packet.begin} repeatCount="indefinite" calcMode="linear" keyPoints={packet.back ? '1;0' : '0;1'} keyTimes="0;1"><mpath href={`#iedge-${packet.edge}`} /></animateMotion>
+      </circle>)}
       <g className="integration-node website-card"><rect x="40" y="48" width="270" height="212" rx="20" /><rect className="browser" x="68" y="78" width="214" height="82" rx="11" /><path d="M68 103h214" /><circle cx="83" cy="91" r="3" /><circle cx="94" cy="91" r="3" /><rect className="browser-line" x="87" y="120" width="92" height="7" rx="3.5" /><rect className="browser-line" x="87" y="136" width="138" height="6" rx="3" /><text className="inode-title" x="175" y="191">Big Pink website</text><g className="webmcp-pill"><rect x="105" y="210" width="140" height="30" rx="8" /><text x="175" y="230">WebMCP handoff</text></g></g>
       <g className="integration-node whisperer-card"><rect x="424" y="34" width="248" height="240" rx="20" /><g className="diagram-hw-mark"><circle cx="548" cy="89" r="28" /><path d="M534 91c5-10 9-10 14 0s9 10 14 0" /><path d="M534 83c5 10 9 10 14 0s9-10 14 0" /><circle cx="548" cy="87" r="3.5" /></g><text className="inode-title" x="548" y="137">Host Whisperer</text><text className="inode-label" x="548" y="159">private support agent</text><g className="token-box"><rect x="458" y="184" width="180" height="58" rx="10" /><text x="548" y="207">PRIVATE CREDENTIAL</text><text className="token-value" x="548" y="228">API TOKEN ••••••••</text></g></g>
       <g className="integration-node host-card"><rect x="786" y="48" width="234" height="212" rx="20" /><g className="mini-rack"><rect x="822" y="79" width="162" height="84" rx="11" />{[0, 1, 2].map((row) => <g key={row}><rect x="837" y={91 + row * 21} width="132" height="13" rx="4" /><circle cx="958" cy={97.5 + row * 21} r="2.8" /></g>)}</g><text className="inode-title" x="903" y="197">{providerNames[provider]}</text><text className="inode-label" x="903" y="220">approved host access</text></g>
@@ -322,12 +365,13 @@ function IntegrationDiagram({ provider }: { provider: ProviderId }) {
 }
 
 function ConnectHost() {
+  usePageIdentity('Integrate your website · Host Whisperer', 'hostWhisperer', 'Connect the host behind your customer website, review the access it grants, and download the one-file WebMCP plugin.');
   const profile = useSyncExternalStore(subscribeStudio, getStudioSnapshot, getStudioSnapshot);
   /* The token lives here and nowhere else: it is never persisted, never
      sent, and never written into the file the developer downloads. */
   const [token, setToken] = useState(() => makeDemoToken(profile.provider));
   const [fingerprint, setFingerprint] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState(() => new URL('/?view=shop', window.location.origin).href);
+  const [websiteUrl, setWebsiteUrl] = useState('https://longdogechallenge.com/');
   const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -374,7 +418,6 @@ function ConnectHost() {
     </div>
 
     <main className="connect-grid">
-      <IntegrationDiagram provider={profile.provider} />
       <section className="studio-panel connect-panel">
         <div className="panel-heading"><div><KeyRound size={16} /><span>Connect your host</span></div><small>step 1</small></div>
         <div className="field-stack">
@@ -399,8 +442,10 @@ function ConnectHost() {
           ? <button className="primary-button" onClick={() => void download()}><Download size={17} /> Download plugin</button>
           : <div className="locked-step"><Lock size={16} /><p>Complete the host connection in step 1 to unlock the plugin.</p></div>}
         <div className="install-tag"><span>Then add this to your pages</span><code>&lt;script type="module" src="/host-whisperer-plugin.js"&gt;&lt;/script&gt;</code><button onClick={() => void copyInstall()}><Copy size={14} /> {copied ? 'Copied' : 'Copy'}</button></div>
-        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>What the support agent handles</strong></div><div className="strip-items">{['Gather safe data', 'File the report', 'Inspect the incident', 'Apply an approved fix', 'Verify it worked'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
+        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>What the support agent handles</strong></div><div className="strip-items">{['Gather safe data', 'File the report', 'Inspect the incident', 'Apply fix', 'Verify it worked'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
       </section>
+
+      <IntegrationDiagram provider={profile.provider} />
     </main><AppFooter label="Host Whisperer" /></div>;
 }
 
@@ -466,6 +511,7 @@ function PoolFloatArt({ product, tint, decorative = false }: { product: Product;
 }
 
 function ShopDemo() {
+  usePageIdentity('Big Pink · Inflatable pool floats', 'bigPink', 'The demonstration storefront whose checkout is down — and recovers without a support ticket.');
   const [cart, setCart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) writeCart(startingCart()); return readCart(); });
   const [service, setService] = useState<Service>(() => { if (!localStorage.getItem(serviceKey)) writeService(brokenService()); return readService(); });
   const [checkout, setCheckout] = useState<'idle' | 'failed' | 'placed'>(() => sessionStorage.getItem(checkoutAttemptKey) === 'true' ? 'failed' : 'idle');
@@ -670,6 +716,7 @@ function ShopDemo() {
 /* ------------------------------------------------------------------ */
 
 function StoreAdmin() {
+  usePageIdentity('Store Admin · Big Pink', 'bigPink', 'The Big Pink developer console: install the Host Whisperer plugin and watch storefront activity.');
   const [bundleReady] = useState(() => localStorage.getItem(demoBundleKey) === 'true');
   const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) !== 'false');
   const [installing, setInstalling] = useState(false);
@@ -722,7 +769,7 @@ function StoreAdmin() {
           {bundleReady && !installed && <div className="package-review">
             <div className="package-title"><span className="package-icon"><HostWhispererMark /></span><div><strong>Host Whisperer support operator</strong><p>Prepared for Big Pink · hosting recovery playbook</p></div><span className="package-version">v0.1.0</span></div>
             <div className="package-files"><span><Code2 size={14} /> host-whisperer-plugin.js</span></div>
-            <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted page and checkout context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Roll back the checkout service after customer approval</span><span><Check size={13} /> Verify checkout before reporting success</span></div>
+            <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted page and checkout context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Roll back the checkout service to its last verified deploy</span><span><Check size={13} /> Verify checkout before reporting success</span></div>
             <button className={installing ? 'admin-install installing' : 'admin-install'} onClick={install} disabled={installing}><Plug size={16} /> {installing ? 'Deploying plugin to storefront…' : 'Install plugin on storefront'}</button>
           </div>}
           {installed && <div className="admin-live"><div><span className="admin-live-mark"><Check size={20} /></span><div><strong>Host Whisperer is active</strong><p>One WebMCP support handoff and the customer help dialog are deployed.</p></div></div><a href="/?view=shop">Test on storefront <ArrowRight size={14} /></a></div>}
@@ -750,6 +797,7 @@ function decodePacket(): EscalationPacket | null {
 }
 
 function IncidentView() {
+  usePageIdentity('Developer escalation · Host Whisperer', 'hostWhisperer', 'Inspect a sanitized incident packet handed to a developer by an installed Host Whisperer plugin.');
   const packet = decodePacket();
   return <div className="app-shell hw-incident"><AppHeader section="Developer escalation" />
     <main className="incident-view">

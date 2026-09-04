@@ -18,13 +18,13 @@ The published prize package names ten winners. Each winning submission is listed
 
 Host Whisperer demonstrates a website changing from a dead end into an agent-native support experience.
 
-Without WebMCP, a customer sees a generic checkout error and a chatbot can only guess from the customer's prose. With the installed Host Whisperer runtime, the website exposes a structured, purpose-built support handoff tied to its live state. ChatGPT delegates the issue, the customer reviews the bounded resolution, and Host Whisperer obtains visible approval, applies it, verifies it, and returns a minimal outcome.
+Without WebMCP, a customer sees a generic checkout error and a chatbot can only guess from the customer's prose. With the installed Host Whisperer runtime, the website exposes a structured, purpose-built support handoff tied to its live state. ChatGPT delegates the issue, and Host Whisperer applies the one bounded resolution the developer allowlisted, verifies it, and returns a minimal outcome.
 
 This is a strong WebMCP demonstration because neither participant can complete the experience as well alone:
 
 - The website and Host Whisperer know the live application state and the actions its developer considers safe, but need a trusted way to receive customer intent.
 - The browser agent can carry that intent and communicate the outcome without scraping the UI, inventing state, or becoming an infrastructure operator.
-- The customer supplies intent and approval, supervises the work, and sees proof of the outcome.
+- The customer supplies intent, watches the work, and sees proof of the outcome.
 - WebMCP provides the structured contract joining those three capabilities.
 
 The demo's product fiction should be credible enough to establish potential impact, but it must remain deterministic and optimized for judging. We do not need to build real hosting integrations, a production backend, generalized playbooks, billing, accounts, or long-term operations.
@@ -35,8 +35,8 @@ There is a Stage One pass/fail screen for baseline viability: the project must f
 
 | Criterion | Official question | What Host Whisperer must prove |
 | --- | --- | --- |
-| WebMCP Leverage | How thoroughly and skillfully does the project use WebMCP? Is it working and non-trivial? | The single customer-facing handoff must be real, discoverable, stateful, approval-gated, and essential to the journey—not a decorative wrapper around a UI action. |
-| Execution | Is it a working, complete, coherent product experience rather than a technical proof of concept? | The live before/after journey must work reliably from failure through installation, diagnosis, approval, repair, and verification. The three roles must be immediately understandable. |
+| WebMCP Leverage | How thoroughly and skillfully does the project use WebMCP? Is it working and non-trivial? | The single customer-facing handoff must be real, discoverable, stateful, developer-bounded, and essential to the journey—not a decorative wrapper around a UI action. |
+| Execution | Is it a working, complete, coherent product experience rather than a technical proof of concept? | The live before/after journey must work reliably from failure through installation, diagnosis, repair, and verification. The three roles must be immediately understandable. |
 | Potential Impact | Does it make a credible, specific case for solving a real problem for a real audience, and does the demo address it? | Lead with the generic-error/support-reconstruction problem and show the exact improvement for a stranded customer and the website developer. |
 | Creativity & Ambition | Is the concept novel and different from existing concepts? | Emphasize the generated support contract, supervised recovery, verification, and transformation of existing sites—not a generic chatbot, shopping assistant, or agent clicking UI. |
 
@@ -93,7 +93,7 @@ The project is ready to submit only when all of these are true:
 - The complete live journey has been tested in ChatGPT's in-app browser, not only in unit tests or ordinary Chrome.
 - A fresh judge can understand the problem, roles, installation transition, and WebMCP value without coaching.
 - Every advertised WebMCP tool works in the deployed build and contributes visibly to the story.
-- Reset, failure reproduction, generation, installation, diagnosis, approval, recovery, and verification are deterministic.
+- Reset, failure reproduction, generation, installation, diagnosis, recovery, and verification are deterministic.
 - The video is public on YouTube, has clear narration, shows the working WebMCP interaction, and is under three minutes.
 - The description explicitly answers all four required prompts and is written to the four judging criteria.
 - The public repository contains the final code, instructions, and a visible open-source license.

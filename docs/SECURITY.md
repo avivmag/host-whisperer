@@ -8,7 +8,7 @@ Untrusted for provider credentials and broad administrative authority. It may ho
 
 ### Browser agent
 
-Allowed to discover and invoke the support handoff registered by the active page. It is not trusted with technical evidence or consequential-action authority. Incident state, action selection, approval, execution, and verification remain inside the runtime and backend.
+Allowed to discover and invoke the support handoff registered by the active page. It is not trusted with technical evidence or consequential-action authority. Incident state, action selection, execution, and verification remain inside the runtime and backend.
 
 ### Website backend
 
@@ -27,8 +27,8 @@ Trusted for installation, provider authorization, playbook selection, and high-i
 5. Bounded inputs and outputs: the issue description is bounded, and WebMCP returns only a status plus customer message.
 6. Private incident binding: the runtime owns the active incident ID and never exposes it to the browser agent.
 7. Diagnosis before repair: a recovery cannot be prepared before a failing diagnostic exists.
-8. Visible consent: a prepared recovery cannot run until the customer approves the exact action in the page.
-9. Single-use transition: recovery runs only from `awaiting_approval`; replay after execution is rejected.
+8. Developer-time consent: only the exact actions the developer allowlisted in the installed plugin can ever run; the runtime cannot invent one.
+9. Single-use transition: recovery runs only from `repairing`, once per prepared incident; replay after execution is rejected.
 10. Verification: the runtime never reports recovery until the configured verification function succeeds.
 11. Honest escalation: an unavailable or unverified resolution returns `needs_developer`; it never becomes a false success.
 12. No browser credentials: cloud and hosting credentials are never generated into the adapter or returned to the agent.
@@ -43,7 +43,7 @@ Acceptable examples:
 - Retry a failed user-scoped job
 - Refresh a stale session
 - Purge a cache entry scoped to the current tenant or resource
-- Request a rollback proposal for developer approval
+- Request a rollback within the developer's allowlist
 
 Unacceptable customer-side examples:
 

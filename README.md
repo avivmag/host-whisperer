@@ -4,7 +4,7 @@
 
 **When a website's host fails, its customers get a dead end. Host Whisperer turns that page into something their own agent can fix.**
 
-A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers one WebMCP handoff. ChatGPT delegates the support request to Host Whisperer, which privately gathers the approved signals, inspects the incident, waits for visible customer approval, applies the one allowlisted resolution, verifies it, and returns only what the customer needs to know.
+A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers one WebMCP handoff. ChatGPT delegates the support request to Host Whisperer, which privately gathers the approved signals, inspects the incident, applies the one developer-allowlisted resolution, verifies it, and returns only what the customer needs to know.
 
 The configuration product does not embed ChatGPT and does not itself need WebMCP. WebMCP belongs in the generated plugin running on the customer website.
 
@@ -35,9 +35,7 @@ ChatGPT delegates one support request through WebMCP
                     ↓
 Host Whisperer gathers data, files the report, and inspects it privately
                     ↓
-Customer approves it on the page — until then, it will not run
-                    ↓
-Host Whisperer applies and verifies the developer-approved resolution
+Host Whisperer applies and verifies the one developer-approved resolution
                     ↓
 ChatGPT receives “resolved,” and the customer retries successfully
 ```

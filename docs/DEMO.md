@@ -30,17 +30,17 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 ### 3. The repair
 
 8. Keep the store open in the integrated browser. In the Codex conversation, say only: **"Fix checkout on this page."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
-9. Codex calls `resolve_store_issue` immediately and waits at the visible in-page approval. It must not ask for a separate chat confirmation, inspect the repository, source code, DOM, network logs, other integrations, or the web.
+9. Codex calls `resolve_store_issue` immediately and reports its result. It must not ask the customer to confirm or approve anything, or inspect the repository, source code, DOM, network logs, other integrations, or the web.
 10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
-11. The page shows the customer-relevant effects of the only allowlisted resolution while the WebMCP call remains open.
-12. Click **Yes, go ahead**. Do not send another chat message: Host Whisperer continues inside the same pending call.
-13. Read the remaining generic progress: **Applying approved resolution → Verifying service → Issue resolved**.
+11. The page names the only allowlisted resolution for this failure while the WebMCP call is still open.
+12. Do not send another chat message: Host Whisperer applies the repair inside the same call, with nothing to click.
+13. Read the remaining generic progress: **Applying resolution → Verifying service → Issue resolved**.
 14. Codex receives only the verified result and tells the customer that checkout is available again.
 
 ### 4. The close
 
 15. The error card becomes **Checkout is back online**, and the button becomes **Try checkout again**.
-16. Click it. The order confirms. Same cart, same item, no order placed before approval.
+16. Click it. The order confirms. Same cart, same item, no order placed on the customer's behalf.
 
 ## Part two — behind the scenes (1:40 – 2:45)
 
@@ -57,12 +57,12 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 6. Open the integration page. Point out the Big Pink URL and demo token already filled in, pick a host, review that host's recognizable permission names, then click **Connect**.
 7. Use the integration diagram to show that WebMCP is installed on the customer website while the API token stays with Host Whisperer for its private exchange with the host.
 8. Say the security line while the connected state appears: the token goes to Host Whisperer's server, it is never stored in the browser, and it never appears in the file you download.
-9. Click **Download plugin**. One JavaScript file: the WebMCP runtime plus this website's diagnostics and its approved recovery actions.
+9. Click **Download plugin**. One JavaScript file: the WebMCP runtime plus this website's diagnostics and the recovery actions the developer allowlisted.
 10. Show the install tag — one `<script type="module">` — and say that this is the entire integration.
 
 ## Closing line
 
-Sixty seconds of developer setup turns every 5xx page on a website from a dead end into a support case the customer's own agent can hand to Host Whisperer for an approved, verified resolution.
+Sixty seconds of developer setup turns every 5xx page on a website from a dead end into a support case the customer's own agent can hand to Host Whisperer for a bounded, verified resolution.
 
 ## Escalation, if you have time
 

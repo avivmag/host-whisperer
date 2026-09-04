@@ -1,4 +1,4 @@
-export const providers = ['aws', 'gcp', 'cloudflare', 'vercel', 'netlify', 'render', 'shopify'] as const;
+export const providers = ['gcp', 'cloudflare', 'vercel', 'netlify', 'render', 'shopify'] as const;
 export type ProviderId = (typeof providers)[number];
 
 export type SupportPlaybook = 'commerce-cart';

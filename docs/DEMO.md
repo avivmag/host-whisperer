@@ -54,10 +54,11 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 ### 6. The developer's side
 
 5. Open `/?view=integrate`.
-6. Set the website origin, pick the host from the dropdown, paste the host API token, click **Connect**.
-7. Say the security line while the connected state appears: the token goes to Host Whisperer's server, it is never stored in the browser, and it never appears in the file you download.
-8. Click **Download plugin**. One JavaScript file: the WebMCP runtime plus this website's diagnostics and its single allowed recovery.
-9. Show the install tag — one `<script type="module">` — and say that this is the entire integration.
+6. Open the integration page. Point out the Big Pink URL and demo token already filled in, pick a host, review that host's recognizable permission names, then click **Connect**.
+7. Use the integration diagram to show that WebMCP is installed on the customer website while the API token stays with Host Whisperer for its private exchange with the host.
+8. Say the security line while the connected state appears: the token goes to Host Whisperer's server, it is never stored in the browser, and it never appears in the file you download.
+9. Click **Download plugin**. One JavaScript file: the WebMCP runtime plus this website's diagnostics and its approved recovery actions.
+10. Show the install tag — one `<script type="module">` — and say that this is the entire integration.
 
 ## Closing line
 

@@ -1,6 +1,6 @@
 # WebMCP Challenge Mission
 
-Last verified against the official challenge website and rules: 2026-09-03.
+Last verified against the official challenge website and rules: 2026-09-04.
 
 ## Why this repository exists
 
@@ -66,11 +66,11 @@ The live project must be free to access for judging. If authentication is used, 
 All official times below are Pacific Time:
 
 - Registration and submission opened: August 25, 2026 at 11:00 AM PT.
-- Submission deadline: **September 3, 2026 at 1:00 PM PT**.
+- Submission deadline: **September 4, 2026 at 1:00 AM PT** (extended by Devpost because of an ongoing outage).
 - Judging: September 4, 2026 at 10:00 AM PT through September 21, 2026 at 5:00 PM PT.
 - Winners announced: on or around September 23, 2026 at 2:00 PM PT.
 
-For this repository's Asia/Jerusalem timezone, the submission deadline is **September 3, 2026 at 11:00 PM IDT**.
+For this repository's Asia/Jerusalem timezone, the submission deadline is **September 4, 2026 at 11:00 AM IDT**. Judging begins at **September 4, 2026 at 8:00 PM IDT**.
 
 After the submission deadline, do not change the submitted Devpost entry, public repository, or live deployment until winners are announced. The official FAQ warns that changes during judging can jeopardize eligibility. If continued development is necessary, make it in a separate fork while leaving the submitted version untouched.
 

@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHostWhispererRuntime } from './index';
 
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove()); });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  Object.defineProperty(document, 'modelContext', { configurable: true, value: undefined });
+  document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove());
+});
 
 describe('generated support runtime', () => {
   it('delegates the complete repair behind one customer-safe tool and waits for approval', async () => {
@@ -18,6 +23,8 @@ describe('generated support runtime', () => {
 
     let requestSettled = false;
     const request = Promise.resolve(runtime.tools[0].execute({ issue: 'Checkout fails for my cart.' })).then((result) => { requestSettled = true; return result; });
+    const immediateProgress = document.querySelector('#host-whisperer-root')?.shadowRoot?.querySelector('[role="progressbar"]');
+    expect(immediateProgress).toHaveAttribute('aria-valuenow', '28');
     await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
@@ -95,6 +102,31 @@ describe('generated support runtime', () => {
     expect(labels).toContain('Read deploy history');
     expect(labels).toContain('Host confirmed rollback');
     expect(labels).toContain('Issue resolved');
+    runtime.destroy();
+  });
+
+  it('registers while dormant and only reveals the offer after activation', async () => {
+    vi.useFakeTimers();
+    const registerTool = vi.fn(async () => undefined);
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool } });
+    const runtime = createHostWhispererRuntime({
+      integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render',
+      deferUntilActivated: true, revealDelayMs: 5000,
+      getContext: () => ({ route: '/checkout' }),
+      diagnostics: [{ id: 'health', label: 'Health', run: () => ({ status: 'pass', summary: 'Online' }) }],
+      actions: [{ id: 'retry', label: 'Retry', description: 'Retry', effects: ['Retry'], run: () => undefined, verify: () => ({ recovered: true, summary: 'Ready' }) }],
+    });
+    const shadow = document.querySelector('#host-whisperer-root')!.shadowRoot!;
+
+    expect(registerTool).toHaveBeenCalledOnce();
+    vi.advanceTimersByTime(5000);
+    expect(shadow.querySelector('.hw-launch')).toBeNull();
+
+    runtime.activate();
+    vi.advanceTimersByTime(4999);
+    expect(shadow.querySelector('.hw-launch')).toBeNull();
+    vi.advanceTimersByTime(1);
+    expect(shadow.querySelector('.hw-launch')).not.toBeNull();
     runtime.destroy();
   });
 });

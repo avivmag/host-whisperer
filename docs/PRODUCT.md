@@ -16,7 +16,7 @@ The website already knows the route, application version, error code, session st
 
 ### Plugin operator
 
-The developer who runs the website. On the connect page they name their origin, pick their host, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the private diagnostics and the single recovery Host Whisperer is allowed to propose.
+The developer who runs the website. On the integration page they confirm the customer website, pick their host, review the provider-specific access, connect the hosting account, and download one JavaScript file to drop into their pages. That file carries the private diagnostics and the developer-approved recovery actions Host Whisperer is allowed to propose.
 
 ### Customer
 
@@ -39,7 +39,7 @@ ChatGPT or another WebMCP-capable browser agent. It discovers the single support
 9. The customer retries checkout and the order goes through.
 10. If recovery is unavailable or verification fails, the customer may approve a sanitized developer escalation instead of being told the problem is solved.
 
-The developer's side of this is one page and one file: connect the host, download the plugin, add one `<script>` tag.
+The developer's side of this is one integration page and one file: review access, connect the host, download the plugin, and add one `<script>` tag.
 
 ## Demo scenario
 

@@ -10,7 +10,7 @@ This draft describes the implemented architecture. Do not submit it until `docs/
 
 **Product walkthrough:** https://host-whisperer.onrender.com
 
-**Connect your host:** https://host-whisperer.onrender.com/?view=integrate
+**Website integration:** https://host-whisperer.onrender.com/?view=integrate
 
 **Working demo:** https://host-whisperer.onrender.com/?view=shop
 
@@ -26,7 +26,7 @@ The website knows exactly what happened. It had no safe, structured way to say s
 
 ### What it does
 
-A developer connects their hosting account on one page and downloads one JavaScript file. That file carries the WebMCP runtime plus the diagnostics they approve and the single recovery they allow. One `<script>` tag installs it.
+A developer integrates their website on one page: they confirm the customer URL, review provider-specific access, connect their hosting account, and download one JavaScript file. That file carries the WebMCP runtime plus the diagnostics and recovery actions they approve. One `<script>` tag installs it.
 
 After that, when a customer hits a supported failure, the page offers help beside the error and registers one WebMCP delegation tool. The customer asks their own agent to hand the issue to Host Whisperer. One call privately gathers the allowlisted signals, files the report, inspects the incident, waits for visible customer approval, applies the bounded resolution, verifies the original symptom, and returns only whether the customer should retry or wait for a developer. The page shows a simple support-case timeline instead of exposing infrastructure details.
 

@@ -4,7 +4,7 @@ Last audited: 2026-09-03
 
 ## Hackathon priority
 
-This repository exists solely for OpenAI's WebMCP Challenge. The governing objective, rubric, submission requirements, and freeze policy are in [HACKATHON.md](HACKATHON.md). The submission deadline is September 3, 2026 at 1:00 PM PT (11:00 PM IDT). Until submission, incomplete judged artifacts and live end-to-end verification take priority over production-oriented work.
+This repository exists solely for OpenAI's WebMCP Challenge. The governing objective, rubric, submission requirements, and freeze policy are in [HACKATHON.md](HACKATHON.md). The submission deadline is September 4, 2026 at 1:00 AM PT (11:00 AM IDT), following the Devpost extension. Until submission, incomplete judged artifacts and live end-to-end verification take priority over production-oriented work.
 
 ## Repository state at audit
 
@@ -21,16 +21,18 @@ Before the latest delegation change, the flow was checked at 1440px against `npm
 - `/?view=shop` — Checkout produces the 503 card; the agent dialog appears five seconds later, anchored beside the error, and nudges. It falls back to the bottom-right corner at 760px.
 - The runtime now registers one high-level tool. The intended sequence is: Codex delegates once → Host Whisperer gathers and inspects privately → **the call waits for visible approval** → approve on the page → Host Whisperer applies and verifies internally → Codex receives only the retry message.
 - `/` — the diagram auto-plays all seven steps; the tone changes to red on failure steps and mint on recovery; the customer's face changes with it.
-- `/?view=integrate` — connecting masks the token to a fingerprint and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the DOM, and not in the downloaded plugin.
+- `/?view=about` — explains the project purpose, clearly labels the simulated host operations and production work still required, provides a temporary YouTube video embed, and identifies the creator.
+- `/?view=integrate` — the Big Pink URL and a disposable demo token are prefilled. Connecting removes the token field, repeats the selected provider's reviewed permissions in the success card, and enables the download. The typed token appears in neither `localStorage`, `sessionStorage`, IndexedDB, nor the downloaded plugin.
 - The production download is one self-contained 23 kB file containing `registerTool` and no credentials.
 
 ## Implemented
 
 - 5xx host-outage incident: `POST /api/checkout` 503, crash-looping deploy, bounded rollback, verified retry
 - Delayed, error-anchored, nudging agent dialog (`revealDelayMs` and `anchorTo` on the runtime config)
+- Storefront-load WebMCP registration with failure-activated UI, refresh-resilient incident display, and an immediate flamingo progress bar during agent work
 - Live streaming of the Host Whisperer ↔ host exchange into the customer's timeline (`report` callback on a recovery action)
 - Animated seven-step inline-SVG flow diagram with auto-play, step list, and prev/next/pause
-- Connect-your-host page: host dropdown, token field, simulated handshake, masked fingerprint, one-file plugin download, install tag
+- Website integration page: architecture diagram, host dropdown without AWS, provider-specific permission preview, prefilled demo token, simulated handshake without a token fingerprint, one-file plugin download, install tag
 - Plugin installed by default, so the demo needs no setup; before/after still available in demo controls
 - One runtime WebMCP delegation tool, registered only by the installed customer runtime
 - Same-call visible approval: `resolve_store_issue` starts inspection immediately, stays pending while the page waits for the customer, then applies and verifies internally without another chat message

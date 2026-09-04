@@ -7,6 +7,8 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   localStorage.clear();
+  sessionStorage.clear();
+  Object.defineProperty(document, 'modelContext', { configurable: true, value: undefined });
   history.replaceState({}, '', '/');
   document.querySelectorAll('#host-whisperer-root').forEach((node) => node.remove());
 });
@@ -24,7 +26,7 @@ describe('Host Whisperer surfaces', () => {
     expect(screen.getByText('Host Whisperer works the host')).toBeInTheDocument();
     expect(screen.getByText('The customer is unblocked')).toBeInTheDocument();
     expect(screen.getByText(/Give your website an end-to-end recovery path/)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /Connect your host/ })).not.toHaveLength(0);
+    expect(screen.getAllByRole('link', { name: /Integrate|Start integration/ })).not.toHaveLength(0);
     expect(screen.queryByLabelText(/Repair progress/)).not.toBeInTheDocument();
   });
 
@@ -45,14 +47,33 @@ describe('Host Whisperer surfaces', () => {
     expect(screen.getByText('Resolution approved')).toBeInTheDocument();
   });
 
-  it('offers one plugin download behind a host connection', () => {
+  it('explains the project and its prototype limits on the about page', () => {
+    history.replaceState({}, '', '/?view=about');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: /A recovery path for the moments/ })).toBeInTheDocument();
+    expect(screen.getByText('OpenAI WebMCP Challenge')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'A working demonstration, not a production service' })).toBeInTheDocument();
+    expect(screen.getByText(/Provider authentication, diagnostics, the failing checkout service/)).toBeInTheDocument();
+    expect(screen.getByTitle('Temporary Big Buck Bunny placeholder for the Host Whisperer demo')).toHaveAttribute('src', expect.stringContaining('youtube-nocookie.com/embed/'));
+    expect(screen.getByRole('heading', { name: 'Aviv Magnezy' })).toBeInTheDocument();
+    expect(screen.getByText('Software Engineer')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /aviv.magnezy@gmail.com/ })).toHaveAttribute('href', 'mailto:aviv.magnezy@gmail.com');
+  });
+
+  it('presents website integration before the host connection and plugin download', () => {
     history.replaceState({}, '', '/?view=integrate');
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Connect your host' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Integrate Host Whisperer' })).toBeInTheDocument();
     expect(screen.getByLabelText('Host')).toBeInTheDocument();
+    expect(screen.getByLabelText('Customer website URL')).toHaveValue(`${location.origin}/?view=shop`);
+    expect(screen.getByLabelText('API token')).not.toHaveValue('');
+    expect(screen.queryByRole('option', { name: 'AWS' })).not.toBeInTheDocument();
+    expect(screen.getByText('Render workspace permissions')).toBeInTheDocument();
+    expect(screen.getByText('Trigger rollbacks')).toBeInTheDocument();
     expect(screen.getByText('host-whisperer-plugin.js')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download plugin/ })).not.toBeInTheDocument();
-    expect(screen.getByText(/Connect your host in step 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Complete the host connection in step 1/)).toBeInTheDocument();
   });
 
   it('drops back to an unconnected host when the host is changed', async () => {
@@ -64,14 +85,16 @@ describe('Host Whisperer surfaces', () => {
     await act(async () => { vi.advanceTimersByTime(1600); });
 
     expect(screen.getByText('Render connected')).toBeInTheDocument();
-    // The masked token stands in for the entry field, which is gone.
     expect(screen.queryByLabelText('API token')).not.toBeInTheDocument();
+    expect(screen.getByText('Granted permissions')).toBeInTheDocument();
+    expect(screen.queryByText('Render workspace permissions')).not.toBeInTheDocument();
 
     await act(async () => { fireEvent.change(screen.getByLabelText('Host'), { target: { value: 'cloudflare' } }); });
 
     expect(screen.queryByText('Render connected')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Connect Cloudflare/ })).toBeInTheDocument();
-    expect(screen.getByLabelText('API token')).toHaveValue('');
+    expect(screen.getByLabelText('API token')).not.toHaveValue('');
+    expect(screen.getByText('Cloudflare API token permissions')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download plugin/ })).not.toBeInTheDocument();
 
     // The studio profile outlives a single render, so hand it back as found.
@@ -117,6 +140,24 @@ describe('Host Whisperer surfaces', () => {
     expect(shadowText()).toContain('Something went wrong. Want help getting back on track?');
     expect(shadowText()).not.toContain('Host Whisperer');
     expect(shadowText()).not.toContain('checkout just fell over');
+  });
+
+  it('registers store support before checkout and restores a failed checkout after refresh', () => {
+    vi.useFakeTimers();
+    const registerTool = vi.fn(async () => undefined);
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: { registerTool } });
+    history.replaceState({}, '', '/?view=shop');
+    const first = render(<App />);
+
+    expect(registerTool).toHaveBeenCalledOnce();
+    expect(shadowText()).not.toContain('Ask Codex');
+    fireEvent.click(screen.getByRole('button', { name: /^Checkout$/ }));
+    expect(sessionStorage.getItem('host-whisperer-bigpink-checkout-attempted')).toBe('true');
+
+    first.unmount();
+    render(<App />);
+    expect(screen.getByText('Service Unavailable')).toBeInTheDocument();
+    expect(registerTool).toHaveBeenCalledTimes(2);
   });
 
   it('selects a pool float from the lower catalog and keeps its color in sync', () => {

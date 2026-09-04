@@ -24,6 +24,7 @@ export interface HostWhispererConfig {
   studioUrl?: string;
   agentLabel?: string;
   revealDelayMs?: number;
+  deferUntilActivated?: boolean;
   anchorTo?: () => Element | null;
   getContext: () => Record<string, unknown>;
   diagnostics: RuntimeDiagnostic[];
@@ -82,7 +83,8 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   const agentLabel = config.agentLabel ?? 'Codex';
   let incident: SupportIncident | null = null;
   let open = false;
-  let revealed = !config.revealDelayMs;
+  let activated = !config.deferUntilActivated;
+  let revealed = activated && !config.revealDelayMs;
   let revealTimer: number | null = null;
   let anchorFrame: number | null = null;
   let controller: AbortController | null = null;
@@ -207,6 +209,10 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   };
 
   const askHostWhisperer = async (issue?: string) => {
+    activated = true;
+    revealed = true;
+    open = true;
+    if (revealTimer !== null) { clearTimeout(revealTimer); revealTimer = null; }
     await getContext(issue);
     const diagnosis = await runDiagnostics();
     if (!diagnosis.results.some((item) => item.status === 'fail')) {
@@ -232,7 +238,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   const definitions: ToolDefinition[] = [{
     name: 'resolve_store_issue',
     title: 'Resolve this store issue',
-    description: 'Call this tool immediately when the customer asks to fix a checkout or store failure. Do not ask for separate chat confirmation before calling: invocation only starts private inspection, then the tool itself pauses for the customer to approve any store change in a visible page dialog. After approval it applies the developer-allowlisted resolution, verifies it, and returns a short customer-facing status.',
+    description: 'Call this tool immediately when the customer asks to fix a checkout or store failure. It is already available on the current page: do not refresh or navigate before invoking it. Do not ask for separate chat confirmation before calling: invocation only starts private inspection, then the tool itself pauses for the customer to approve any store change in a visible page dialog. After approval it applies the developer-allowlisted resolution, verifies it, and returns a short customer-facing status.',
     inputSchema: objectSchema({ issue: string('A short customer description of what failed.', { maxLength: 500 }) }, ['issue']),
     execute: async ({ issue }) => askHostWhisperer(issue),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -298,18 +304,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     .hw-activity.off{display:none}
     .hw-activity h3{margin:0;font:500 11.5px 'JetBrains Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.14em;color:#8b937f}
     .hw-activity-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .hw-ring{position:relative;width:32px;height:32px;flex:none}
-    .hw-ring svg{width:32px;height:32px;transform:rotate(-90deg);display:block}
-    .hw-ring circle{fill:none;stroke-width:3.2;stroke-linecap:round}
-    .hw-ring-track{stroke:#dde1d4}
-    .hw-ring-fill{stroke:#0d7d6b;transition:stroke-dashoffset .45s ease,stroke .3s ease}
-    .hw-ring.waiting .hw-ring-fill{stroke:#a55a00}
-    .hw-ring.done .hw-ring-fill{stroke:#4d7c0f}
-    .hw-ring.failed .hw-ring-fill{stroke:#b42318}
-    .hw-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 9.5px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:-.03em;color:#8b937f}
-    .hw-ring.waiting .hw-ring-num{color:#a55a00}
-    .hw-ring.done .hw-ring-num{color:#4d7c0f}
-    .hw-ring.failed .hw-ring-num{color:#b42318}
+    .hw-progress-num{font:600 11px 'JetBrains Mono',ui-monospace,monospace;color:#b43e6d}
     .hw-event{display:grid;grid-template-columns:8px 1fr;gap:10px;margin:11px 0;animation:hw-event-in .36s ease-out}
     .hw-event i{width:7px;height:7px;border-radius:50%;background:#0d7d6b;margin-top:4px;box-shadow:0 0 0 3px #e2f4f0}
     .hw-event.running i{background:#a55a00;box-shadow:0 0 0 3px #fbefdb;animation:hw-pulse 1s infinite}
@@ -317,12 +312,22 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
     .hw-event.approval i{background:#7ba90f;box-shadow:0 0 0 3px #eff8d6}
     .hw-event strong{display:block;font:500 13px 'JetBrains Mono',ui-monospace,monospace;color:#14170f}
     .hw-event span{display:block;margin-top:2px;font-size:12.5px;color:#7d8674;line-height:1.45}
+    .hw-progress{position:relative;margin:17px 8px 3px;padding-top:17px}
+    .hw-progress-track{position:relative;height:10px;overflow:hidden;border:1px solid #e8a9bf;border-radius:999px;background:#fce8ef;box-shadow:inset 0 1px 2px rgba(123,39,71,.1)}
+    .hw-progress-fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#f08aac,#df4f83 72%,#c83369);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+    .hw-progress:not(.done):not(.failed) .hw-progress-fill{background-size:180% 100%;animation:hw-progress-shimmer 1.8s linear infinite}
+    .hw-progress-flamingo{position:absolute;left:0;top:-1px;width:28px;height:28px;overflow:visible;transform:translateX(-50%);transition:left .5s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 2px 2px rgba(123,39,71,.18));animation:hw-flamingo-bob 1.4s ease-in-out infinite}
+    .hw-progress-flamingo .sun{fill:#f8bfd0}.hw-progress-flamingo .body,.hw-progress-flamingo .neck{fill:#df4f83;stroke:#7b2747;stroke-width:1.4;stroke-linejoin:round}.hw-progress-flamingo .eye{fill:#1c1815}.hw-progress-flamingo .beak{fill:#f4b746;stroke:#7b2747;stroke-width:1.2}.hw-progress-flamingo .leg{fill:none;stroke:#7b2747;stroke-width:1.5;stroke-linecap:round}
+    .hw-progress.done .hw-progress-track{border-color:#a9d431;background:#eff8d6}.hw-progress.done .hw-progress-fill{background:#8fc61a}.hw-progress.done .hw-progress-flamingo{animation:none}
+    .hw-progress.failed .hw-progress-track{border-color:#e4aaa5;background:#fdeceb}.hw-progress.failed .hw-progress-fill{background:#b42318}.hw-progress.failed .hw-progress-flamingo{animation:none}
     @keyframes hw-arrive{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
     @keyframes hw-enter{from{opacity:0;transform:translateX(30px) scale(.93)}to{opacity:1;transform:none}}
     @keyframes hw-nudge{0%,84%,100%{transform:none}87%{transform:translateX(-6px) rotate(-1.7deg)}90%{transform:translateX(5px) rotate(1.4deg)}93%{transform:translateX(-3px) rotate(-.8deg)}96%{transform:translateX(1px)}}
     @media (prefers-reduced-motion:reduce){.hw-launch{animation:hw-enter .01s both}.hw-launch-head i{animation:none}}
     @keyframes hw-event-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
     @keyframes hw-pulse{70%{box-shadow:0 0 0 8px transparent}}
+    @keyframes hw-progress-shimmer{to{background-position:-180% 0}}
+    @keyframes hw-flamingo-bob{50%{margin-top:-2px}}
   </style>`;
 
   const positionLauncher = () => {
@@ -350,23 +355,26 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   /* The panel is built once and then patched in place. Re-writing the
      whole shadow root on every activity event made the dialog visibly
      flash and replay its entry animation while a repair was running. */
-  const ringLength = 2 * Math.PI * 15.5;
-  const panelSkeleton = `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand"></div><h2 class="hw-title"></h2></div><button class="hw-close" aria-label="Close">×</button></div><div class="hw-body"></div><div class="hw-activity off"><div class="hw-activity-head"><h3>Progress</h3><div class="hw-ring"><svg viewBox="0 0 36 36"><circle class="hw-ring-track" cx="18" cy="18" r="15.5"></circle><circle class="hw-ring-fill" cx="18" cy="18" r="15.5" stroke-dasharray="${ringLength}" stroke-dashoffset="${ringLength}"></circle></svg><span class="hw-ring-num">0</span></div></div><div class="hw-events"></div></div></section>`;
+  const panelSkeleton = `<section class="hw-panel"><div class="hw-head"><div><div class="hw-brand"></div><h2 class="hw-title"></h2></div><button class="hw-close" aria-label="Close">×</button></div><div class="hw-body"></div><div class="hw-activity off"><div class="hw-activity-head"><h3>Progress</h3><span class="hw-progress-num">0%</span></div><div class="hw-events"></div><div class="hw-progress" role="progressbar" aria-label="Repair progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="hw-progress-track"><div class="hw-progress-fill"></div></div><svg class="hw-progress-flamingo" viewBox="0 0 48 48" aria-hidden="true"><circle class="sun" cx="24" cy="24" r="18"/><path class="body" d="M10 29c5-7 13-9 21-5 4 2 6 6 5 10-9 5-20 5-26-5Z"/><path class="neck" d="M29 26c-1-9 0-16 6-17 5-1 8 2 8 6 0 4-4 6-8 5"/><circle class="eye" cx="38" cy="13" r="1.4"/><path class="beak" d="M42 16l5 2-6 2"/><path class="leg" d="M20 36v7m9-8 3 8"/></svg></div></div></section>`;
 
   /* How far along the one bounded repair is. The bar stalls at the
      approval stage on purpose: that is where the customer decides. */
   const stageProgress: Record<SupportIncident['stage'], number> = { idle: 0, reported: .08, investigating: .28, diagnosed: .44, awaiting_approval: .44, repairing: .72, verifying: .88, recovered: 1, escalated: 1 };
 
-  const renderRing = () => {
-    const ring = shadow.querySelector('.hw-ring');
-    const fill = shadow.querySelector('.hw-ring-fill');
-    if (!ring || !fill) return;
+  const renderProgress = () => {
+    const progress = shadow.querySelector<HTMLElement>('.hw-progress');
+    const fill = shadow.querySelector<HTMLElement>('.hw-progress-fill');
+    const flamingo = shadow.querySelector<SVGSVGElement>('.hw-progress-flamingo');
+    if (!progress || !fill || !flamingo) return;
     const stage = incident?.stage ?? 'idle';
     const value = stageProgress[stage] ?? 0;
     const state = stage === 'awaiting_approval' ? 'waiting' : stage === 'escalated' ? 'failed' : stage === 'recovered' ? 'done' : '';
-    if (ring.className !== `hw-ring ${state}`) ring.className = `hw-ring ${state}`;
-    fill.setAttribute('stroke-dashoffset', String(ringLength * (1 - value)));
-    setText('.hw-ring-num', String(Math.round(value * 100)));
+    const percentage = Math.round(value * 100);
+    progress.className = `hw-progress ${state}`;
+    progress.setAttribute('aria-valuenow', String(percentage));
+    fill.style.width = `${percentage}%`;
+    flamingo.style.left = `${percentage}%`;
+    setText('.hw-progress-num', `${percentage}%`);
   };
   const htmlCache = new Map<string, string>();
   const eventNodes = new Map<string, HTMLElement>();
@@ -460,7 +468,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
         ${current.stage === 'escalated' ? '<div class="hw-card"><h3>Sent to the developer</h3><p>Store support could not fix this safely, so a human has the details now.</p></div>' : ''}`);
     }
     renderEvents();
-    renderRing();
+    renderProgress();
     positionLauncher();
   };
 
@@ -504,11 +512,28 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   render();
   window.addEventListener('scroll', schedulePosition, { passive: true });
   window.addEventListener('resize', schedulePosition);
-  if (config.revealDelayMs) revealTimer = window.setTimeout(() => { revealed = true; render(); }, config.revealDelayMs);
+  const activate = () => {
+    if (activated) return;
+    activated = true;
+    if (config.revealDelayMs) revealTimer = window.setTimeout(() => { revealTimer = null; revealed = true; render(); }, config.revealDelayMs);
+    else { revealed = true; render(); }
+  };
+  if (activated && config.revealDelayMs) revealTimer = window.setTimeout(() => { revealTimer = null; revealed = true; render(); }, config.revealDelayMs);
   void register();
   return {
+    activate,
     open: () => { revealed = true; open = true; render(); },
-    reset: () => { finishApprovalWait(false); incident = null; render(); },
+    reset: () => {
+      finishApprovalWait(false);
+      incident = null;
+      open = false;
+      if (config.deferUntilActivated) {
+        activated = false;
+        revealed = false;
+        if (revealTimer !== null) { clearTimeout(revealTimer); revealTimer = null; }
+      }
+      render();
+    },
     getIncident: () => incident,
     tools: definitions,
     destroy: () => {

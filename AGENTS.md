@@ -21,7 +21,7 @@ All surfaces currently share one Vite deployment for demonstration purposes, but
 | Route | Surface | Audience | Responsibility |
 | --- | --- | --- | --- |
 | `/` | Host Whisperer walkthrough | Evaluator or developer | Explain the product with the animated seven-step flow diagram |
-| `/?view=integrate` | Connect your host | Plugin operator/developer | Choose a host, connect it, and download the one-file plugin |
+| `/?view=integrate` | Integrate Host Whisperer | Plugin operator/developer | Confirm the customer website, review provider access, connect its host, and download the one-file plugin |
 | `/?view=shop` | Big Pink | Customer | Hit the 503, then use the installed WebMCP support tools |
 | `/?view=incident#packet=...` | Developer escalation | Store developer/operator | Inspect a customer-approved sanitized incident packet |
 | `/?view=admin` | Big Pink Admin | Store developer | Legacy install console; kept working but off the demo path and out of navigation |

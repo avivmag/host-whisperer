@@ -4,10 +4,19 @@ import { createHostWhispererRuntime } from './runtime';
 import { buildPluginFile, getStudioSnapshot, hydrateStudio, prepareStudioBundle, subscribeStudio, updateStudioProfile } from './studio';
 import { providers, type EscalationPacket, type ProviderId } from './types';
 
-const providerNames: Record<ProviderId, string> = { aws: 'AWS', gcp: 'Google Cloud', cloudflare: 'Cloudflare', vercel: 'Vercel', netlify: 'Netlify', render: 'Render', shopify: 'Shopify' };
-const tokenPrefixes: Record<ProviderId, string> = { aws: 'akia', gcp: 'gcp', cloudflare: 'cf', vercel: 'vc', netlify: 'ntl', render: 'rnd', shopify: 'shpat' };
+const providerNames: Record<ProviderId, string> = { gcp: 'Google Cloud', cloudflare: 'Cloudflare', vercel: 'Vercel', netlify: 'Netlify', render: 'Render', shopify: 'Shopify' };
+const tokenPrefixes: Record<ProviderId, string> = { gcp: 'gcp', cloudflare: 'cf', vercel: 'vc', netlify: 'ntl', render: 'rnd', shopify: 'shpat' };
+const providerPermissions: Record<ProviderId, { heading: string; items: string[] }> = {
+  gcp: { heading: 'Google Cloud IAM roles', items: ['Cloud Run Viewer (roles/run.viewer)', 'Logs Viewer (roles/logging.viewer)', 'Cloud Run Developer (roles/run.developer)'] },
+  cloudflare: { heading: 'Cloudflare API token permissions', items: ['Workers Scripts Read', 'Workers Tail Read', 'Workers Scripts Write'] },
+  vercel: { heading: 'Vercel project access', items: ['Project Viewer', 'Full Production Deployment'] },
+  netlify: { heading: 'Netlify account access', items: ['Project role: Developer', 'Personal access token (inherits your role)', 'SAML team access (when enforced)'] },
+  render: { heading: 'Render workspace permissions', items: ['View services', 'View service events, metrics, and logs', 'Trigger service deploys', 'Trigger rollbacks'] },
+  shopify: { heading: 'Shopify Admin API access scopes', items: ['read_themes', 'write_themes'] },
+};
 const demoInstallKey = 'host-whisperer-bigpink-installed';
 const demoBundleKey = 'host-whisperer-bigpink-bundle-ready';
+const checkoutAttemptKey = 'host-whisperer-bigpink-checkout-attempted';
 const agentLabel = 'Codex';
 
 function downloadText(filename: string, value: string, type = 'text/javascript') {
@@ -18,12 +27,20 @@ function downloadText(filename: string, value: string, type = 'text/javascript')
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function HostWhispererMark({ small = false }: { small?: boolean }) {
+  return <svg className={`hw-mark ${small ? 'small' : ''}`} viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" /><path d="M9 21c4-8 7-8 11 0s7 8 11 0" /><path d="M9 14c4 8 7 8 11 0s7-8 11 0" /><circle cx="20" cy="20" r="3" /></svg>;
+}
+
+function BigPinkMark({ small = false }: { small?: boolean }) {
+  return <svg className={`big-pink-mark ${small ? 'small' : ''}`} viewBox="0 0 48 48" aria-hidden="true"><circle className="bp-sun" cx="24" cy="24" r="23" /><path className="bp-body" d="M10 29c5-7 13-9 21-5 4 2 6 6 5 10-9 5-20 5-26-5Z" /><path className="bp-neck" d="M29 26c-1-9 0-16 6-17 5-1 8 2 8 6 0 4-4 6-8 5" /><circle className="bp-eye" cx="38" cy="13" r="1.4" /><path className="bp-beak" d="M42 16l5 2-6 2" /><path className="bp-leg" d="M20 36v7m9-8 3 8" /></svg>;
+}
+
 function AppHeader({ section }: { section: string }) {
-  return <header className="topbar"><a className="brand" href="/"><span className="brand-glyph">hw</span><span className="brand-name">Host Whisperer</span></a><nav className="topbar-nav"><a href="/">How it works</a><a href="/?view=integrate">Connect your host</a><a href="/?view=shop">Live demo</a></nav><span className="topbar-section">{section}</span></header>;
+  return <header className="topbar"><a className="brand" href="/"><HostWhispererMark /><span className="brand-name">Host Whisperer</span></a><nav className="topbar-nav"><a href="/">How it works</a><a href="/?view=integrate">Integrate</a><a href="/?view=shop">Live demo</a><a href="/?view=about">About</a></nav><span className="topbar-section">{section}</span></header>;
 }
 
 function AppFooter({ label }: { label: string }) {
-  return <footer className="hw-footer"><span className="brand-glyph small">hw</span><span className="hw-footer-name">{label}</span><span className="hw-footer-note">Developers define the boundaries. Customers stay in control.</span></footer>;
+  return <footer className="hw-footer"><HostWhispererMark small /><span className="hw-footer-name">{label}</span><span className="hw-footer-note">Developers define the boundaries. Customers stay in control.</span></footer>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -67,7 +84,6 @@ function CustomerNode({ mood, on, focus }: { mood: Mood; on: boolean; focus: 'cu
     <g className={`customer-role customer-person ${focus === 'customer' ? 'active' : ''}`}>
       <rect x="50" y="196" width="196" height="76" rx="12" />
       <circle className="face-bg" cx="78" cy="226" r="17" />
-      <path className="hair" d="M62 224c1-11 7-17 16-17 10 0 16 7 17 18-5-6-11-9-18-9-6 0-11 3-15 8Z" />
       <circle className="ink" cx="72" cy="226" r="1.8" /><circle className="ink" cx="84" cy="226" r="1.8" />
       {mood === 'happy' ? <path className="line" d="M71 233q7 8 14 0" /> : mood === 'angry' ? <path className="line" d="M71 237q7-7 14 0" /> : <path className="line" d="M72 236h12" />}
       <path className="person-shoulders" d="M58 257c4-12 11-18 20-18s17 6 21 18" />
@@ -106,7 +122,7 @@ function HostNode({ on }: { on: boolean }) {
 function WhispererNode({ on }: { on: boolean }) {
   return <g className={`dnode hw ${on ? 'on' : ''}`}>
     <rect className="node-shell" x="548" y="438" width="322" height="130" rx="22" />
-    <g className="hw-orb"><circle cx="592" cy="482" r="24" /><path d="M581 482c8-14 16-14 23 0-7 14-15 14-23 0Z" /><circle cx="592" cy="482" r="4" /></g>
+    <g className="hw-orb"><circle cx="592" cy="482" r="24" /><path d="M580 483c4-9 8-9 12 0s8 9 12 0" /><path d="M580 476c4 9 8 9 12 0s8-9 12 0" /><circle cx="592" cy="480" r="3" /></g>
     <text className="dtitle node-title-left" x="628" y="476">Host Whisperer</text>
     <text className="dlabel node-label-left" x="628" y="497">deterministic support agent</text>
     <g className="action-pills"><rect x="572" y="522" width="82" height="29" rx="8" /><text x="613" y="541">diagnose</text><rect x="664" y="522" width="82" height="29" rx="8" /><text x="705" y="541">fix</text><rect x="756" y="522" width="90" height="29" rx="8" /><text x="801" y="541">verify</text></g>
@@ -217,7 +233,7 @@ function Overview() {
           <div className="eyebrow"><Sparkles size={14} /> WebMCP support infrastructure</div>
           <h1>Host Whisperer. <em>What if 5xx errors came with a recovery path?</em></h1>
           <p>Host Whisperer turns supported hosting failures into end-to-end recovery: the customer’s agent hands off the incident, Host Whisperer diagnoses and fixes the host, and SREs sleep better at night.</p>
-          <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Connect your host</a></div>
+          <div className="hero-actions"><a className="primary-link" href="/?view=shop"><ShoppingBag size={16} /> See it happen <ArrowRight size={16} /></a><a className="secondary-link" href="/?view=integrate"><Plug size={16} /> Integrate your website</a></div>
           <ul className="hero-proof">
             <li><Check size={14} /> One script tag to install</li>
             <li><Check size={14} /> No hosting credentials in the browser</li>
@@ -232,31 +248,111 @@ function Overview() {
       <section className="webmcp-explainer">
         <div className="explainer-mark"><Bot size={22} /></div>
         <div className="explainer-body"><h2>Give your website an end-to-end recovery path</h2><p>Host Whisperer is a developer integration that generates one JavaScript file and registers a WebMCP support handoff on your customer-facing pages. When a customer encounters a supported failure, their browser agent can delegate it to Host Whisperer for diagnosis, repair, and verification.</p></div>
-        <a className="explainer-link" href="/?view=integrate"><Plug size={15} /> Connect your host <ArrowRight size={15} /></a>
+        <a className="explainer-link" href="/?view=integrate"><Plug size={15} /> Start integration <ArrowRight size={15} /></a>
       </section>
 
       <section className="surface-switcher">
         <div className="section-kicker">Two surfaces, two audiences</div>
         <div className="surface-grid">{([
           ['Customer', 'Big Pink', 'Hit the checkout outage and watch the agent resolve it.', '/?view=shop'],
-          ['Developer', 'Connect your host', 'Link your hosting account and download the plugin.', '/?view=integrate'],
+          ['Developer', 'Integrate Host Whisperer', 'Connect your host, review access, and download the plugin.', '/?view=integrate'],
         ] as Array<[string, string, string, string]>).map(([role, name, copy, href]) => <a key={name} className="surface-card" href={href}><span className="surface-role">{role}</span><strong>{name}</strong><p>{copy}</p><em>Open<ArrowUpRight size={14} /></em></a>)}</div>
       </section>
     </main><AppFooter label="Host Whisperer" /></div>;
 }
 
 /* ------------------------------------------------------------------ */
-/* Surface 2 — Connect your host and download the plugin.               */
+/* About — project context, prototype status, and creator details.     */
 /* ------------------------------------------------------------------ */
 
-const grantedScopes = ['Read deploy history', 'Read service logs and health', 'Roll back to a previous deploy'];
+function About() {
+  return <div className="app-shell hw-about"><AppHeader section="About" />
+    <main className="about-page">
+      <section className="about-hero">
+        <div className="about-hero-copy">
+          <div className="eyebrow"><Sparkles size={14} /> About the project</div>
+          <h1>A recovery path for the moments when a website just stops.</h1>
+          <p>Host Whisperer explores a simple idea: when a customer hits a website failure, their browser agent should be able to hand the problem to a tightly constrained support agent instead of leaving them with a generic error.</p>
+        </div>
+        <aside className="about-origin">
+          <span>Built for</span>
+          <strong>OpenAI WebMCP Challenge</strong>
+          <p>A time-bounded hackathon demonstration of how people, browser agents, websites, and support systems could work together.</p>
+        </aside>
+      </section>
+
+      <section className="about-story" aria-labelledby="about-why">
+        <div className="section-kicker">Why it exists</div>
+        <div className="about-story-grid">
+          <h2 id="about-why">A 5xx error knows more than it tells you.</h2>
+          <div className="about-prose">
+            <p>Today, a customer sees “something went wrong,” support reconstructs the incident from scratch, and the website already holds useful context that never reaches the right system safely.</p>
+            <p>Host Whisperer demonstrates a more useful handoff. The website exposes one purpose-built WebMCP tool. A browser agent carries the customer’s intent, while Host Whisperer privately diagnoses a supported problem, proposes a bounded recovery, waits for visible approval, applies it, and verifies the result.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="about-reality" aria-labelledby="about-reality-title">
+        <div className="about-reality-heading">
+          <div className="section-kicker">Prototype status</div>
+          <h2 id="about-reality-title">A working demonstration, not a production service</h2>
+          <p>You can explore the complete experience on this website, but it cannot be used to repair real hosted applications yet.</p>
+        </div>
+        <div className="reality-grid">
+          <article><span>Working in the demo</span><strong>The WebMCP handoff and customer approval flow</strong><p>The generated runtime registers a real browser-facing tool and demonstrates the full incident journey with deterministic local state.</p></article>
+          <article className="mock"><span>Mocked for the hackathon</span><strong>The host connection and infrastructure recovery</strong><p>Provider authentication, diagnostics, the failing checkout service, rollback, and verification are simulated. No real cloud account is connected or changed.</p></article>
+          <article><span>Needed for real use</span><strong>Secure server-side provider integrations</strong><p>A production version would need authenticated backend services, provider adapters, durable audit trails, configurable allowlists, monitoring, and extensive security testing.</p></article>
+        </div>
+      </section>
+
+      <section className="about-video" aria-labelledby="about-video-title">
+        <div className="about-video-copy">
+          <div className="section-kicker">Project video</div>
+          <h2 id="about-video-title">Demo walkthrough coming soon</h2>
+          <p>This temporary video will be replaced with the official Host Whisperer walkthrough after it is published on YouTube.</p>
+          <span className="placeholder-badge">Temporary placeholder · Big Buck Bunny</span>
+        </div>
+        <div className="video-frame">
+          <iframe src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ" title="Temporary Big Buck Bunny placeholder for the Host Whisperer demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+        </div>
+      </section>
+
+      <section className="creator-card" aria-labelledby="creator-name">
+        <div className="creator-monogram" aria-hidden="true">AM</div>
+        <div className="creator-copy"><span>Created by</span><h2 id="creator-name">Aviv Magnezy</h2><p>Software Engineer</p></div>
+        <a href="mailto:aviv.magnezy@gmail.com">aviv.magnezy@gmail.com <ArrowUpRight size={15} /></a>
+      </section>
+    </main><AppFooter label="Host Whisperer" /></div>;
+}
+
+/* ------------------------------------------------------------------ */
+/* Surface 2 — Integrate Host Whisperer with a website and its host.    */
+/* ------------------------------------------------------------------ */
+
+const makeDemoToken = (provider: ProviderId) => `${tokenPrefixes[provider]}_demo_${Math.random().toString(36).slice(2, 14)}`;
+
+function IntegrationDiagram({ provider }: { provider: ProviderId }) {
+  return <section className="integration-diagram" aria-labelledby="integration-diagram-title">
+    <div className="integration-diagram-copy"><div className="section-kicker">Integration architecture</div><h2 id="integration-diagram-title">One safe bridge between your website and its host</h2><p>The plugin adds the WebMCP handoff to the customer website. The host credential stays with Host Whisperer and is used only for the approved permissions.</p></div>
+    <svg viewBox="0 0 1060 310" role="img" aria-label={`Big Pink exposes WebMCP to Host Whisperer. Host Whisperer uses a private API token to communicate with ${providerNames[provider]}.`}>
+      <defs><marker id="integration-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0l10 5-10 5Z" /></marker></defs>
+      <path className="integration-edge" d="M310 154H424" markerEnd="url(#integration-arrow)" />
+      <path className="integration-edge token-edge" d="M672 154H786" markerEnd="url(#integration-arrow)" />
+      <g className="integration-node website-card"><rect x="40" y="48" width="270" height="212" rx="20" /><rect className="browser" x="68" y="78" width="214" height="82" rx="11" /><path d="M68 103h214" /><circle cx="83" cy="91" r="3" /><circle cx="94" cy="91" r="3" /><rect className="browser-line" x="87" y="120" width="92" height="7" rx="3.5" /><rect className="browser-line" x="87" y="136" width="138" height="6" rx="3" /><text className="inode-title" x="175" y="191">Big Pink website</text><g className="webmcp-pill"><rect x="105" y="210" width="140" height="30" rx="8" /><text x="175" y="230">WebMCP handoff</text></g></g>
+      <g className="integration-node whisperer-card"><rect x="424" y="34" width="248" height="240" rx="20" /><g className="diagram-hw-mark"><circle cx="548" cy="89" r="28" /><path d="M534 91c5-10 9-10 14 0s9 10 14 0" /><path d="M534 83c5 10 9 10 14 0s9-10 14 0" /><circle cx="548" cy="87" r="3.5" /></g><text className="inode-title" x="548" y="137">Host Whisperer</text><text className="inode-label" x="548" y="159">private support agent</text><g className="token-box"><rect x="458" y="184" width="180" height="58" rx="10" /><text x="548" y="207">PRIVATE CREDENTIAL</text><text className="token-value" x="548" y="228">API TOKEN ••••••••</text></g></g>
+      <g className="integration-node host-card"><rect x="786" y="48" width="234" height="212" rx="20" /><g className="mini-rack"><rect x="822" y="79" width="162" height="84" rx="11" />{[0, 1, 2].map((row) => <g key={row}><rect x="837" y={91 + row * 21} width="132" height="13" rx="4" /><circle cx="958" cy={97.5 + row * 21} r="2.8" /></g>)}</g><text className="inode-title" x="903" y="197">{providerNames[provider]}</text><text className="inode-label" x="903" y="220">approved host access</text></g>
+      <text className="edge-label" x="367" y="139">support handoff</text><text className="edge-label" x="729" y="139">authenticated API</text>
+    </svg>
+  </section>;
+}
 
 function ConnectHost() {
   const profile = useSyncExternalStore(subscribeStudio, getStudioSnapshot, getStudioSnapshot);
   /* The token lives here and nowhere else: it is never persisted, never
      sent, and never written into the file the developer downloads. */
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(() => makeDemoToken(profile.provider));
   const [fingerprint, setFingerprint] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState(() => new URL('/?view=shop', window.location.origin).href);
   const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -270,16 +366,17 @@ function ConnectHost() {
   const changeProvider = (provider: ProviderId) => {
     if (provider === profile.provider) return;
     setFingerprint('');
-    setToken('');
+    setToken(makeDemoToken(provider));
     localStorage.removeItem(demoBundleKey);
     update({ provider });
   };
 
   const connect = () => {
-    if (token.trim().length < 8) { window.alert('Enter the API token for your host to connect.'); return; }
+    const credential = token.trim().length >= 8 ? token.trim() : makeDemoToken(profile.provider);
+    setToken(credential);
     setConnecting(true);
     window.setTimeout(() => {
-      setFingerprint(`${tokenPrefixes[profile.provider]}_${'•'.repeat(6)}${token.trim().slice(-4)}`);
+      setFingerprint('connected');
       setToken('');
       setConnecting(false);
       void prepareStudioBundle();
@@ -293,39 +390,41 @@ function ConnectHost() {
     setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   };
 
-  return <div className="app-shell hw-studio"><AppHeader section="Developer setup" />
+  const permissions = providerPermissions[profile.provider];
+
+  return <div className="app-shell hw-studio"><AppHeader section="Integration" />
     <div className="integration-intro">
-      <div><div className="eyebrow"><Plug size={14} /> Setup</div><h1>Connect your host</h1><p>Link the hosting account that runs your website, then drop one file into it. That file is what registers the WebMCP support tools for your customers.</p></div>
-      <div className="intro-meta"><span className="intro-role">Developer configuration</span><span className="intro-build">{fingerprint ? 'connected' : 'not connected'}</span></div>
+      <div><div className="eyebrow"><Plug size={14} /> Website integration</div><h1>Integrate Host Whisperer</h1><p>Connect the host behind your customer website, review the exact access Host Whisperer needs, then install the generated WebMCP plugin.</p></div>
+      <div className="intro-meta"><span className="intro-role">Developer integration</span><span className="intro-build">{fingerprint ? 'host connected' : 'host not connected'}</span></div>
     </div>
 
     <main className="connect-grid">
+      <IntegrationDiagram provider={profile.provider} />
       <section className="studio-panel connect-panel">
-        <div className="panel-heading"><div><KeyRound size={16} /><span>Hosting account</span></div><small>step 1</small></div>
+        <div className="panel-heading"><div><KeyRound size={16} /><span>Connect your host</span></div><small>step 1</small></div>
         <div className="field-stack">
-          <label>Your website origin<input key={profile.allowedOrigin} defaultValue={profile.allowedOrigin} onBlur={(event) => update({ allowedOrigin: event.target.value })} /></label>
+          <label>Customer website URL<input value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} onBlur={(event) => { try { update({ allowedOrigin: new URL(event.target.value).origin }); } catch { window.alert('Enter a valid website URL.'); } }} /></label>
           <label>Host<select value={profile.provider} onChange={(event) => changeProvider(event.target.value as ProviderId)}>{providers.map((provider) => <option key={provider} value={provider}>{providerNames[provider]}</option>)}</select></label>
-          {/* Once connected the masked token is shown in the connected card
-              below, so the entry field would only repeat it back. */}
           {!fingerprint && <label>API token<input type="password" autoComplete="off" spellCheck={false} placeholder={`${tokenPrefixes[profile.provider]}_…`} value={token} onChange={(event) => setToken(event.target.value)} /></label>}
         </div>
+        {!fingerprint && <div className="permission-preview"><div><ShieldCheck size={17} /><strong>{permissions.heading}</strong></div><p>Grant only the access below in {providerNames[profile.provider]}.</p><ul>{permissions.items.map((permission) => <li key={permission}><Check size={13} /> {permission}</li>)}</ul></div>}
         <div className="privacy-note"><Lock size={18} /><div><strong>Where this token goes</strong><p>It is sent to Host Whisperer’s servers over TLS and stays there. It is never stored in your browser, and it never appears in the plugin you download — open the file and check.</p></div></div>
         {!fingerprint
           ? <button className={`primary-button ${connecting ? 'installing' : ''}`} onClick={connect} disabled={connecting}><Plug size={17} /> {connecting ? `Connecting to ${providerNames[profile.provider]}…` : `Connect ${providerNames[profile.provider]}`}</button>
-          : <div className="connected-state"><div className="connected-head"><Check size={18} /><div><strong>{providerNames[profile.provider]} connected</strong><span>{fingerprint}</span></div></div><ul>{grantedScopes.map((scope) => <li key={scope}><Check size={13} /> {scope}</li>)}</ul></div>}
+          : <div className="connected-state"><div className="connected-head"><Check size={18} /><div><strong>{providerNames[profile.provider]} connected</strong><span>Granted permissions</span></div></div><ul>{permissions.items.map((permission) => <li key={permission}><Check size={13} /> {permission}</li>)}</ul></div>}
       </section>
 
       <section className="studio-panel connect-panel">
         <div className="panel-heading"><div><Download size={16} /><span>Your plugin</span></div><small>step 2</small></div>
-        <p className="connect-copy">One JavaScript file. It contains the WebMCP handoff, the diagnostics Host Whisperer may run, and the single recovery it is allowed to apply.</p>
+        <p className="connect-copy">One JavaScript file. It contains the WebMCP handoff, the diagnostics Host Whisperer may run, and the developer-approved recovery actions it may apply.</p>
         <div className="plugin-file"><Code2 size={15} /><div><strong>host-whisperer-plugin.js</strong><span>WebMCP handoff · one support agent · no credentials</span></div></div>
         {/* The file is built from the connected account, so there is nothing
             to download until step 1 is done. */}
         {fingerprint
           ? <button className="primary-button" onClick={() => void download()}><Download size={17} /> Download plugin</button>
-          : <div className="locked-step"><Lock size={16} /><p>Connect your host in step 1 and the download appears here.</p></div>}
+          : <div className="locked-step"><Lock size={16} /><p>Complete the host connection in step 1 to unlock the plugin.</p></div>}
         <div className="install-tag"><span>Then add this to your pages</span><code>&lt;script type="module" src="/host-whisperer-plugin.js"&gt;&lt;/script&gt;</code><button onClick={() => void copyInstall()}><Copy size={14} /> {copied ? 'Copied' : 'Copy'}</button></div>
-        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>What the support agent handles</strong></div><div className="strip-items">{['Gather safe data', 'File the report', 'Inspect the incident', 'Apply the one fix', 'Verify it worked'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
+        <div className="capability-strip"><div className="strip-label"><Activity size={16} /><strong>What the support agent handles</strong></div><div className="strip-items">{['Gather safe data', 'File the report', 'Inspect the incident', 'Apply an approved fix', 'Verify it worked'].map((value) => <span key={value}><Check size={12} />{value}</span>)}</div></div>
       </section>
     </main><AppFooter label="Host Whisperer" /></div>;
 }
@@ -394,8 +493,8 @@ function PoolFloatArt({ product, tint, decorative = false }: { product: Product;
 function ShopDemo() {
   const [cart, setCart] = useState<Cart>(() => { if (!localStorage.getItem(cartKey)) writeCart(startingCart()); return readCart(); });
   const [service, setService] = useState<Service>(() => { if (!localStorage.getItem(serviceKey)) writeService(brokenService()); return readService(); });
-  const [checkout, setCheckout] = useState<'idle' | 'failed' | 'placed'>('idle');
-  const [helpArmed, setHelpArmed] = useState(false);
+  const [checkout, setCheckout] = useState<'idle' | 'failed' | 'placed'>(() => sessionStorage.getItem(checkoutAttemptKey) === 'true' ? 'failed' : 'idle');
+  const [helpArmed, setHelpArmed] = useState(() => sessionStorage.getItem(checkoutAttemptKey) === 'true');
   /* The plugin ships installed: part one of the demo needs no setup. */
   const [installed, setInstalled] = useState(() => localStorage.getItem(demoInstallKey) !== 'false');
   const [sku, setSku] = useState(catalog[0].sku);
@@ -410,6 +509,7 @@ function ShopDemo() {
   const errorRef = useRef<HTMLDivElement>(null);
   const productRef = useRef<HTMLElement>(null);
   const flockRef = useRef<HTMLElement>(null);
+  const runtimeRef = useRef<ReturnType<typeof createHostWhispererRuntime> | null>(null);
 
   const product = findProduct(sku);
   const needle = query.trim().toLowerCase();
@@ -432,15 +532,22 @@ function ShopDemo() {
     productRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   };
 
-  const tryCheckout = () => { if (!cart.items.length) return; setBagOpen(false); if (readService().healthy) { setCheckout('placed'); return; } setCheckout('failed'); setHelpArmed(true); };
+  const tryCheckout = () => {
+    if (!cart.items.length) return;
+    setBagOpen(false);
+    if (readService().healthy) { sessionStorage.removeItem(checkoutAttemptKey); setCheckout('placed'); return; }
+    sessionStorage.setItem(checkoutAttemptKey, 'true');
+    setCheckout('failed');
+    setHelpArmed(true);
+  };
 
   useEffect(() => {
     const refresh = () => setService(readService());
     window.addEventListener('hostwhisperer:service-restored', refresh);
-    if (!installed || !helpArmed) return () => window.removeEventListener('hostwhisperer:service-restored', refresh);
+    if (!installed) return () => window.removeEventListener('hostwhisperer:service-restored', refresh);
     const runtime = createHostWhispererRuntime({
       integrationId: 'big-pink-demo', appName: 'Big Pink', allowedOrigin: location.origin, providerHint: 'render', studioUrl: `${location.origin}/?view=incident`,
-      agentLabel, revealDelayMs: 5000, anchorTo: () => errorRef.current,
+      agentLabel, revealDelayMs: 5000, deferUntilActivated: true, anchorTo: () => errorRef.current,
       getContext: () => {
         const current = readService();
         return { route: location.pathname, appVersion: '2.4.0', checkoutStatus: current.healthy ? 200 : 503, lastErrorCode: current.healthy ? 'NONE' : 'CHECKOUT_SERVICE_UNAVAILABLE', failingDeploy: current.healthy ? 'none' : current.deploy, cartItemCount: cartCount(readCart()), cartIntact: true };
@@ -475,17 +582,24 @@ function ShopDemo() {
           : ({ recovered: false, summary: 'checkout-service is still returning HTTP 503.' }),
       }],
     });
-    return () => { window.removeEventListener('hostwhisperer:service-restored', refresh); runtime.destroy(); };
-  }, [installed, helpArmed]);
+    runtimeRef.current = runtime;
+    return () => {
+      window.removeEventListener('hostwhisperer:service-restored', refresh);
+      if (runtimeRef.current === runtime) runtimeRef.current = null;
+      runtime.destroy();
+    };
+  }, [installed]);
 
-  const reset = () => { writeService(brokenService()); setService(readService()); setCheckout('idle'); setHelpArmed(false); };
-  const restartJourney = () => { writeService(brokenService()); localStorage.setItem(demoInstallKey, 'false'); localStorage.removeItem(demoBundleKey); setService(readService()); setInstalled(false); setCheckout('idle'); setHelpArmed(false); };
+  useEffect(() => { if (helpArmed) runtimeRef.current?.activate(); }, [helpArmed, installed]);
+
+  const reset = () => { writeService(brokenService()); sessionStorage.removeItem(checkoutAttemptKey); setService(readService()); setCheckout('idle'); setHelpArmed(false); runtimeRef.current?.reset(); };
+  const restartJourney = () => { writeService(brokenService()); sessionStorage.removeItem(checkoutAttemptKey); localStorage.setItem(demoInstallKey, 'false'); localStorage.removeItem(demoBundleKey); setService(readService()); setInstalled(false); setCheckout('idle'); setHelpArmed(false); };
   const enablePlugin = () => { localStorage.removeItem(demoInstallKey); setInstalled(true); };
 
   return <div className="shop-shell">
     <div className="shop-promo">Free delivery on flocks over $50 <b>·</b> 30-day returns <b>·</b> 0% real feathers</div>
     <header className="shop-nav">
-      <a href="/?view=shop" className="shop-logo">BIG PINK</a>
+      <a href="/?view=shop" className="shop-logo"><BigPinkMark /><span>BIG PINK</span></a>
       <nav>{categories.map((value) => <button key={value} className={category === value ? 'on' : ''} onClick={() => browse(value)}>{value}</button>)}</nav>
       <div className="shop-nav-tools">
         {searching && <input className="shop-search" autoFocus placeholder="Search the flock" aria-label="Search the flock" value={query} onChange={(event) => { setQuery(event.target.value); setCategory(null); }} onKeyDown={(event) => { if (event.key === 'Escape') { setQuery(''); setSearching(false); } }} />}
@@ -601,7 +715,7 @@ function StoreAdmin() {
   ];
   return <div className="admin-shell">
     <aside className="admin-sidebar">
-      <a href="/?view=admin" className="admin-logo"><span>BP</span><div><strong>Big Pink</strong><small>Store Admin</small></div></a>
+      <a href="/?view=admin" className="admin-logo"><BigPinkMark small /><div><strong>Big Pink</strong><small>Store Admin</small></div></a>
       <nav>
         <a className="active" href="/?view=admin"><LayoutDashboard size={16} /> Overview</a>
         <span><ShoppingBag size={16} /> Orders<b>24</b></span>
@@ -631,7 +745,7 @@ function StoreAdmin() {
           <div className="admin-section-head"><div><span className="section-mark"><Plug size={17} /></span><div><h2>Support integration</h2><p>Code packages applied to the Big Pink customer website.</p></div></div><span className={installed ? 'admin-badge live' : 'admin-badge'}>{installed ? 'Active' : 'Not installed'}</span></div>
           {!bundleReady && !installed && <div className="admin-empty"><PackageCheck size={26} /><h3>No integration package received</h3><p>Connect a host in Host Whisperer and download the plugin, then return here to install it.</p><a href="/?view=integrate">Open Host Whisperer <ArrowRight size={14} /></a></div>}
           {bundleReady && !installed && <div className="package-review">
-            <div className="package-title"><span className="package-icon">HW</span><div><strong>Host Whisperer support operator</strong><p>Prepared for Big Pink · hosting recovery playbook</p></div><span className="package-version">v0.1.0</span></div>
+            <div className="package-title"><span className="package-icon"><HostWhispererMark /></span><div><strong>Host Whisperer support operator</strong><p>Prepared for Big Pink · hosting recovery playbook</p></div><span className="package-version">v0.1.0</span></div>
             <div className="package-files"><span><Code2 size={14} /> host-whisperer-plugin.js</span></div>
             <div className="package-permissions"><strong>Requested website capabilities</strong><span><Check size={13} /> Read allowlisted page and checkout context</span><span><Check size={13} /> Run three safe diagnostics</span><span><Check size={13} /> Roll back the checkout service after customer approval</span><span><Check size={13} /> Verify checkout before reporting success</span></div>
             <button className={installing ? 'admin-install installing' : 'admin-install'} onClick={install} disabled={installing}><Plug size={16} /> {installing ? 'Deploying plugin to storefront…' : 'Install plugin on storefront'}</button>
@@ -685,5 +799,6 @@ export default function App() {
   if (view === 'admin') return <StoreAdmin />;
   if (view === 'incident') return <IncidentView />;
   if (view === 'integrate') return <ConnectHost />;
+  if (view === 'about') return <About />;
   return <Overview />;
 }

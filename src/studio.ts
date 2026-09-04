@@ -1,6 +1,6 @@
 import { openDB } from 'idb';
 import { containsSensitiveValue } from './security';
-import type { ProviderId, SupportIntegration, SupportPlaybook } from './types';
+import { providers, type ProviderId, type SupportIntegration, type SupportPlaybook } from './types';
 
 const DB_NAME = 'host-whisperer-studio';
 const STORE_NAME = 'integrations';
@@ -30,7 +30,10 @@ const emit = () => listeners.forEach((listener) => listener());
 export async function hydrateStudio() {
   if (!dbPromise) return;
   const saved = await (await dbPromise).getAll(STORE_NAME) as SupportIntegration[];
-  if (saved[0]) profile = saved.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  if (saved[0]) {
+    profile = saved.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    if (!providers.includes(profile.provider)) profile = { ...profile, provider: 'render', bundlePrepared: false };
+  }
   emit();
 }
 

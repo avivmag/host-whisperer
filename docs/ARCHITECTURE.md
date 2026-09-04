@@ -3,9 +3,9 @@
 ## System overview
 
 ```text
-Connect your host                     Big Pink (customer website)
-  developer picks a host,               serves normally; POST /api/checkout
-  connects it, downloads      ---->     returns 503 because the host's
+Website integration                  Big Pink (customer website)
+  developer reviews access,             serves normally; POST /api/checkout
+  connects the host, downloads ---->    returns 503 because the host's
   one plugin file                       checkout-service is crash-looping
                                                 |
                                                 v
@@ -37,9 +37,13 @@ The repository is one React application using query-string routing to present se
 
 It registers no WebMCP tools.
 
-### Connect your host
+### About
 
-`/?view=integrate` is the developer surface. The developer supplies the website origin and application name, chooses a host, and pastes a host API token. A simulated handshake returns the granted scopes and a masked fingerprint, after which the plugin can be downloaded as a single file.
+`/?view=about` explains why Host Whisperer exists, identifies the project as an OpenAI WebMCP Challenge demonstration, and distinguishes the working browser handoff from mocked provider operations. It also contains the temporary project-video embed and creator contact details. It registers no WebMCP tools.
+
+### Website integration
+
+`/?view=integrate` is the developer surface. It explains the complete integration rather than presenting host connection as the product: the Big Pink customer URL and a demo token are prefilled, the developer chooses a host, reviews permission names that match that provider's console, and connects it. A three-node diagram makes the boundary explicit: WebMCP lives on the customer website, Host Whisperer holds the credential privately, and the credential authenticates only the Host Whisperer-to-host exchange. A simulated handshake moves the reviewed permissions into the connected success card without showing any token fingerprint, after which the plugin can be downloaded as a single file.
 
 The token lives in React component state only. It is never written to IndexedDB or `localStorage`, never passed to `updateStudioProfile`, and never interpolated into the generated plugin. `src/App.test.tsx` asserts this.
 
@@ -47,9 +51,9 @@ It registers no WebMCP tools.
 
 ### Big Pink
 
-`/?view=shop` simulates the customer website: an inflatable pool-float store. Search, category navigation, the bag drawer, the account menu, color swatches and product selection are all live client state; nothing leaves the browser. Selecting a card in the lower catalog updates the hero product, its default color, and its accessible image label together. The plugin is installed by default so the demo needs no setup. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the bag is untouched and no payment is attempted. The runtime mounts immediately but its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card. The demo controls live in the page footer, away from the customer story.
+`/?view=shop` simulates the customer website: an inflatable pool-float store. Search, category navigation, the bag drawer, the account menu, color swatches and product selection are all live client state; nothing leaves the browser. Selecting a card in the lower catalog updates the hero product, its default color, and its accessible image label together. The plugin is installed by default so the demo needs no setup. Its WebMCP tool registers as soon as the storefront loads, so an agent never needs to refresh to discover it. Clicking Checkout simulates `POST /api/checkout` failing with `HTTP 503 · Service Unavailable`; the bag is untouched and no payment is attempted. Only then is the dormant customer UI activated: its dialog stays hidden for `revealDelayMs`, then animates in anchored beside the error card. The failed checkout is kept in tab-scoped session storage so an accidental refresh preserves the visible incident and recovery path. The demo controls live in the page footer, away from the customer story.
 
-The customer-facing launcher and panel use only Big Pink support language; they do not reveal the installed provider. The opened panel says one thing: the sentence to give the browser agent, with a **Copy** button for it. When no Website Tool is available it also offers **Use store support here**, which runs the same workflow without an agent. The panel is patched in place — cached HTML per region, appended activity rows — so a repair in progress never re-runs its entrance animations.
+The customer-facing launcher and panel use only Big Pink support language; they do not reveal the installed provider. The opened panel says one thing: the sentence to give the browser agent, with a **Copy** button for it. When the agent invokes the tool, the panel opens immediately and appends an animated pink progress bar after the activity rows; a small Big Pink flamingo travels with the bounded workflow until it settles. When no Website Tool is available the panel also offers **Use store support here**, which runs the same workflow without an agent. The panel is patched in place — cached HTML per region, appended activity rows — so a repair in progress never re-runs its entrance animations.
 
 ### Escalation view
 
@@ -84,6 +88,7 @@ The production build has two stages:
 - Up to 20 recovery actions with unique IDs, each exposing `run(report?)`
 - An optional escalation destination
 - `revealDelayMs` — how long the dialog stays hidden after mount
+- `deferUntilActivated` — register immediately but keep the customer UI dormant until `runtime.activate()` is called
 - `anchorTo` — returns the element the dialog should sit beside, recomputed on scroll and resize, falling back to the bottom-right corner when it does not fit
 
 The runtime rejects an origin mismatch, empty tool sets, excessive tool counts, and duplicate IDs.
@@ -127,6 +132,7 @@ The demo uses same-origin browser storage so navigation between its simulated su
 | localStorage | `bigpink-demo-cart` | Cart contents, kept intact as evidence |
 | localStorage | `host-whisperer-bigpink-installed` | `'false'` uninstalls; anything else, including absent, means installed |
 | localStorage | `host-whisperer-bigpink-bundle-ready` | Legacy handoff flag for the install console |
+| sessionStorage | `host-whisperer-bigpink-checkout-attempted` | Keeps the visible failed checkout intact across an accidental refresh in the current tab |
 
 This is not a production package-delivery or deployment mechanism.
 

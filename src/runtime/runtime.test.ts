@@ -71,7 +71,7 @@ describe('generated support runtime', () => {
     let healthy = false;
     const runtime = createHostWhispererRuntime({
       integrationId: 'test', appName: 'Shop', allowedOrigin: location.origin, providerHint: 'render',
-      agentLabel: 'Codex', revealDelayMs: 5000,
+      agentLabel: 'ChatGPT', revealDelayMs: 5000,
       getContext: () => ({ route: '/product/aster-h1', checkoutStatus: 503 }),
       diagnostics: [{ id: 'checkout_service', label: 'Checkout service', run: () => ({ status: 'fail', summary: 'HTTP 503 from checkout-service.' }) }],
       actions: [{
@@ -83,7 +83,7 @@ describe('generated support runtime', () => {
     const shadow = () => document.querySelector('#host-whisperer-root')!.shadowRoot!;
     expect(shadow().querySelector('.hw-launch')).toBeNull();
     vi.advanceTimersByTime(5000);
-    expect(shadow().querySelector('.hw-launch')?.textContent).toContain('Ask Codex');
+    expect(shadow().querySelector('.hw-launch')?.textContent).toContain('Ask ChatGPT');
     expect(shadow().textContent).not.toContain('Host Whisperer');
 
     const request = runtime.tools[0].execute({ issue: 'Checkout returns a server error.' });

@@ -25,17 +25,17 @@ The video has two parts. Part one shows the offer: a customer stuck on a server 
 ### 2. The offer
 
 6. The agent dialog animates in beside the error and keeps nudging. Do not rush past it.
-7. Click **Ask Codex**. The support panel opens with its activity timeline visible.
+7. Click **Ask ChatGPT**. The support panel opens with its activity timeline visible.
 
 ### 3. The repair
 
-8. Keep the store open in the integrated browser. In the Codex conversation, say only: **"Fix checkout on this page."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
-9. Codex calls `resolve_store_issue` immediately and reports its result. It must not ask the customer to confirm or approve anything, or inspect the repository, source code, DOM, network logs, other integrations, or the web.
+8. Keep the store open in the integrated browser. In the ChatGPT conversation, say only: **"Fix checkout on this page."** Do not mention `@Browser`; that explicitly routes to visual browser control instead of the page's Website Tool.
+9. ChatGPT calls `resolve_store_issue` immediately and reports its result. It must not ask the customer to confirm or approve anything, or inspect the repository, source code, DOM, network logs, other integrations, or the web.
 10. Read the simple page timeline: **Gathering incident data → Filing support report → Sending for inspection**. Explain that the technical evidence stays with Host Whisperer rather than being handed to the customer or their agent.
 11. The page names the only allowlisted resolution for this failure while the WebMCP call is still open.
 12. Do not send another chat message: Host Whisperer applies the repair inside the same call, with nothing to click.
 13. Read the remaining generic progress: **Applying resolution → Verifying service → Issue resolved**.
-14. Codex receives only the verified result and tells the customer that checkout is available again.
+14. ChatGPT receives only the verified result and tells the customer that checkout is available again.
 
 ### 4. The close
 

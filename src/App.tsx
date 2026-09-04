@@ -17,7 +17,7 @@ const providerPermissions: Record<ProviderId, { heading: string; items: string[]
 const demoInstallKey = 'host-whisperer-bigpink-installed';
 const demoBundleKey = 'host-whisperer-bigpink-bundle-ready';
 const checkoutAttemptKey = 'host-whisperer-bigpink-checkout-attempted';
-const agentLabel = 'Codex';
+const agentLabel = 'ChatGPT';
 
 /* Two products share one deployment, so every surface names itself: the
    title says which page you are on, the icon says whose page it is.

@@ -135,9 +135,9 @@ describe('Host Whisperer surfaces', () => {
 
     // The plugin is installed, but it stays out of the way while the
     // customer takes in the error.
-    expect(shadowText()).not.toContain('Ask Codex');
+    expect(shadowText()).not.toContain('Ask ChatGPT');
     act(() => { vi.advanceTimersByTime(5000); });
-    expect(shadowText()).toContain('Ask Codex');
+    expect(shadowText()).toContain('Ask ChatGPT');
     expect(shadowText()).toContain('Something went wrong. Want help getting back on track?');
     expect(shadowText()).not.toContain('Host Whisperer');
     expect(shadowText()).not.toContain('checkout just fell over');
@@ -151,7 +151,7 @@ describe('Host Whisperer surfaces', () => {
     const first = render(<App />);
 
     expect(registerTool).toHaveBeenCalledOnce();
-    expect(shadowText()).not.toContain('Ask Codex');
+    expect(shadowText()).not.toContain('Ask ChatGPT');
     fireEvent.click(screen.getByRole('button', { name: /^Checkout$/ }));
     expect(sessionStorage.getItem('host-whisperer-bigpink-checkout-attempted')).toBe('true');
 

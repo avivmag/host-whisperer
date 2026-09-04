@@ -91,7 +91,7 @@ export function createHostWhispererRuntime(config: HostWhispererConfig) {
   if (config.diagnostics.length > 20 || config.actions.length > 20) throw new Error('Host Whisperer supports at most 20 diagnostics and 20 actions per integration.');
   if (new Set(config.diagnostics.map((item) => item.id)).size !== config.diagnostics.length || new Set(config.actions.map((item) => item.id)).size !== config.actions.length) throw new Error('Diagnostic and action IDs must be unique.');
 
-  const agentLabel = config.agentLabel ?? 'Codex';
+  const agentLabel = config.agentLabel ?? 'ChatGPT';
   let incident: SupportIncident | null = null;
   let open = false;
   let activated = !config.deferUntilActivated;

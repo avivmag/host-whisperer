@@ -60,7 +60,7 @@ Next steps include additional verified playbooks for authentication and data syn
 - Country: Israel
 - App Status: New
 - Live URL: https://host-whisperer.onrender.com/?view=shop
-- Testing instructions: Use the latest ChatGPT desktop app with Website Tools enabled and GPT-5.6 Sol or Terra. Open the live URL in its integrated browser. No setup is needed — the plugin is installed. Click **Checkout** to reproduce the 503. Wait five seconds for the agent dialog to appear beside the error, open it, and—while keeping that page open—tell Codex: “Ask Host Whisperer to fix checkout.” Codex makes one Website Tool call while the page shows generic support progress; Host Whisperer repairs and verifies inside that same call, with nothing for you to approve. When Codex says checkout is available again, click **Try checkout again**. To see the same page without the plugin, use **Show it without the plugin** in the demo controls in the page footer. The developer's side is at `?view=integrate`.
+- Testing instructions: Use the latest ChatGPT desktop app with Website Tools enabled and GPT-5.6 Sol or Terra. Open the live URL in its integrated browser. No setup is needed — the plugin is installed. Click **Checkout** to reproduce the 503. Wait five seconds for the agent dialog to appear beside the error, open it, and—while keeping that page open—tell ChatGPT: “Ask Host Whisperer to fix checkout.” ChatGPT makes one Website Tool call while the page shows generic support progress; Host Whisperer repairs and verifies inside that same call, with nothing for you to approve. When ChatGPT says checkout is available again, click **Try checkout again**. To see the same page without the plugin, use **Show it without the plugin** in the demo controls in the page footer. The developer's side is at `?view=integrate`.
 - Public repository: https://github.com/avivmag/host-whisperer
 - Tested clients: Google Chrome 152 with `WebMCPTesting` enabled and automated Vitest tool-contract tests. Add ChatGPT's in-app browser after the recorded interactive test.
 - AI tools used: OpenAI Codex for product design, implementation, testing, deployment, and debugging; Devpost's MCP server for challenge requirements and submission preparation.
@@ -73,9 +73,9 @@ See [DEMO.md](DEMO.md) for the full beat-by-beat script. In outline:
 
 **0:00–0:35 — The dead end.** An ordinary storefront. Click Checkout. Hold on **503 Service Unavailable**, `POST /api/checkout`, `upstream: checkout-service — no healthy instances`. Say the point: this is the store's server, not the customer's browser, and refreshing will not help. Then wait in silence for five seconds.
 
-**0:35–0:45 — The offer.** The agent dialog animates in beside the error and nudges. Click **Ask Codex**.
+**0:35–0:45 — The offer.** The agent dialog animates in beside the error and nudges. Click **Ask ChatGPT**.
 
-**0:45–1:20 — Delegate visibly.** With the store open in the integrated browser, say only: “Ask Host Whisperer to fix checkout.” Codex calls one Website Tool and waits. The page shows gathering data, filing the report, and sending it for inspection; technical infrastructure details stay behind Host Whisperer.
+**0:45–1:20 — Delegate visibly.** With the store open in the integrated browser, say only: “Ask Host Whisperer to fix checkout.” ChatGPT calls one Website Tool and waits. The page shows gathering data, filing the report, and sending it for inspection; technical infrastructure details stay behind Host Whisperer.
 
 **1:20–1:45 — Resolve.** Read the generic progress as Host Whisperer restores the checkout service and verifies it, with nothing for the customer to answer.
 

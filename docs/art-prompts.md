@@ -54,7 +54,7 @@ The two connectors matter: in the diagram this node sits below the website and w
 
 ## Checks before using generated art
 
-- No text, logos, or brand marks anywhere in the image — the challenge rules require authorized use of third-party trademarks and copyrighted assets.
+- No text, logos, or third-party brand marks anywhere in the image.
 - Transparent background, so the node keeps its tone when a step turns the card coral or mint.
 - Legible at 180 px and at 1x on a projector.
 - Keep the SVG diagram working with art absent; the illustrated version should be an upgrade, never a dependency.

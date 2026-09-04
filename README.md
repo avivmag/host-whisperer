@@ -1,7 +1,5 @@
 # Host Whisperer
 
-> **Hackathon project:** This repository exists solely as an entry for [OpenAI's WebMCP Challenge](https://openai.com/webmcp-challenge/). It is a deterministic competition demo, not a production product and not intended for real-world use. See the [challenge mission, judging strategy, requirements, and deadline](docs/HACKATHON.md).
-
 **When a website's host fails, its customers get a dead end. Host Whisperer turns that page into something their own agent can fix.**
 
 A developer connects their hosting account and drops one JavaScript file into their site. When a customer later hits a supported failure, that page registers one WebMCP handoff. ChatGPT delegates the support request to Host Whisperer, which privately gathers the approved signals, inspects the incident, applies the one developer-allowlisted resolution, verifies it, and returns only what the customer needs to know.
@@ -15,9 +13,8 @@ The configuration product does not embed ChatGPT and does not itself need WebMCP
 - [Connect your host](https://host-whisperer.onrender.com/?view=integrate) — the developer's whole setup
 - [Big Pink](https://host-whisperer.onrender.com/?view=shop) — **the demo**: the storefront with the plugin installed
 - [Standalone runtime](https://host-whisperer.onrender.com/runtime/host-whisperer.js)
+- [Demo video](https://youtu.be/pjghQeBDLVI)
 - [Big Pink Admin](https://host-whisperer.onrender.com/?view=admin) — legacy install console, off the demo path
-
-The live deployment may lag behind the current worktree. See [implementation status](docs/STATUS.md) before relying on it.
 
 ## Product flow
 
@@ -50,15 +47,10 @@ The installed runtime registers this tool in `src/runtime/index.ts`. The tool de
 
 ## Documentation
 
-- [Hackathon mission and submission target](docs/HACKATHON.md)
 - [Product specification](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security model](docs/SECURITY.md)
-- [Implementation status and next work](docs/STATUS.md)
 - [Demo video script](docs/DEMO.md)
-- [Devpost submission draft](docs/SUBMISSION.md)
-- [Research archive](docs/research/README.md)
-- [Instructions for coding agents](AGENTS.md)
 
 ## Run locally
 

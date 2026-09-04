@@ -52,7 +52,7 @@ describe('Host Whisperer surfaces', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Website failures should come with a recovery path.' })).toBeInTheDocument();
-    expect(screen.getByText('OpenAI WebMCP Challenge')).toBeInTheDocument();
+    expect(screen.getByText('WebMCP')).toBeInTheDocument();
     expect(screen.getByText('Real handoff, simulated host')).toBeInTheDocument();
     expect(screen.getByText(/Provider operations are simulated/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Try the live demo/ })).toHaveAttribute('href', '/?view=shop');

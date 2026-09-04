@@ -1,8 +1,8 @@
 # Demo Video Script
 
-Target: **under three minutes**, with narration, as required by [HACKATHON.md](HACKATHON.md).
+Target: **under three minutes**, with narration.
 
-The video has two parts. Part one shows the offer: a customer stuck on a server error, unstuck by their own agent. Part two shows how it works and how a developer installs it. Part one is the submission — record it first and record it well.
+The video has two parts. Part one shows the offer: a customer stuck on a server error, unstuck by their own agent. Part two shows how it works and how a developer installs it.
 
 ## Before recording
 

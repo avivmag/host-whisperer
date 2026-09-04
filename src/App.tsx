@@ -302,8 +302,8 @@ function About() {
         </div>
         <div className="about-details">
           <aside className="about-origin">
-            <span>Built for</span>
-            <strong>OpenAI WebMCP Challenge</strong>
+            <span>Built with</span>
+            <strong>WebMCP</strong>
             <p>A focused demonstration of people, browser agents, websites, and support systems working together.</p>
           </aside>
           <aside className="about-origin about-status">

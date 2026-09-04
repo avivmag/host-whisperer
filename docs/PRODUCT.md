@@ -1,6 +1,6 @@
 # Product Specification
 
-> This specification describes the product fiction used for the WebMCP Challenge demonstration. Host Whisperer is being built solely for that hackathon and is not intended for production or post-hackathon use. Competition goals and requirements are authoritative in [HACKATHON.md](HACKATHON.md).
+Host Whisperer is a deterministic prototype. Its browser-side host recovery is simulated and is not intended for production infrastructure.
 
 ## One-sentence proposition
 
